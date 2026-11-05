@@ -19,49 +19,57 @@ lib.print.info("================================================================
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName ~= cache.resource then return end
 
-    MySQL.query([[
-        CREATE TABLE IF NOT EXISTS `souh4il_dev_logs` (
-          `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-          `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          `action` varchar(50) NOT NULL,
-          `executor_source` int(11) DEFAULT NULL,
-          `executor_name` varchar(100) NOT NULL,
-          `executor_license` varchar(50) NOT NULL,
-          `target_source` int(11) DEFAULT NULL,
-          `target_name` varchar(100) DEFAULT NULL,
-          `target_license` varchar(50) DEFAULT NULL,
-          `details` longtext DEFAULT NULL,
-          `status` enum('SUCCESS','REJECTED','INTRUSION_ALERT') NOT NULL DEFAULT 'SUCCESS',
-          `previous_hash` varchar(64) NOT NULL,
-          `hash` varchar(64) NOT NULL,
-          PRIMARY KEY (`id`),
-          KEY `idx_action` (`action`),
-          KEY `idx_executor` (`executor_license`),
-          KEY `idx_timestamp` (`timestamp`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    ]])
+    CreateThread(function()
+        local success, err = pcall(function()
+            MySQL.query.await([[
+                CREATE TABLE IF NOT EXISTS `souh4il_dev_logs` (
+                  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                  `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  `action` varchar(50) NOT NULL,
+                  `executor_source` int(11) DEFAULT NULL,
+                  `executor_name` varchar(100) NOT NULL,
+                  `executor_license` varchar(50) NOT NULL,
+                  `target_source` int(11) DEFAULT NULL,
+                  `target_name` varchar(100) DEFAULT NULL,
+                  `target_license` varchar(50) DEFAULT NULL,
+                  `details` longtext DEFAULT NULL,
+                  `status` enum('SUCCESS','REJECTED','INTRUSION_ALERT') NOT NULL DEFAULT 'SUCCESS',
+                  `previous_hash` varchar(64) NOT NULL,
+                  `hash` varchar(64) NOT NULL,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_action` (`action`),
+                  KEY `idx_executor` (`executor_license`),
+                  KEY `idx_timestamp` (`timestamp`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ]])
 
-    MySQL.query([[CREATE TABLE IF NOT EXISTS `souh4il_dev_logs_archive` LIKE `souh4il_dev_logs`;]])
+            MySQL.query.await([[CREATE TABLE IF NOT EXISTS `souh4il_dev_logs_archive` LIKE `souh4il_dev_logs`;]])
 
-    MySQL.query([[
-        CREATE TABLE IF NOT EXISTS `souh4il_dev_outbox` (
-          `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-          `log_id` bigint(20) unsigned NOT NULL,
-          `destination` varchar(100) NOT NULL,
-          `payload` longtext NOT NULL,
-          `signature` varchar(64) NOT NULL,
-          `attempts` tinyint(3) unsigned NOT NULL DEFAULT 0,
-          `status` enum('PENDING','SENT','FAILED') NOT NULL DEFAULT 'PENDING',
-          `last_error` text DEFAULT NULL,
-          `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          PRIMARY KEY (`id`),
-          KEY `idx_status` (`status`),
-          KEY `idx_log` (`log_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    ]])
+            MySQL.query.await([[
+                CREATE TABLE IF NOT EXISTS `souh4il_dev_outbox` (
+                  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                  `log_id` bigint(20) unsigned NOT NULL,
+                  `destination` varchar(100) NOT NULL,
+                  `payload` longtext NOT NULL,
+                  `signature` varchar(64) NOT NULL,
+                  `attempts` tinyint(3) unsigned NOT NULL DEFAULT 0,
+                  `status` enum('PENDING','SENT','FAILED') NOT NULL DEFAULT 'PENDING',
+                  `last_error` text DEFAULT NULL,
+                  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_status` (`status`),
+                  KEY `idx_log` (`log_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ]])
+        end)
 
-    lib.print.info(("^2%s — Database tables verified.^0"):format(SharedConfig.PanelName))
+        if success then
+            lib.print.info(("^2%s — Database tables verified.^0"):format(SharedConfig.PanelName))
+        else
+            lib.print.error(("^1%s — Database initialization error: %s^0"):format(SharedConfig.PanelName, tostring(err)))
+        end
+    end)
 end)
 
 ---Callback 1: Ping / Health Check
@@ -137,29 +145,48 @@ lib.callback.register('souh4il_dev:server:queryAuditLogs', function(source, limi
     }
 end)
 
----NetEvent: Execute Personal Quick Actions (Revive, Heal)
-RegisterNetEvent('souh4il_dev:server:executeQuickAction', function(actionType)
-    local src = source
-    if not Permissions.CanExecute(src, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(src) then
-        return
+---Callback 4: Request Quick Action (Server-Side Authorized & Audited)
+lib.callback.register('souh4il_dev:server:requestQuickAction', function(source, actionType)
+    local allowed, reason = Security.CheckRateLimit(source, 'quick_action')
+    if not allowed then
+        return { success = false, error = reason }
+    end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        Logger.Write("UNAUTHORIZED_QUICK_ACTION_ATTEMPT", source, source, { action = actionType }, "REJECTED")
+        return { success = false, error = "ACCESS_DENIED" }
     end
 
     if actionType == 'revive' then
         if GetResourceState('qbx_medical') == 'started' then
-            exports.qbx_medical:Revive(src)
-            Logger.Write("QUICK_ACTION_REVIVE", src, src, { type = "self_revive" }, "SUCCESS")
+            exports.qbx_medical:Revive(source)
+            Logger.Write("QUICK_ACTION_REVIVE", source, source, { type = "self_revive" }, "SUCCESS")
+            return { success = true }
         end
+        return { success = false, error = "qbx_medical not started" }
     elseif actionType == 'heal' then
         if GetResourceState('qbx_medical') == 'started' then
-            exports.qbx_medical:Heal(src)
-            Logger.Write("QUICK_ACTION_HEAL", src, src, { type = "self_heal" }, "SUCCESS")
+            exports.qbx_medical:Heal(source)
+            Logger.Write("QUICK_ACTION_HEAL", source, source, { type = "self_heal" }, "SUCCESS")
+            return { success = true }
         end
+        return { success = false, error = "qbx_medical not started" }
+    elseif actionType == 'repair' or actionType == 'clean' or actionType == 'tpm' or actionType == 'dv' then
+        Logger.Write("QUICK_ACTION_" .. actionType:upper(), source, source, { type = actionType }, "SUCCESS")
+        return { success = true }
     end
+
+    return { success = false, error = "UNKNOWN_ACTION" }
 end)
 
 ---NetEvent: Set Weather
 RegisterNetEvent('souh4il_dev:server:setWeather', function(weatherType)
     local src = source
+    local allowed, reason = Security.CheckRateLimit(src, 'weather_control')
+    if not allowed then
+        return
+    end
+
     if not Permissions.CanExecute(src, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(src) then
         return
     end

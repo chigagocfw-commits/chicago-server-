@@ -81,54 +81,63 @@ RegisterNUICallback('close', function(_, cb)
     cb('ok')
 end)
 
--- NUI Quick Actions Callback
+-- NUI Quick Actions Callback (Server-Authorized)
 RegisterNUICallback('quickAction', function(data, cb)
     local action = data.action
     local ped = PlayerPedId()
 
-    if action == 'revive' then
-        TriggerServerEvent('souh4il_dev:server:executeQuickAction', 'revive')
-    elseif action == 'heal' then
-        TriggerServerEvent('souh4il_dev:server:executeQuickAction', 'heal')
-    elseif action == 'repair' then
-        local veh = GetVehiclePedIsIn(ped, false)
-        if veh ~= 0 then
-            SetVehicleFixed(veh)
-            SetVehicleDirtLevel(veh, 0.0)
-            lib.notify({ title = SharedConfig.PanelName, description = "Vehicle fully repaired & cleaned.", type = 'success' })
-        else
-            lib.notify({ title = SharedConfig.PanelName, description = "You must be inside a vehicle.", type = 'error' })
+    lib.callback('souh4il_dev:server:requestQuickAction', false, function(response)
+        if not response or not response.success then
+            lib.notify({
+                title = SharedConfig.PanelName,
+                description = response and response.error or "Action rejected by server",
+                type = 'error'
+            })
+            return
         end
-    elseif action == 'clean' then
-        local veh = GetVehiclePedIsIn(ped, false)
-        if veh ~= 0 then
-            SetVehicleDirtLevel(veh, 0.0)
-            lib.notify({ title = SharedConfig.PanelName, description = "Vehicle washed.", type = 'success' })
-        else
-            ClearPedBloodDamage(ped)
-            ResetPedVisibleDamage(ped)
-            lib.notify({ title = SharedConfig.PanelName, description = "Ped cleaned.", type = 'success' })
+
+        if action == 'revive' or action == 'heal' then
+            lib.notify({ title = SharedConfig.PanelName, description = action:upper() .. " applied successfully.", type = 'success' })
+        elseif action == 'repair' then
+            local veh = GetVehiclePedIsIn(ped, false)
+            if veh ~= 0 then
+                SetVehicleFixed(veh)
+                SetVehicleDirtLevel(veh, 0.0)
+                lib.notify({ title = SharedConfig.PanelName, description = "Vehicle fully repaired & cleaned.", type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "You must be inside a vehicle.", type = 'error' })
+            end
+        elseif action == 'clean' then
+            local veh = GetVehiclePedIsIn(ped, false)
+            if veh ~= 0 then
+                SetVehicleDirtLevel(veh, 0.0)
+                lib.notify({ title = SharedConfig.PanelName, description = "Vehicle washed.", type = 'success' })
+            else
+                ClearPedBloodDamage(ped)
+                ResetPedVisibleDamage(ped)
+                lib.notify({ title = SharedConfig.PanelName, description = "Ped cleaned.", type = 'success' })
+            end
+        elseif action == 'tpm' then
+            local waypoint = GetFirstBlipInfoId(8)
+            if DoesBlipExist(waypoint) then
+                local coords = GetBlipInfoIdCoord(waypoint)
+                DoScreenFadeOut(250)
+                Wait(300)
+                SetEntityCoords(ped, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
+                Wait(250)
+                DoScreenFadeIn(250)
+                lib.notify({ title = SharedConfig.PanelName, description = "Teleported to waypoint.", type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "No map waypoint set.", type = 'error' })
+            end
+        elseif action == 'dv' then
+            local veh = GetVehiclePedIsIn(ped, false)
+            if veh ~= 0 then
+                DeleteEntity(veh)
+                lib.notify({ title = SharedConfig.PanelName, description = "Vehicle deleted.", type = 'inform' })
+            end
         end
-    elseif action == 'tpm' then
-        local waypoint = GetFirstBlipInfoId(8)
-        if DoesBlipExist(waypoint) then
-            local coords = GetBlipInfoIdCoord(waypoint)
-            DoScreenFadeOut(250)
-            Wait(300)
-            SetEntityCoords(ped, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
-            Wait(250)
-            DoScreenFadeIn(250)
-            lib.notify({ title = SharedConfig.PanelName, description = "Teleported to waypoint.", type = 'success' })
-        else
-            lib.notify({ title = SharedConfig.PanelName, description = "No map waypoint set.", type = 'error' })
-        end
-    elseif action == 'dv' then
-        local veh = GetVehiclePedIsIn(ped, false)
-        if veh ~= 0 then
-            DeleteEntity(veh)
-            lib.notify({ title = SharedConfig.PanelName, description = "Vehicle deleted.", type = 'inform' })
-        end
-    end
+    end, action)
 
     cb('ok')
 end)
@@ -152,6 +161,25 @@ end)
 -- Weather Set Callback
 RegisterNUICallback('setWeather', function(data, cb)
     TriggerServerEvent('souh4il_dev:server:setWeather', data.weather)
+    cb('ok')
+end)
+
+-- Owner Arsenal Stubs (Pending Phase 2 Integration)
+RegisterNUICallback('requestLoadout', function(data, cb)
+    lib.notify({
+        title = SharedConfig.PanelName,
+        description = ("Loadout '%s' requested. Feature is locked until Phase 2."):format(tostring(data.loadout)),
+        type = 'inform'
+    })
+    cb('ok')
+end)
+
+RegisterNUICallback('spawnVehicle', function(data, cb)
+    lib.notify({
+        title = SharedConfig.PanelName,
+        description = ("Vehicle '%s' requested. Feature is locked until Phase 2."):format(tostring(data.model)),
+        type = 'inform'
+    })
     cb('ok')
 end)
 

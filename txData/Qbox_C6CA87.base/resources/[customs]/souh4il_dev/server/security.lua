@@ -89,6 +89,10 @@ end
 
 -- Disconnect cleanup
 AddEventHandler('playerDropped', function()
+    local srcNum = math.tointeger(source)
+    if srcNum then
+        rateBuckets[srcNum] = nil
+    end
     rateBuckets[source] = nil
 end)
 

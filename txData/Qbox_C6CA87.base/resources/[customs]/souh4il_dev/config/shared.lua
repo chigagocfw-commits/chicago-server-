@@ -14,6 +14,8 @@ Config.RateLimits = {
     ['ping'] = { capacity = 10.0, fillRatePerSec = 2.0 },
     ['security_check'] = { capacity = 5.0, fillRatePerSec = 1.0 },
     ['audit_query'] = { capacity = 3.0, fillRatePerSec = 0.5 },
+    ['quick_action'] = { capacity = 2.0, fillRatePerSec = 0.2 },
+    ['weather_control'] = { capacity = 2.0, fillRatePerSec = 0.1 },
 }
 
 -- Return config
