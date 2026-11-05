@@ -1,0 +1,1493 @@
+/*  ─────────────────────────────────────────────────────────────
+    Apex Chat — Live chat window
+    Fully-custom, ox_inventory / ox_lib aesthetic. Every colour is
+    a theme CSS variable set by js/themes.js (with Apex-blue
+    fallbacks here) so themes switch instantly & live.
+    ───────────────────────────────────────────────────────────── */
+
+:root {
+    --bg:          #0A0A0B;
+    --panel:       #1A1A1B;
+    --panelRaised: #232325;
+    --border:      #1F1F21;
+    --borderHi:    #2A2A2D;
+    --text:        #F4F4F5;
+    --textSub:     #A8A8AD;
+    --accent:      #1F5EFF;
+    --accentSoft:  rgba(31,94,255,.14);
+    --accentText:  #FFFFFF;
+
+    --surface-0:   #0A0A0B;
+    --surface-1:   #131314;
+    --surface-2:   #1A1A1B;
+    --surface-3:   #232325;
+    --surface-4:   #2D2D30;
+    --surface-5:   #38383C;
+    --line-1:      #1F1F21;
+    --line-2:      #2A2A2D;
+    --line-3:      #3A3A3E;
+    --line-4:      #4D4D52;
+    --text-1:      #F4F4F5;
+    --text-2:      #A8A8AD;
+    --text-3:      #7C7C82;
+    --brand-300:   #859BFF;
+    --brand-400:   #5C7AFF;
+    --brand-500:   #1F5EFF;
+    --brand-600:   #0048F0;
+    --brand-a08:   rgba(31,94,255,.08);
+    --brand-a12:   rgba(31,94,255,.12);
+    --brand-a18:   rgba(31,94,255,.18);
+    --brand-a25:   rgba(31,94,255,.25);
+    --brand-a40:   rgba(31,94,255,.40);
+    --shadow-sm:   0 2px 8px rgba(0,0,0,.4);
+    --shadow-md:   0 8px 22px rgba(0,0,0,.5);
+    --shadow-lg:   0 18px 44px rgba(0,0,0,.62);
+
+    --ac-font:     14px;
+    --ac-radius:   12px;
+    --ac-radius-sm: 8px;
+
+    /* ── Ledger premium tokens (editorial transcript + milled inputs) ──
+       Safe rgba bases below so a box-shadow that consumes these never
+       invalidates on older CEF; the @supports block right after upgrades
+       --ac-hair / --ac-inner-lite / --ac-ink-faint to theme-aware
+       color-mix() values wherever Chromium supports it. */
+    --ac-ink:        var(--text);
+    --ac-ink-sub:    var(--textSub);
+    --ac-ink-faint:  var(--textSub);
+    --ac-surface:    var(--surface-2);
+    --ac-hair:       rgba(255,255,255,.06);
+    --ac-inner-lite: rgba(255,255,255,.06);
+    --ac-ease:       cubic-bezier(.22,.61,.36,1);
+    --ac-out:        cubic-bezier(.2,.8,.2,1);
+    --ac-release:    cubic-bezier(.3,0,.2,1);
+    --ac-t-fast:     .14s;
+    --ac-t-rel:      .32s;
+    --ac-ring:       0 0 0 3px var(--brand-a12);
+}
+
+/* Theme-aware upgrade: on light themes a faint DARK edge instead of a white
+   glare; on carbon a faint light edge. Only applies where color-mix() exists. */
+@supports (color: color-mix(in srgb, red, blue)) {
+    :root {
+        --ac-ink-faint:  color-mix(in srgb, var(--textSub) 62%, transparent);
+        --ac-hair:       color-mix(in srgb, var(--text) 8%, transparent);
+        --ac-inner-lite: color-mix(in srgb, var(--text) 6%, transparent);
+    }
+}
+
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: transparent; overflow: hidden;
+    font-family: 'Titillium Web', 'Inter', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ───────── Window shell ─────────
+   Size tokens drive the WHOLE window (width + feed height + input
+   position + font), not just the font. Set per data-size below. */
+.apex-chat {
+    --ac-w:        41%;
+    --ac-minw:     384px;
+    --ac-maxw:     460px;
+    --ac-feed-h:   31vh;
+    --ac-input-top: 33.3vh;
+    position: fixed;
+    width: var(--ac-w);
+    min-width: var(--ac-minw);
+    max-width: var(--ac-maxw);
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: var(--ac-font);
+    color: var(--text);
+    z-index: 20;
+    pointer-events: none;          /* game clicks pass through unless open */
+    transition: opacity .25s ease;
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,.22)) drop-shadow(0 1px 1px rgba(0,0,0,.16));
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.006em;
+    isolation: isolate;
+}
+.apex-chat[data-size="small"]  { --ac-font: 12.5px; --ac-w: 32%; --ac-minw: 320px; --ac-maxw: 380px; --ac-feed-h: 26vh; --ac-input-top: 28.3vh; }
+.apex-chat[data-size="medium"] { --ac-font: 14px;   --ac-w: 41%; --ac-minw: 384px; --ac-maxw: 460px; --ac-feed-h: 31vh; --ac-input-top: 33.3vh; }
+.apex-chat[data-size="big"]    { --ac-font: 16px;   --ac-w: 48%; --ac-minw: 452px; --ac-maxw: 560px; --ac-feed-h: 37vh; --ac-input-top: 39.3vh; }
+
+/* ── Configurable message display (Settings › Configuration) ── */
+.apex-chat[data-font="sm"] { --ac-font-scale: .88; }
+.apex-chat[data-font="lg"] { --ac-font-scale: 1.16; }
+.apex-chat[data-time="off"]    .ac-time   { display: none; }
+.apex-chat[data-avatars="off"] .ac-avatar { display: none; }
+.apex-chat[data-tags="off"]    .ac-tag    { display: none; }
+.apex-chat[data-id="off"]      .ac-msgid  { display: none; }
+/* Small segmented control used by the display "show/hide all" switch. */
+.apex-seg-sm button { padding: 4px 10px; font-size: 11px; }
+.apex-chat[data-density="compact"] .ac-msg  { padding: 3px 10px; margin-top: 3px; }
+.apex-chat[data-density="compact"] .ac-meta { margin-bottom: 0; }
+.apex-chat[data-mine="off"] .ac-msg.is-mine {
+    background: rgba(16, 16, 20, .34);
+    border-color: var(--line-1, rgba(255, 255, 255, .06));
+    box-shadow: 0 2px 9px rgba(0, 0, 0, .22);
+}
+
+/* Positions */
+.apex-chat.is-pos-top-left      { top: 2.5%;     left: 40px;   }
+.apex-chat.is-pos-top-center    { top: 2.5%;     left: 50%; transform: translateX(-50%); }
+.apex-chat.is-pos-top-right     { top: 2.5%;     right: 40px;  }
+.apex-chat.is-pos-bottom-left   { bottom: 4.5vh; left: 1.6vw;  }
+.apex-chat.is-pos-bottom-center { bottom: 4.5vh; left: 50%; transform: translateX(-50%); }
+.apex-chat.is-pos-bottom-right  { bottom: 4.5vh; right: 1.6vw; }
+
+/* ───────── Header / tabs ───────── */
+/* Header removed — settings moved into the composer tools, feed pulls up. */
+.ac-head { display: none !important; }
+.apex-chat[data-open="true"] .ac-head { opacity: 1; transform: none; pointer-events: auto; }
+/* Keep the header's space reserved so opening the chat does not push messages down. */
+.apex-chat:not([data-open="true"]) .ac-inputwrap { display: none; }
+
+.ac-head-left,
+.ac-actions,
+.ac-quickchats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ac-head-left { min-width: 0; }
+.ac-actions { flex: 0 0 auto; margin-left: auto; }
+/* Active-channel badge + name in the header — removed per request. */
+.ac-head-title { display: none; }
+.ac-head-badge {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    display: grid; place-items: center;
+    border-radius: 8px;
+    background: linear-gradient(155deg, var(--cat, var(--brand-400)), var(--brand-600));
+    color: var(--accentText);
+    font-size: 12px;
+    box-shadow: inset 0 1px 0 var(--ac-inner-lite), 0 2px 6px -3px rgba(0,0,0,.5);
+}
+.ac-head-name {
+    font-weight: 700; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ac-iconbtn {
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--ac-radius-sm);
+    color: var(--textSub); cursor: pointer;
+    backdrop-filter: none;
+    transition: .12s;
+    box-shadow: none;
+}
+.ac-iconbtn:hover { color: var(--text); border-color: var(--line-3); background: var(--surface-3); }
+.ac-quick {
+    min-width: 52px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 9px;
+    border: 1px solid var(--line-2);
+    border-radius: var(--ac-radius-sm);
+    background: var(--surface-2);
+    color: var(--textSub);
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: none;
+    transition: .12s;
+}
+.ac-quick i { color: var(--cat, var(--brand-400)); font-size: 11px; }
+.ac-quick:hover {
+    color: var(--text);
+    background: var(--surface-3);
+    border-color: var(--line-3);
+}
+.ac-quick.is-active {
+    color: var(--text);
+    background: var(--surface-3);
+    border-color: var(--line-3);
+}
+.ac-quick[hidden] { display: none; }
+
+/* ───────── Feed ───────── */
+.ac-feed {
+    position: relative;
+    z-index: 1;
+    display: flex; flex-direction: column; gap: 0;
+    height: var(--ac-feed-h, 31vh);
+    max-height: var(--ac-feed-h, 31vh);
+    /* Always scrollable so new messages reliably pin to the bottom; the
+       scrollbar thumb is transparent (and pointer-events off) until open. */
+    overflow-y: auto;
+    /* top padding gives the floating hover-actions pill room on the first row */
+    padding: 14px 10px 0 0;
+    margin-right: -10px;
+    transition: opacity .45s ease;
+    pointer-events: none;
+    scrollbar-gutter: stable;
+}
+.apex-chat[data-open="true"] .ac-feed { pointer-events: auto; }
+/* Messages fill top→down. Once the feed overflows, scrollDown() (below,
+   in chat.js) keeps the newest pinned to the bottom and the oldest scroll
+   off the top — even while the chat is closed. */
+.apex-chat.ac-feedhidden .ac-feed { opacity: 0; }
+.apex-chat.ac-screenhidden { opacity: 0 !important; pointer-events: none !important; }
+/* /hide — feed + history stay collapsed even with the chat open, so the
+   only thing on screen is the composer with its "type /hide" notice. */
+.apex-chat.ac-hidden .ac-feed { opacity: 0 !important; pointer-events: none !important; }
+.ac-feed::-webkit-scrollbar { width: 5px; }
+.ac-feed::-webkit-scrollbar-thumb { background: transparent; border-radius: 6px; }
+.apex-chat[data-open="true"] .ac-feed::-webkit-scrollbar-thumb { background: var(--borderHi); }
+.ac-feed::-webkit-scrollbar-track { background: transparent; }
+
+/* Message bubble */
+.ac-msg {
+    position: relative;
+    /* NEVER shrink inside the flex-column feed — otherwise a full feed
+       squishes every message (and a fixed-size image overflows the
+       compressed bubble). Keep natural height and let the feed scroll. */
+    flex: 0 0 auto;
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 11px;
+    margin-top: 6px;
+    /* Theme-adapted, semi-transparent message surface + a faint category tint. */
+    background:
+        linear-gradient(90deg, rgba(var(--cat-rgb, 59,130,246), .06), rgba(var(--cat-rgb, 59,130,246), 0) 58%),
+        rgba(16, 16, 20, .34);
+    border: 1px solid var(--line-1, rgba(255, 255, 255, .06));
+    border-radius: 10px;
+    backdrop-filter: none;
+    box-shadow: 0 2px 9px rgba(0, 0, 0, .22);
+    animation: ac-in .2s var(--ac-out) both;
+    transition: background var(--ac-t-rel) var(--ac-release), border-color .2s ease;
+    word-break: break-word;
+    overflow: visible;
+    z-index: 1;
+}
+/* Prefer a theme-surface tint where color-mix() is available. */
+@supports (color: color-mix(in srgb, red, blue)) {
+    .ac-msg {
+        background:
+            linear-gradient(90deg, rgba(var(--cat-rgb, 59,130,246), .07), rgba(var(--cat-rgb, 59,130,246), 0) 55%),
+            color-mix(in srgb, var(--surface-2) 60%, transparent);
+    }
+}
+.ac-msg:hover { border-color: var(--line-2, rgba(255, 255, 255, .1)); }
+.ac-msg.has-reactions { z-index: 8; }
+.ac-msg.is-reacting { z-index: 80; }
+.ac-msg.is-menu-open { z-index: 90; }
+.ac-msg::before { display: none; }
+/* "Mine" = a thin channel-tinted spine down the left of the group. */
+.ac-msg.is-mine {
+    box-shadow: inset 2px 0 0 rgba(var(--cat-rgb, 59,130,246), .5), 0 2px 9px rgba(0, 0, 0, .22);
+    border-color: rgba(var(--cat-rgb, 59,130,246), .26);
+}
+/* Row hover highlight. */
+.ac-msg:hover { background: rgba(255,255,255,.04); }
+@keyframes ac-in {
+    from { opacity: 0; transform: translateY(6px); }
+    55%  { opacity: 1; }
+    to   { opacity: 1; transform: none; }
+}
+
+.ac-avatar {
+    position: relative;
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    /* Soft translucent tint instead of a full saturated fill (only shows
+       behind icon/initials — a mugshot image covers it). */
+    background: linear-gradient(155deg, rgba(var(--cat-rgb, 59,130,246), .26), rgba(var(--cat-rgb, 59,130,246), .10));
+    color: var(--cat, var(--brand-300)); font-weight: 650; font-size: 13px; letter-spacing: -0.01em;
+    overflow: hidden;
+    border: 1px solid rgba(var(--cat-rgb, 59,130,246), .28);
+    box-shadow:
+        inset 0 1px 0 var(--ac-inner-lite),
+        0 2px 6px -3px rgba(0,0,0,.5);
+}
+.ac-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ac-avatar i { font-size: 16px; line-height: 1; }
+.ac-msg.no-avatar .ac-avatar { display: none; }
+
+.ac-body { position: relative; flex: 1; min-width: 0; padding-bottom: 0; }
+.ac-msg.has-reactions .ac-body { padding-bottom: 0; }
+.ac-meta { display: flex; align-items: baseline; gap: 7px; min-height: 0; line-height: 1; margin-bottom: 2px; padding-right: 8px; }
+.ac-author {
+    min-width: 0;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+}
+.ac-chip {
+    /* Inline: sits to the right of the tag and before the time.
+       Aligned to the TOP of the row (not centred on the tag). */
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 999px;
+    background: rgba(var(--cat-rgb, 59,130,246), .1);
+    color: var(--cat, var(--accent));
+    border: 1px solid rgba(var(--cat-rgb, 59,130,246), .22);
+    font-size: 8px; font-weight: 650; letter-spacing: .11em; text-transform: uppercase;
+}
+.ac-name { flex: 0 1 auto; min-width: 0; font-weight: 600; font-size: 13px; letter-spacing: -0.012em; line-height: 1.1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-msgid { flex: 0 0 auto; font-size: 10px; font-weight: 700; color: var(--textSub); opacity: .75; font-variant-numeric: tabular-nums; }
+/* Time now sits inline to the left, right before the channel chip. */
+.ac-time { flex: 0 0 auto; font-size: 10px; font-weight: 480; color: var(--ac-ink-sub); opacity: .7; letter-spacing: .02em; font-variant-numeric: tabular-nums lining-nums; }
+.ac-text { margin-top: 1px; font-size: calc(var(--ac-font) * var(--ac-font-scale, 1)); line-height: 1.4; color: var(--ac-ink); opacity: 1; letter-spacing: -0.003em; text-wrap: pretty; }
+.ac-text a {
+    color: var(--brand-500);
+    text-underline-offset: 2px;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color .12s ease;
+}
+.ac-text a:hover { text-decoration-color: currentColor; }
+/* Quoted reply inside a message — clickable, jumps to the original. */
+.ac-reply-preview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 3px;
+    padding: 3px 8px 3px 7px;
+    border: 0;
+    border-left: 2px solid rgba(var(--cat-rgb, 59,130,246), .65);
+    border-radius: 4px 8px 8px 4px;
+    background: rgba(var(--cat-rgb, 59,130,246), .08);
+    color: var(--textSub);
+    font: inherit;
+    font-size: 9.5px;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+.ac-reply-preview:hover { background: rgba(var(--cat-rgb, 59,130,246), .16); color: var(--text); }
+.ac-reply-preview i { font-size: 8.5px; color: var(--cat, var(--brand-400)); transform: scaleX(-1); }
+.ac-reply-preview strong { color: var(--cat, var(--brand-300)); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+.ac-reply-preview span {
+    color: var(--textSub);
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Flash highlight when jumping to a replied message. */
+.ac-msg.ac-flash {
+    border-color: rgba(var(--cat-rgb, 59,130,246), .6);
+    box-shadow:
+        0 0 0 2px rgba(var(--cat-rgb, 59,130,246), .35),
+        0 2px 9px rgba(0, 0, 0, .22);
+}
+/* Reactions overlay the bubble's bottom-right corner INSIDE it — absolute
+   (anchored to .ac-msg) so they sit in the true corner, add no height, and
+   never hang outside the message. */
+.ac-reactions {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    z-index: 4;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    max-width: 70%;
+    pointer-events: auto;
+}
+.ac-reactions:empty { display: none; }
+.ac-reaction-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    min-height: 17px;
+    padding: 2px 7px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 999px;
+    /* Translucent so the message surface shows through. */
+    background: rgba(255, 255, 255, .06);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+.ac-reaction-pill:hover { background: rgba(255, 255, 255, .12); border-color: var(--brand-a25); }
+.ac-reaction-emoji { font-size: 11.5px; line-height: 1; }
+/* Hover actions sit INSIDE the bubble's top-right corner, no background.
+   Anchored to .ac-msg (not .ac-body) so they hit the true corner. */
+.ac-msg-actions {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    bottom: auto;
+    z-index: 82;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1px;
+    width: auto;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity .12s ease, transform .12s ease;
+    pointer-events: none;
+}
+.apex-chat[data-open="true"] .ac-msg:hover .ac-msg-actions,
+.apex-chat[data-open="true"] .ac-msg:focus-within .ac-msg-actions,
+.ac-msg.is-menu-open .ac-msg-actions,
+.ac-msg.is-reacting .ac-msg-actions {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+.ac-msg-action {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--textSub);
+    cursor: pointer;
+    font-size: 11px;
+    box-shadow: none;
+    line-height: 1;
+}
+.ac-msg-action i { display: block; width: 1em; height: 1em; line-height: 1; text-align: center; }
+.ac-msg-action,
+.ac-reaction-pill,
+.ac-msg-menu,
+.ac-reaction-picker {
+    background-clip: padding-box;
+}
+.ac-msg-action:hover {
+    color: var(--brand-400);
+    background: transparent;
+    border-color: transparent;
+}
+.ac-reaction-picker {
+    position: absolute;
+    left: auto;
+    right: 0;
+    top: calc(100% + 6px);
+    bottom: auto;
+    z-index: 90;
+    width: min(232px, calc(100vw - 56px));
+    max-height: 156px;
+    display: grid;
+    grid-template-columns: repeat(7, 26px);
+    gap: 4px;
+    padding: 7px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    background: var(--surface-1);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.04);
+    pointer-events: auto;
+}
+.ac-reaction-picker[hidden] { display: none; }
+/* Open upward when there is no room below (set by JS) — keeps the
+   feed's scroll height from growing when a panel opens. */
+.ac-reaction-picker.is-up { top: auto; bottom: calc(100% + 6px); }
+.ac-reaction-picker::-webkit-scrollbar { width: 6px; }
+.ac-reaction-picker::-webkit-scrollbar-thumb { background: var(--borderHi); border-radius: 6px; }
+.ac-reaction-picker::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
+.ac-reaction-picker::-webkit-scrollbar-track { background: transparent; }
+.ac-reaction-option {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 17px;
+    line-height: 1;
+}
+.ac-reaction-option:hover {
+    background: var(--brand-a12);
+    border-color: var(--brand-a18);
+}
+.ac-msg-menu {
+    position: absolute;
+    right: 0;
+    top: 16px;
+    bottom: auto;
+    z-index: 95;
+    width: 174px;
+    display: grid;
+    gap: 2px;
+    padding: 7px;
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    background: var(--surface-1);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.04);
+    pointer-events: auto;
+}
+.ac-msg-menu[hidden] { display: none; }
+.ac-msg-menu.is-up { top: auto; bottom: calc(100% + 8px); }
+.ac-msg-menu button {
+    width: 100%;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 7px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--textSub);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+.ac-msg-menu button:hover {
+    background: var(--accentSoft);
+    color: var(--text);
+}
+.ac-msg-menu button i {
+    width: 14px;
+    text-align: center;
+    color: var(--textSub);
+    opacity: .9;
+}
+.ac-msg-menu button[data-menu-act="call"] { color: #4E9CE5; }
+.ac-msg-menu button[data-menu-act="call"] i { color: #4E9CE5; }
+.ac-msg-menu button.is-danger { color: #D35C62; }
+.ac-msg-menu button.is-danger i { color: #D35C62; }
+.ac-msg-menu hr {
+    width: calc(100% + 14px);
+    height: 1px;
+    margin: 5px -7px;
+    border: 0;
+    background: var(--line-2);
+}
+
+/* Legacy / raw-html bubbles (other resources + okok channels) keep
+   their own markup. We reproduce the old okok channel skins here so
+   /ooc /pm /staff /twitch /ad announcements etc. stay styled. */
+.ac-legacy { flex: 0 0 auto; display: block; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; animation: ac-in .22s cubic-bezier(.2,.7,.3,1) both; }
+.ac-legacy .chat-message {
+    position: relative;
+    display: block; font-size: 12.5px;
+    padding: 7px 10px; border-radius: var(--ac-radius);
+    border: 1px solid var(--line-2);
+    background: var(--surface-2);
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.008)), var(--surface-2);
+    backdrop-filter: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,.26), 0 6px 18px rgba(0,0,0,.22);
+    color: var(--text); word-break: break-word; line-height: 1.25;
+    overflow: hidden;
+}
+.ac-legacy .chat-message::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--brand-a40), rgba(255,255,255,.22), var(--brand-a40), transparent);
+    opacity: .55;
+}
+.ac-legacy .chat-message .message { margin-top: 2px; color: var(--text); }
+.ac-legacy .chat-message .time { margin-left: 6px; font-size: 9.5px; color: var(--textSub); }
+.ac-legacy .chat-message b { font-weight: 700; }
+.ac-legacy .chat-message i { margin-right: 4px; }
+.ac-legacy .chat-message i[class*="fa-"]:first-child { padding: 4px; border-radius: 6px; }
+
+/* Per-channel tints (fallback hexes baked in for old CEF) */
+.ac-legacy .staff        { border-color: rgba(52,199,123,.35);  background: rgba(52,199,123,.13); }
+.ac-legacy .staffonly    { border-color: var(--line-3);          background: rgba(255,255,255,.05); }
+.ac-legacy .server-msg   { border-color: rgba(240,85,109,.35);   background: rgba(240,85,109,.13); }
+.ac-legacy .system       { border-color: rgba(255,197,61,.35);   background: rgba(255,197,61,.12); }
+.ac-legacy .advertisement{ border-color: rgba(52,199,123,.35);  background: rgba(52,199,123,.12); }
+.ac-legacy .twitch       { border-color: rgba(156,112,222,.35); background: rgba(156,112,222,.12); }
+.ac-legacy .youtube      { border-color: rgba(240,85,109,.35);   background: rgba(240,85,109,.12); }
+.ac-legacy .twitter      { border-color: rgba(201,205,209,.30); background: rgba(201,205,209,.10); }
+.ac-legacy .police       { border-color: var(--brand-a25);       background: var(--brand-a12); }
+.ac-legacy .ambulance    { border-color: rgba(255,197,61,.35);   background: rgba(255,197,61,.12); }
+.ac-legacy .jobchat      { border-color: rgba(78,156,229,.35);  background: rgba(78,156,229,.12); }
+.ac-legacy .ooc          { border-color: var(--line-3);          background: rgba(255,255,255,.04); }
+.ac-legacy .pm           { border-color: var(--brand-a25);       background: var(--brand-a12); }
+.ac-legacy .anonymous    { border-color: var(--line-2);          background: rgba(255,255,255,.05); }
+.ac-legacy .muted        { border-color: rgba(255,197,61,.35);   background: rgba(255,197,61,.12); }
+
+/* okok icon chips used inside legacy templates */
+.ac-legacy .fa-shield-alt,
+.ac-legacy .fa-shield-halved   { color:#fff; background: var(--accent); }
+.ac-legacy .fa-eye-slash       { color:#fff; background: var(--panelRaised); }
+.ac-legacy .fa-exclamation-circle { color:#fff; background:#E5564B; }
+.ac-legacy .fa-twitch          { color:#fff; background:#9c70de; }
+.ac-legacy .fa-youtube         { color:#fff; background:#ff3030; }
+.ac-legacy .fa-twitter,
+.ac-legacy .fa-x-twitter       { color:#fff; background:#000; }
+.ac-legacy .fa-cog             { color:#fff; background:#E5A93C; }
+.ac-legacy .fa-ad              { color:#fff; background:#34C77B; }
+.ac-legacy .fa-bullhorn        { color:#fff; background: var(--accent); }
+.ac-legacy .fa-ambulance,
+.ac-legacy .fa-truck-medical   { color:#fff; background:#E5A93C; }
+.ac-legacy .fa-door-open       { color:#fff; background: var(--textSub); }
+.ac-legacy .fa-mask            { color:#fff; background: var(--panelRaised); }
+.ac-legacy .fa-briefcase       { color:#fff; background:#4E9CE5; }
+.ac-legacy .fa-gavel           { color:#fff; background:#E5A93C; }
+.ac-legacy .fa-comment         { color:#fff; background: var(--accent); }
+
+/* ───────── Input ───────── */
+.ac-inputwrap {
+    position: absolute;
+    top: var(--ac-input-top, 33.3vh);
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 70;
+    overflow: visible;
+}
+.apex-chat[data-open="true"] .ac-inputwrap { opacity: 1; transform: none; pointer-events: auto; }
+
+.ac-inputrow {
+    position: relative;   /* anchor for the emoji/GIF/photo popover */
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 6px 4px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-2);
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.28), inset 0 1px 0 var(--ac-inner-lite);
+    backdrop-filter: none;
+    order: 1;
+    transition: border-color var(--ac-t-fast) var(--ac-out), box-shadow var(--ac-t-fast) var(--ac-out), background var(--ac-t-fast) var(--ac-out);
+}
+.ac-replybar {
+    order: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+    padding: 4px 6px 4px 9px;
+    border: 1px solid var(--line-1);
+    border-left: 2px solid var(--brand-500);
+    border-radius: 6px;
+    background: var(--brand-a08);
+    color: var(--text);
+    box-shadow: none;
+}
+.ac-replybar[hidden] { display: none; }
+
+/* ── /hide notice (shown in the composer while the chat is hidden) ── */
+.ac-hiddenbar {
+    order: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+    padding: 5px 8px 5px 9px;
+    border: 1px solid var(--line-1);
+    border-left: 2px solid var(--textSub);
+    border-radius: 6px;
+    background: rgba(120, 120, 130, .12);
+    color: var(--textSub);
+    font-size: 10px;
+}
+.ac-hiddenbar[hidden] { display: none; }
+.ac-hiddenbar > i { font-size: 10px; }
+.ac-hiddenbar kbd {
+    padding: 1px 5px;
+    border: 1px solid var(--line-2);
+    border-radius: 4px;
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 9.5px;
+}
+.ac-hiddenbar.is-flash { animation: ac-hidden-flash .45s ease; }
+@keyframes ac-hidden-flash {
+    0%, 100% { border-left-color: var(--textSub); background: rgba(120,120,130,.12); }
+    35%      { border-left-color: var(--brand-500); background: var(--brand-a12); color: var(--text); }
+}
+.ac-replybar > i { color: var(--brand-400); font-size: 10px; transform: scaleX(-1); }
+.ac-replybar div { min-width: 0; flex: 1; display: grid; gap: 1px; }
+.ac-replybar strong { font-size: 9.5px; color: var(--brand-300); }
+.ac-replybar span { color: var(--textSub); font-size: 9.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-replybar button {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--textSub);
+    cursor: pointer;
+}
+.ac-replybar button:hover { color: var(--brand-300); background: var(--brand-a12); }
+/* Fixed focus ring (theme brand) — deliberately does NOT follow the
+   active channel colour so the composer looks the same in every chat. */
+.ac-inputrow:focus-within {
+    border-color: var(--brand-a40);
+    background: var(--surface-1);
+    box-shadow:
+        inset 0 1px 0 var(--ac-inner-lite),
+        0 0 0 3px var(--brand-a12);
+}
+.ac-prefix {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 10px; border-radius: var(--ac-radius-sm);
+    background: linear-gradient(180deg, var(--brand-500), var(--brand-600)); color: var(--accentText);
+    border: 0;
+    font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+    white-space: nowrap;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 var(--ac-inner-lite), 0 1px 2px rgba(0,0,0,.28);
+    transition: box-shadow var(--ac-t-rel) var(--ac-release), filter var(--ac-t-rel) var(--ac-release), transform var(--ac-t-rel) var(--ac-release);
+}
+.ac-prefix:hover {
+    transition-duration: var(--ac-t-fast);
+    filter: brightness(1.04);
+    box-shadow: inset 0 1px 0 var(--ac-inner-lite), 0 2px 8px -3px var(--brand-a40), var(--ac-ring);
+}
+.ac-prefix:active {
+    transition-duration: .1s;
+    transition-timing-function: var(--ac-ease);
+    transform: translateY(1px) scale(.97);
+}
+.ac-prefix i { font-size: 11px; }
+.ac-prefix .ac-chev { margin-left: 2px; font-size: 9px; opacity: .85; transition: transform .12s; }
+.ac-channel {
+    position: relative;
+    flex: 0 0 auto;
+}
+.ac-channel.is-open .ac-chev { transform: rotate(180deg); }
+.ac-channel-menu {
+    position: absolute;
+    left: 0;
+    /* Open the channel-type dropdown DOWNWARD (below the composer prefix). */
+    top: calc(100% + 6px);
+    bottom: auto;
+    width: 170px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-2);
+    border-radius: var(--ac-radius);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.05);
+    z-index: 45;
+}
+.ac-head .ac-channel-menu {
+    top: calc(100% + 6px);
+    bottom: auto;
+}
+.ac-channel-menu[hidden] { display: none; }
+.ac-channel-item {
+    width: 100%;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid transparent;
+    border-radius: var(--ac-radius-sm);
+    background: transparent;
+    color: var(--textSub);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, color .12s;
+}
+.ac-channel-item i {
+    flex: 0 0 auto;
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    background: rgba(var(--cat-rgb, 59,130,246), .16);
+    color: var(--cat, var(--brand-400));
+    font-size: 11px;
+}
+.ac-channel-item:hover {
+    color: var(--text);
+    background: var(--brand-a08);
+    border-color: var(--brand-a18);
+}
+.ac-channel-item.is-active {
+    color: var(--text);
+    background: var(--brand-a12);
+    border-color: var(--brand-a25);
+}
+#ac-field {
+    flex: 1; min-width: 0;
+    background: transparent; border: 0; outline: none;
+    color: var(--ac-ink); font-family: inherit; font-size: var(--ac-font);
+    letter-spacing: -0.003em;
+    padding: 8px 2px;
+}
+#ac-field::placeholder { color: var(--textSub); }
+.ac-counter { font-size: 10px; color: var(--ac-ink-sub); padding-right: 4px; min-width: 0; text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+.ac-counter:empty { display: none; }
+.ac-counter.is-warn { color: var(--accent); }
+
+.ac-hint {
+    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+    padding: 6px 6px 0;
+    font-size: 9.5px; color: var(--textSub);
+    opacity: 1;
+    order: 3;
+}
+.ac-hint kbd {
+    background: var(--surface-2); border: 1px solid var(--line-2);
+    border-radius: 5px; padding: 1px 5px; font-family: inherit; color: var(--ac-ink-faint);
+    font-variant-numeric: tabular-nums; letter-spacing: .01em;
+}
+
+/* ───────── Command suggestions ───────── */
+.ac-suggest {
+    order: 2;
+    margin-top: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    color: var(--text);
+    background: var(--surface-1);
+    border: 1px solid var(--line-2);
+    border-radius: var(--ac-radius);
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    backdrop-filter: none;
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.ac-suggest[hidden] { display: none; }
+.ac-suggest::-webkit-scrollbar { width: 6px; }
+.ac-suggest::-webkit-scrollbar-thumb { background: var(--borderHi); border-radius: 6px; }
+.ac-suggest::-webkit-scrollbar-track { background: transparent; }
+.ac-sugg-item {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 5px;
+    padding-left: 27px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+}
+.ac-sugg-item:hover, .ac-sugg-item.is-active {
+    background: var(--brand-a12); border-left-color: var(--brand-500);
+}
+.ac-sugg-cmd  { font-weight: 800; color: var(--text); font-size: 0.9rem; }
+.ac-sugg-help { color: var(--textSub); font-size: 0.9rem; }
+.ac-sugg-params { margin-left: auto; color: var(--brand-500); font-size: 0.9rem; font-weight: 700; }
+
+/* @mention autocomplete rows */
+.ac-mention .ac-sugg-item, .ac-mention-item { padding-left: 12px; gap: 6px; align-items: center; }
+.ac-mention-at {
+    flex: 0 0 auto;
+    display: grid; place-items: center;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--brand-a18);
+    color: var(--brand-300);
+    font-weight: 800; font-size: 12px;
+}
+.ac-mention-item .ac-sugg-cmd { font-weight: 700; font-size: 0.86rem; }
+.ac-mention-item .ac-sugg-params { color: var(--textSub); font-weight: 700; font-size: 0.72rem; }
+
+/* ───────── Taller input + tools ───────── */
+.ac-inputrow { padding: 5px 7px; min-height: 42px; }
+#ac-field { padding: 8px 4px; }
+
+.ac-tools { display: flex; align-items: center; gap: 2px; }
+.ac-tool {
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    background: transparent; border: 0; border-radius: 8px;
+    color: var(--textSub); cursor: pointer; font-size: 14px;
+    transition: color var(--ac-t-rel) var(--ac-release), background var(--ac-t-rel) var(--ac-release), transform var(--ac-t-rel) var(--ac-release);
+}
+.ac-tool:hover { color: var(--brand-300); background: var(--brand-a12); transition-duration: var(--ac-t-fast); transform: translateY(-1px); }
+.ac-tool[hidden] { display: none; }
+
+.ac-send {
+    width: 32px; height: 32px;
+    flex: 0 0 32px;
+    margin-left: auto;
+    display: grid; place-items: center;
+    /* Fixed theme-brand colour — deliberately does NOT follow the channel. */
+    border: 1px solid var(--brand-a40);
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--brand-500), var(--brand-600));
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    box-shadow: inset 0 1px 0 var(--ac-inner-lite), 0 1px 2px rgba(0,0,0,.28);
+    transition: transform .12s var(--ac-ease), box-shadow var(--ac-t-rel) var(--ac-release), filter var(--ac-t-fast) ease, background .18s ease, border-color .18s ease;
+}
+.ac-send:hover {
+    filter: brightness(1.06);
+    box-shadow: inset 0 1px 0 var(--ac-inner-lite), 0 2px 10px -2px var(--brand-a40), 0 0 0 3px var(--brand-a18);
+}
+.ac-send:active {
+    transform: translateY(1px) scale(.965);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.32), inset 0 1px 0 rgba(0,0,0,.18);
+}
+
+/* ───────── Emoji / GIF / photo popover ─────────
+   Anchored to the input row and floated over the hint line below the
+   chat (z-index beats the static hints), so opening it covers them. */
+.ac-pop {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 6px);
+    bottom: auto;
+    z-index: 120;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--line-2);
+    border-radius: var(--ac-radius);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.04);
+    padding: 8px;
+    max-height: min(230px, 28vh);
+    overflow: visible;
+}
+.ac-pop[hidden] { display: none; }
+.ac-emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    max-height: min(204px, calc(28vh - 18px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    scrollbar-gutter: stable;
+}
+.ac-emoji-grid::-webkit-scrollbar { width: 6px; }
+.ac-emoji-grid::-webkit-scrollbar-thumb { background: var(--borderHi); border-radius: 6px; }
+.ac-emoji-grid::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
+.ac-emoji-grid::-webkit-scrollbar-track { background: transparent; }
+.ac-emoji {
+    width: 100%;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    font-size: 18px;
+    padding: 2px;
+    cursor: pointer;
+    line-height: 1;
+}
+.ac-emoji:hover { background: var(--surface-3); }
+.ac-gifbox { display: grid; gap: 8px; }
+.ac-gifbox > span { font-size: 11px; color: var(--textSub); letter-spacing: .04em; text-transform: uppercase; }
+.ac-gifrow { display: flex; gap: 8px; }
+.ac-gifurl { flex: 1; background: var(--surface-1); border: 1px solid var(--line-2); border-radius: var(--ac-radius-sm); color: var(--text); padding: 8px 10px; font-family: inherit; outline: none; }
+.ac-gifurl:focus { border-color: var(--brand-500); box-shadow: 0 0 0 2px var(--brand-a18); }
+.ac-gifadd { background: linear-gradient(180deg, var(--brand-400), var(--brand-600)); color: var(--accentText); border: 0; border-radius: var(--ac-radius-sm); padding: 8px 14px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px -8px var(--brand-a40); }
+.ac-gifadd:disabled { opacity: .72; cursor: wait; }
+.ac-photo-shot { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 34px; }
+.ac-photo-status { color: var(--textSub); font-size: 11px; line-height: 1.35; }
+
+/* Optional caption input inside the photo / GIF popovers. */
+.ac-cap-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--surface-2);
+    border: 1px solid var(--line-2);
+    border-radius: var(--ac-radius-sm);
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    padding: 8px 10px;
+    outline: none;
+}
+.ac-cap-input::placeholder { color: var(--textSub); }
+.ac-cap-input:focus { border-color: var(--brand-a40); box-shadow: 0 0 0 3px var(--brand-a12); }
+
+/* Inline images / GIFs in messages — compact, never wider than the body
+   (the min() keeps them small yet caps at 100% so they can't overflow),
+   full image shown (no crop), click zooms. */
+.ac-img {
+    display: block;
+    margin-top: 6px;
+    width: auto;
+    height: auto;
+    max-width: min(190px, 100%);
+    max-height: 150px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    cursor: zoom-in;
+}
+.ac-photo-img { background: var(--surface-1); }
+
+/* Fullscreen image viewer (click an inline image) */
+#ac-lightbox {
+    position: fixed; inset: 0; z-index: 300;
+    display: grid; place-items: center;
+    background: rgba(4, 4, 6, .78);
+    cursor: zoom-out;
+    pointer-events: auto;
+    animation: ac-in .16s ease both;
+}
+#ac-lightbox[hidden] { display: none; }
+#ac-lightbox img {
+    max-width: 82vw; max-height: 82vh;
+    border-radius: 12px;
+    border: 1px solid var(--line-3);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Layout order: tabs → messages → input (like okokChat). */
+.ac-head { order: 1; }
+.ac-feed { order: 2; }
+.ac-inputwrap { order: 3; }
+
+/* ───────── Free-hand position ───────── */
+.apex-chat.is-free { top: auto; bottom: auto; left: 0; right: auto; transform: none; }
+
+/* ───────── Light mode (Chat Settings → White Mode) ─────────
+   !important so it beats the theme's inline custom-property values. */
+html.ac-light {
+    --bg:          rgba(244,246,251,.9)  !important;
+    --panel:       rgba(255,255,255,.93) !important;
+    --panelRaised: rgba(255,255,255,.99) !important;
+    --border:      rgba(10,12,20,.1)     !important;
+    --borderHi:    rgba(10,12,20,.18)    !important;
+    --text:        #14151A               !important;
+    --textSub:     rgba(20,21,26,.55)    !important;
+}
+
+/* ───────── Player tags (inline in messages, right of the name) ───────── */
+.ac-tag {
+    flex: 0 0 auto;
+    display: inline-flex; align-items: center; gap: 4px;
+    vertical-align: middle; margin: 0;
+    font-size: 10px; font-weight: 800; letter-spacing: .04em;
+    line-height: 1; white-space: nowrap;
+}
+.ac-tag i { font-size: 10px; }
+.ac-tag-badge { padding: 2px 7px 2px 6px; border-radius: 6px; border: 1px solid transparent; }
+.ac-tag-full  { padding: 2px 8px; border-radius: 6px; box-shadow: 0 1px 4px -1px rgba(0,0,0,.5); }
+.ac-tag-text  { text-transform: uppercase; }
+.ac-tag-icon  { width: 17px; height: 17px; justify-content: center; border-radius: 5px; }
+
+/* ───────── GIF picker ───────── */
+/* The popover sizes to its content for GIFs; only the grid scrolls. */
+.ac-pop[data-kind="gif"] { max-height: none; overflow: hidden; }
+.ac-gifsearch { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: none; }
+.ac-gif-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--line-2); }
+.ac-gif-head:focus-within { border-color: var(--brand-a40); box-shadow: 0 0 0 3px var(--brand-a12); }
+.ac-gif-head i { color: var(--textSub); font-size: 12px; }
+.ac-gif-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--text); font: inherit; font-size: 13px; }
+.ac-gif-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    max-height: 216px;
+    overflow-y: auto; overflow-x: hidden;
+    padding-right: 6px;
+    scrollbar-gutter: stable;
+}
+.ac-gif-grid::-webkit-scrollbar { width: 6px; }
+.ac-gif-grid::-webkit-scrollbar-thumb { background: var(--borderHi); border-radius: 6px; }
+.ac-gif-grid::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
+.ac-gif-grid::-webkit-scrollbar-track { background: transparent; }
+.ac-gif-cell { padding: 0; border: 1px solid var(--line-1); border-radius: 8px; overflow: hidden; background: var(--surface-1); cursor: pointer; aspect-ratio: 1; transition: transform .12s ease, border-color .12s ease; }
+.ac-gif-cell:hover { border-color: var(--accent); transform: scale(1.03); }
+.ac-gif-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ac-gif-loading { grid-column: 1 / -1; text-align: center; color: var(--textSub); font-size: 12px; padding: 22px 0; }
+.ac-gif-credit { color: var(--textSub); font-size: 9.5px; text-align: right; letter-spacing: .04em; }
+/* GIF / image-only messages: no empty text gap. */
+.ac-text:empty { display: none; }
+
+/* ───────── Photo framing overlay (custom, replaces native help) ───────── */
+.ac-photoframe {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-bottom: 6vh;
+    pointer-events: none;   /* mouse still aims the camera */
+    font-family: 'Titillium Web', 'Inter', system-ui, sans-serif;
+    animation: ac-pf-in .2s var(--ac-out, ease) both;
+}
+.ac-photoframe[hidden] { display: none; }
+@keyframes ac-pf-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* A subtle vignette so the bar reads over any scene. */
+.ac-photoframe::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 90% at 50% 100%, rgba(0,0,0,.55), rgba(0,0,0,0) 60%);
+    pointer-events: none;
+}
+.ac-pf-badge {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(10,10,12,.62);
+    border: 1px solid rgba(255,255,255,.14);
+    color: #fff;
+    font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+    box-shadow: 0 10px 30px -12px rgba(0,0,0,.7);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.ac-pf-badge i { color: var(--brand-400, #60A5FA); font-size: 12px; }
+.ac-pf-bar {
+    position: relative;
+    display: inline-flex; align-items: stretch; gap: 4px;
+    padding: 8px;
+    border-radius: 16px;
+    background: rgba(10,10,12,.64);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 44px -18px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.ac-pf-ctrl {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    min-width: 132px;
+    padding: 9px 16px;
+    border-radius: 11px;
+}
+.ac-pf-shoot  { background: linear-gradient(180deg, rgba(59,130,246,.22), rgba(59,130,246,.08)); border: 1px solid rgba(59,130,246,.4); }
+.ac-pf-cancel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); }
+.ac-pf-sep { width: 1px; margin: 6px 2px; background: rgba(255,255,255,.1); }
+.ac-pf-keys { display: inline-flex; align-items: center; gap: 5px; }
+.ac-pf-or { color: rgba(255,255,255,.4); font-size: 10px; }
+.ac-pf-keys kbd {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px; padding: 0 7px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    border-bottom-width: 2px;
+    color: #fff; font-family: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
+}
+.ac-pf-shoot .ac-pf-keys kbd { background: rgba(96,165,250,.22); border-color: rgba(96,165,250,.5); }
+.ac-pf-label { color: rgba(255,255,255,.92); font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+.ac-pf-shoot .ac-pf-label { color: var(--brand-300, #93B4FB); }
+
+/* ───────── Mentions (@nome) ───────── */
+.ac-mention {
+    display: inline-block;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--brand-a18);
+    color: var(--brand-300);
+    font-weight: 700;
+}
+/* The whole message stands out when *you* are the one mentioned. */
+.ac-msg.is-mention {
+    border-color: rgba(229, 169, 60, .6);
+    box-shadow:
+        inset 3px 0 0 rgba(229, 169, 60, .95),
+        0 0 0 1px rgba(229, 169, 60, .28),
+        0 2px 12px rgba(0, 0, 0, .28);
+    background:
+        linear-gradient(90deg, rgba(229, 169, 60, .18), rgba(229, 169, 60, .03) 70%),
+        rgba(16, 16, 20, .38);
+}
+/* The @token pointing at you glows amber inside a mention message. */
+.ac-msg.is-mention .ac-mention { background: rgba(229,169,60,.24); color: #F0C878; }
+
+/* ───────── Typing indicator ("X está a escrever…") ───────── */
+.ac-typing {
+    order: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 4px;
+    padding: 2px 4px;
+    color: var(--textSub);
+    font-size: 10px;
+    line-height: 1;
+}
+.ac-typing[hidden] { display: none; }
+.ac-typing-dots { display: inline-flex; gap: 3px; }
+.ac-typing-dots i {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--brand-400);
+    animation: ac-typing-bounce 1.2s infinite ease-in-out;
+}
+.ac-typing-dots i:nth-child(2) { animation-delay: .15s; }
+.ac-typing-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes ac-typing-bounce {
+    0%, 60%, 100% { transform: none; opacity: .5; }
+    30% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* ───────── Edited marker ───────── */
+.ac-edited { margin-left: 5px; color: var(--textSub); font-size: 9px; font-style: italic; opacity: .8; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CHAT LAYOUT THEMES (data-design on .apex-chat) — change the whole
+   message layout, not just colours. "apex" is the default (no rules).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Glass — frosted, translucent, rounded. */
+.apex-chat[data-design="glass"] .ac-msg {
+    background: rgba(255,255,255,.07);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px -8px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.10);
+}
+.apex-chat[data-design="glass"] .ac-avatar { border-radius: 13px; }
+
+/* Neon — left accent border on every line, sharp corners, glow. */
+.apex-chat[data-design="neon"] .ac-msg {
+    background: rgba(10,10,14,.5);
+    border: 1px solid rgba(255,255,255,.05);
+    border-left: 3px solid rgba(var(--cat-rgb,59,130,246),.95);
+    border-radius: 3px;
+    box-shadow: -2px 0 14px -3px rgba(var(--cat-rgb,59,130,246),.55), 0 2px 8px rgba(0,0,0,.3);
+}
+.apex-chat[data-design="neon"] .ac-avatar { border-radius: 4px; }
+.apex-chat[data-design="neon"] .ac-name { text-shadow: 0 0 10px rgba(var(--cat-rgb,59,130,246),.55); }
+
+/* Bubble — chat balloons, round avatars. */
+.apex-chat[data-design="bubble"] .ac-msg {
+    background: rgba(255,255,255,.06);
+    border: 0;
+    border-radius: 5px 16px 16px 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.24);
+}
+.apex-chat[data-design="bubble"] .ac-msg.is-mine { border-radius: 16px 5px 16px 16px; }
+.apex-chat[data-design="bubble"] .ac-avatar { border-radius: 50%; }
+
+/* Cards — each message a distinct raised card. */
+.apex-chat[data-design="cards"] .ac-msg {
+    background: var(--surface-2);
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    box-shadow: 0 6px 18px -6px rgba(0,0,0,.4);
+    margin-top: 8px;
+    padding: 13px;
+}
+
+/* Minimalistic — ultra-flat GTA5 style, gradient fade from the left. */
+.apex-chat[data-design="minimal"] .ac-msg {
+    background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,0) 72%);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 5px 10px;
+    margin-top: 2px;
+}
+.apex-chat[data-design="minimal"] .ac-avatar {
+    width: 26px; height: 26px; border-radius: 6px; border: 0; box-shadow: none;
+}
+.apex-chat[data-design="minimal"] .ac-text,
+.apex-chat[data-design="minimal"] .ac-name { text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+
+/* Terminal — monospace, row separators, no bubbles or avatars. */
+.apex-chat[data-design="terminal"] .ac-msg {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 4px 8px;
+    margin-top: 0;
+    gap: 8px;
+}
+.apex-chat[data-design="terminal"] .ac-avatar { display: none; }
+.apex-chat[data-design="terminal"] .ac-feed,
+.apex-chat[data-design="terminal"] .ac-text,
+.apex-chat[data-design="terminal"] .ac-name,
+.apex-chat[data-design="terminal"] .ac-time { font-family: 'Consolas','Courier New',monospace; letter-spacing: 0; }
+
+/* Compact — dense, tiny spacing, small avatars. */
+.apex-chat[data-design="compact"] .ac-msg { padding: 3px 8px; margin-top: 2px; border-radius: 6px; gap: 7px; box-shadow: none; background: rgba(255,255,255,.03); border-color: transparent; }
+.apex-chat[data-design="compact"] .ac-avatar { width: 24px; height: 24px; border-radius: 6px; }
+.apex-chat[data-design="compact"] .ac-text { font-size: calc(var(--ac-font) * .92); }
+
+/* Outline — coloured border only, transparent body. */
+.apex-chat[data-design="outline"] .ac-msg { background: transparent; border: 1px solid rgba(var(--cat-rgb,59,130,246),.5); border-radius: 10px; box-shadow: none; }
+.apex-chat[data-design="outline"] .ac-avatar { background: transparent; border: 1px solid rgba(var(--cat-rgb,59,130,246),.6); }
+
+/* Aurora — soft multi-colour gradient per message. */
+.apex-chat[data-design="aurora"] .ac-msg { background: linear-gradient(120deg, rgba(var(--cat-rgb,59,130,246),.22), rgba(168,85,247,.15) 55%, rgba(34,211,238,.12)); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; box-shadow: 0 6px 20px -8px rgba(0,0,0,.4); }
+
+/* Pill — fully-rounded capsules. */
+.apex-chat[data-design="pill"] .ac-msg { border-radius: 22px; padding: 10px 16px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); box-shadow: none; }
+.apex-chat[data-design="pill"] .ac-avatar { border-radius: 50%; }
+
+/* CRT — retro green terminal with glow. */
+.apex-chat[data-design="crt"] .ac-msg { background: rgba(0,22,0,.4); border: 1px solid rgba(80,255,120,.25); border-radius: 2px; box-shadow: inset 0 0 20px rgba(80,255,120,.08); }
+.apex-chat[data-design="crt"] .ac-avatar { display: none; }
+.apex-chat[data-design="crt"] .ac-feed,
+.apex-chat[data-design="crt"] .ac-text,
+.apex-chat[data-design="crt"] .ac-name,
+.apex-chat[data-design="crt"] .ac-time { font-family: 'Consolas','Courier New',monospace; color: #7CFF9B; text-shadow: 0 0 6px rgba(80,255,120,.45); letter-spacing: 0; }
+
+/* Midnight — deep elegant blue. */
+.apex-chat[data-design="midnight"] .ac-msg { background: linear-gradient(180deg, rgba(20,28,54,.62), rgba(12,16,32,.55)); border: 1px solid rgba(80,110,200,.22); border-radius: 12px; box-shadow: 0 6px 18px -8px rgba(0,0,20,.6); }
+
+/* Hologram — cyan futuristic glow. */
+.apex-chat[data-design="holo"] .ac-msg { background: linear-gradient(120deg, rgba(34,211,238,.14), rgba(59,130,246,.10)); border: 1px solid rgba(34,211,238,.4); border-radius: 10px; box-shadow: 0 0 14px -4px rgba(34,211,238,.5), inset 0 0 10px rgba(34,211,238,.06); }
+.apex-chat[data-design="holo"] .ac-name { color: #67E8F9; text-shadow: 0 0 8px rgba(34,211,238,.5); }
+
+/* Sticky — slightly tilted sticky notes. */
+.apex-chat[data-design="sticky"] .ac-msg { background: linear-gradient(180deg, #f7e98a, #f3df6b); border: 0; border-radius: 3px; box-shadow: 0 6px 14px -6px rgba(0,0,0,.5); transform: rotate(-.6deg); }
+.apex-chat[data-design="sticky"] .ac-msg:nth-child(even) { transform: rotate(.7deg); }
+.apex-chat[data-design="sticky"] .ac-text,
+.apex-chat[data-design="sticky"] .ac-name { color: #2a2410; }
+.apex-chat[data-design="sticky"] .ac-time { color: rgba(42,36,16,.6); }
+
+/* Ticket — dashed receipt border. */
+.apex-chat[data-design="ticket"] .ac-msg { background: rgba(255,255,255,.04); border: 1px dashed rgba(255,255,255,.28); border-radius: 4px; box-shadow: none; }
+.apex-chat[data-design="ticket"] .ac-avatar { border-radius: 4px; }
+
+/* Frost — bright frosted glass. */
+.apex-chat[data-design="frost"] .ac-msg { background: rgba(255,255,255,.16); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); border: 1px solid rgba(255,255,255,.3); border-radius: 18px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.35); }
+.apex-chat[data-design="frost"] .ac-text,
+.apex-chat[data-design="frost"] .ac-name { color: #0d1420; }
+.apex-chat[data-design="frost"] .ac-time { color: rgba(13,20,32,.6); }
+
+/* Slate — matte sober slate. */
+.apex-chat[data-design="slate"] .ac-msg { background: #1c2128; border: 1px solid #2d333b; border-radius: 8px; box-shadow: none; }
+.apex-chat[data-design="slate"] .ac-avatar { border-radius: 8px; }
+
+/* iMessage — rounded bubbles, your own messages in blue. */
+.apex-chat[data-design="imessage"] .ac-msg { background: rgba(120,120,128,.24); border: 0; border-radius: 17px; box-shadow: none; }
+.apex-chat[data-design="imessage"] .ac-avatar { border-radius: 50%; }
+.apex-chat[data-design="imessage"] .ac-msg.is-mine { background: linear-gradient(180deg, #2a8cff, #0a72f5); border-color: transparent; box-shadow: none; }
+.apex-chat[data-design="imessage"] .ac-msg.is-mine .ac-text,
+.apex-chat[data-design="imessage"] .ac-msg.is-mine .ac-name { color: #fff; }
+.apex-chat[data-design="imessage"] .ac-msg.is-mine .ac-time { color: rgba(255,255,255,.72); }
+
+/* Mono Ink — high-contrast black & white. */
+.apex-chat[data-design="mono"] .ac-msg { background: #0b0b0c; border: 1px solid #ffffff; border-radius: 4px; box-shadow: none; }
+.apex-chat[data-design="mono"] .ac-avatar { border-radius: 4px; background: #fff; color: #000; border: 0; }
+.apex-chat[data-design="mono"] .ac-text,
+.apex-chat[data-design="mono"] .ac-name { color: #fff; }
+
+/* Sunset — warm orange/pink gradient. */
+.apex-chat[data-design="sunset"] .ac-msg { background: linear-gradient(120deg, rgba(251,146,60,.24), rgba(244,63,94,.18) 70%); border: 1px solid rgba(251,146,60,.3); border-radius: 14px; box-shadow: 0 6px 18px -8px rgba(120,20,0,.4); }
+.apex-chat[data-design="sunset"] .ac-name { color: #FDBA74; }
+
+/* Forest — calm natural green. */
+.apex-chat[data-design="forest"] .ac-msg { background: linear-gradient(180deg, rgba(20,48,32,.6), rgba(12,30,20,.55)); border: 1px solid rgba(74,160,100,.28); border-radius: 12px; box-shadow: 0 5px 16px -8px rgba(0,20,0,.5); }
+.apex-chat[data-design="forest"] .ac-name { color: #86EFAC; }
+
+/* Vaporwave — 80s pink & cyan. */
+.apex-chat[data-design="vaporwave"] .ac-msg { background: linear-gradient(120deg, rgba(244,114,182,.20), rgba(34,211,238,.16)); border: 1px solid rgba(244,114,182,.4); border-radius: 8px; box-shadow: 0 0 14px -5px rgba(244,114,182,.5); }
+.apex-chat[data-design="vaporwave"] .ac-name { color: #F0ABFC; text-shadow: 0 0 8px rgba(244,114,182,.5); }
+.apex-chat[data-design="vaporwave"] .ac-avatar { border-radius: 4px; }
+
+/* ───────── Design picker (settings › THEMES › CHAT THEME) ───────── */
+.design-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); gap: 12px; }
+.design-card {
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    padding: 10px;
+    background: var(--surface-2);
+    cursor: pointer;
+    transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.design-card:hover { border-color: var(--line-3); transform: translateY(-1px); }
+.design-card.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accentSoft); }
+.design-prev {
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0d0d10;
+    padding: 8px;
+    display: flex; flex-direction: column; gap: 5px; justify-content: flex-end;
+}
+.dp-msg { display: flex; gap: 6px; align-items: center; }
+.dp-av { width: 15px; height: 15px; border-radius: 5px; background: var(--accent); flex: 0 0 auto; }
+.dp-lines { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.dp-name { width: 42%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.42); }
+.dp-txt  { width: 82%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.16); }
+.design-meta { margin-top: 9px; }
+.design-meta strong { display: block; color: var(--text); font-size: 13px; }
+.design-meta .tick { color: var(--accent); }
+.design-meta small { display: block; color: var(--textSub); font-size: 11px; line-height: 1.32; margin-top: 3px; }
+
+/* Per-design mini-preview looks */
+.design-prev[data-design="apex"]    .dp-msg { background: rgba(255,255,255,.04); border-radius: 6px; padding: 4px 5px; }
+.design-prev[data-design="glass"]   .dp-msg { background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 4px 5px; }
+.design-prev[data-design="neon"]    .dp-msg { background: rgba(10,10,14,.65); border-left: 2px solid var(--accent); border-radius: 2px; padding: 4px 5px; }
+.design-prev[data-design="bubble"]  .dp-msg { background: rgba(255,255,255,.06); border-radius: 3px 9px 9px 9px; padding: 4px 5px; }
+.design-prev[data-design="bubble"]  .dp-av  { border-radius: 50%; }
+.design-prev[data-design="cards"]   .dp-msg { background: var(--surface-3); border: 1px solid var(--line-2); border-radius: 7px; padding: 5px; }
+.design-prev[data-design="minimal"] .dp-msg { background: linear-gradient(90deg, rgba(0,0,0,.65), transparent 70%); padding: 3px 5px; }
+.design-prev[data-design="minimal"] .dp-av  { width: 11px; height: 11px; border-radius: 3px; }
+.design-prev[data-design="terminal"] { background: #05070a; }
+.design-prev[data-design="terminal"] .dp-msg { border-bottom: 1px solid rgba(255,255,255,.10); padding: 3px 4px; }
+.design-prev[data-design="terminal"] .dp-av  { display: none; }
+.design-prev[data-design="terminal"] .dp-name,
+.design-prev[data-design="terminal"] .dp-txt { background: rgba(120,230,150,.5); }
+.design-prev[data-design="compact"] .dp-msg { background: rgba(255,255,255,.03); border-radius: 4px; padding: 2px 4px; gap: 4px; }
+.design-prev[data-design="compact"] .dp-av { width: 10px; height: 10px; }
+.design-prev[data-design="outline"] .dp-msg { background: transparent; border: 1px solid var(--accent); border-radius: 7px; padding: 4px 5px; }
+.design-prev[data-design="aurora"] .dp-msg { background: linear-gradient(120deg, var(--accent), #a855f7 60%, #22d3ee); border-radius: 9px; padding: 4px 5px; }
+.design-prev[data-design="pill"] .dp-msg { background: rgba(255,255,255,.06); border-radius: 12px; padding: 5px 8px; }
+.design-prev[data-design="pill"] .dp-av { border-radius: 50%; }
+.design-prev[data-design="crt"] { background: #001400; }
+.design-prev[data-design="crt"] .dp-msg { border: 1px solid rgba(80,255,120,.3); border-radius: 2px; padding: 3px 4px; }
+.design-prev[data-design="crt"] .dp-av { display: none; }
+.design-prev[data-design="crt"] .dp-name,
+.design-prev[data-design="crt"] .dp-txt { background: rgba(120,255,150,.6); }
+.design-prev[data-design="midnight"] { background: #0a0e1c; }
+.design-prev[data-design="midnight"] .dp-msg { background: rgba(30,42,80,.6); border: 1px solid rgba(80,110,200,.3); border-radius: 7px; padding: 4px 5px; }
+.design-prev[data-design="holo"] .dp-msg { background: linear-gradient(120deg, rgba(34,211,238,.2), rgba(59,130,246,.12)); border: 1px solid rgba(34,211,238,.5); border-radius: 6px; padding: 4px 5px; }
+.design-prev[data-design="holo"] .dp-av { background: #22d3ee; }
+.design-prev[data-design="sticky"] .dp-msg { background: #f3df6b; border-radius: 2px; padding: 4px 5px; transform: rotate(-1deg); }
+.design-prev[data-design="sticky"] .dp-name,
+.design-prev[data-design="sticky"] .dp-txt { background: rgba(40,36,16,.5); }
+.design-prev[data-design="sticky"] .dp-av { background: #b8a63a; }
+.design-prev[data-design="ticket"] .dp-msg { background: rgba(255,255,255,.03); border: 1px dashed rgba(255,255,255,.35); border-radius: 3px; padding: 4px 5px; }
+.design-prev[data-design="frost"] .dp-msg { background: rgba(255,255,255,.6); border-radius: 9px; padding: 4px 5px; }
+.design-prev[data-design="frost"] .dp-name,
+.design-prev[data-design="frost"] .dp-txt { background: rgba(13,20,32,.4); }
+.design-prev[data-design="frost"] .dp-av { background: rgba(13,20,32,.6); }
+.design-prev[data-design="slate"] .dp-msg { background: #1c2128; border: 1px solid #2d333b; border-radius: 6px; padding: 4px 5px; }
+.design-prev[data-design="imessage"] .dp-msg { background: rgba(120,120,128,.3); border-radius: 10px; padding: 4px 6px; }
+.design-prev[data-design="imessage"] .dp-av { border-radius: 50%; }
+.design-prev[data-design="imessage"] .dp-msg:last-child { background: linear-gradient(180deg, #2a8cff, #0a72f5); }
+.design-prev[data-design="imessage"] .dp-msg:last-child .dp-name,
+.design-prev[data-design="imessage"] .dp-msg:last-child .dp-txt { background: rgba(255,255,255,.65); }
+.design-prev[data-design="mono"] .dp-msg { background: #0b0b0c; border: 1px solid #fff; border-radius: 3px; padding: 4px 5px; }
+.design-prev[data-design="mono"] .dp-av { background: #fff; }
+.design-prev[data-design="mono"] .dp-name,
+.design-prev[data-design="mono"] .dp-txt { background: rgba(255,255,255,.7); }
+.design-prev[data-design="sunset"] .dp-msg { background: linear-gradient(120deg, rgba(251,146,60,.5), rgba(244,63,94,.4)); border-radius: 9px; padding: 4px 5px; }
+.design-prev[data-design="sunset"] .dp-av { background: #FB923C; }
+.design-prev[data-design="forest"] { background: #08160e; }
+.design-prev[data-design="forest"] .dp-msg { background: rgba(20,48,32,.7); border: 1px solid rgba(74,160,100,.35); border-radius: 7px; padding: 4px 5px; }
+.design-prev[data-design="forest"] .dp-av { background: #4ADE80; }
+.design-prev[data-design="vaporwave"] { background: #16081a; }
+.design-prev[data-design="vaporwave"] .dp-msg { background: linear-gradient(120deg, rgba(244,114,182,.35), rgba(34,211,238,.28)); border: 1px solid rgba(244,114,182,.5); border-radius: 5px; padding: 4px 5px; }
+.design-prev[data-design="vaporwave"] .dp-av { background: #F472B6; }

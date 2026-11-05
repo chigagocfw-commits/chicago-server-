@@ -1,0 +1,69 @@
+{
+    "ui_header_title": "Character",
+    "ui_header_accent": "Selector",
+    "ui_header_subtitle": "Review identity and choose a life to load",
+    "ui_btn_quit": "QUIT",
+
+    "ui_quit_heading": "Are you sure?",
+    "ui_quit_lead": "You will disconnect from the server.",
+    "ui_quit_copy": "Are you sure you want to quit?",
+
+    "ui_identity": "Identity",
+    "ui_details": "Details",
+
+    "ui_field_name": "Name",
+    "ui_field_dob": "Date of birth",
+    "ui_field_gender": "Gender",
+    "ui_field_nationality": "Nationality",
+    "ui_field_first_name": "First name",
+    "ui_field_last_name": "Last name",
+    "ui_field_char_name": "Character name",
+    "ui_field_tebex_id": "Tebex ID",
+
+    "ui_gender_male": "Male",
+    "ui_gender_female": "Female",
+
+    "ui_select_nationality": "Select nationality",
+
+    "ui_section_play": "Play",
+    "ui_section_character": "Character",
+
+    "ui_btn_play_now": "PLAY NOW",
+    "ui_btn_create": "CREATE",
+    "ui_btn_cancel": "CANCEL",
+    "ui_btn_delete": "DELETE",
+    "ui_btn_redeem": "REDEEM",
+    "ui_btn_visit_shop": "VISIT SHOP",
+    "ui_btn_get_more_slots": "GET MORE SLOTS",
+    "ui_btn_esc": "ESC",
+
+    "ui_no_empty_slots": "No empty character slots",
+
+    "ui_aria_prev_char": "Previous character",
+    "ui_aria_next_char": "Next character",
+    "ui_aria_delete_char": "Delete character",
+
+    "ui_register_heading": "Register character",
+    "ui_register_lead": "Required details for your new character in the city.",
+
+    "ui_delete_heading": "Are you sure?",
+    "ui_delete_lead": "This permanently removes the character. There is no undo.",
+    "ui_delete_copy_pre": "Type",
+    "ui_delete_copy_post": "below to confirm deletion.",
+
+    "ui_redeem_heading": "Redeem slot",
+    "ui_redeem_lead": "Unlock an extra character slot with your purchase code.",
+    "ui_redeem_intro_pre": "Purchase a slot on the webstore, then paste your",
+    "ui_redeem_intro_tid": "Tebex transaction ID",
+    "ui_redeem_intro_mid": "(e.g.",
+    "ui_redeem_tebex_example": "tbx-123456789",
+
+    "ui_welcome_greeting": "Welcome",
+    "ui_welcome_player": "Player",
+    "ui_welcome_to": ", to",
+    "ui_welcome_press": "Press",
+    "ui_welcome_or": "or",
+    "ui_welcome_continue": "to continue",
+
+    "dropped_player_message": "You have quit the server."
+}

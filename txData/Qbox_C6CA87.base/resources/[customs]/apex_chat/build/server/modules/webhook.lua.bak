@@ -1,0 +1,647 @@
+local L0_1, L1_1
+function L0_1(A0_2)
+  local L1_2, L2_2, L3_2, L4_2, L5_2, L6_2, L7_2, L8_2, L9_2
+  L1_2 = {}
+  L1_2.steam = ""
+  L1_2.ip = ""
+  L1_2.discord = ""
+  L1_2.license = ""
+  L1_2.xbl = ""
+  L1_2.live = ""
+  L2_2 = 0
+  L3_2 = GetNumPlayerIdentifiers
+  L4_2 = A0_2
+  L3_2 = L3_2(L4_2)
+  L3_2 = L3_2 - 1
+  L4_2 = 1
+  for L5_2 = L2_2, L3_2, L4_2 do
+    L6_2 = GetPlayerIdentifier
+    L7_2 = A0_2
+    L8_2 = L5_2
+    L6_2 = L6_2(L7_2, L8_2)
+    L7_2 = string
+    L7_2 = L7_2.find
+    L8_2 = L6_2
+    L9_2 = "steam"
+    L7_2 = L7_2(L8_2, L9_2)
+    if L7_2 then
+      L1_2.steam = L6_2
+    else
+      L7_2 = string
+      L7_2 = L7_2.find
+      L8_2 = L6_2
+      L9_2 = "ip"
+      L7_2 = L7_2(L8_2, L9_2)
+      if L7_2 then
+        L1_2.ip = L6_2
+      else
+        L7_2 = string
+        L7_2 = L7_2.find
+        L8_2 = L6_2
+        L9_2 = "discord"
+        L7_2 = L7_2(L8_2, L9_2)
+        if L7_2 then
+          L1_2.discord = L6_2
+        else
+          L7_2 = string
+          L7_2 = L7_2.find
+          L8_2 = L6_2
+          L9_2 = "license"
+          L7_2 = L7_2(L8_2, L9_2)
+          if L7_2 then
+            L1_2.license = L6_2
+          else
+            L7_2 = string
+            L7_2 = L7_2.find
+            L8_2 = L6_2
+            L9_2 = "xbl"
+            L7_2 = L7_2(L8_2, L9_2)
+            if L7_2 then
+              L1_2.xbl = L6_2
+            else
+              L7_2 = string
+              L7_2 = L7_2.find
+              L8_2 = L6_2
+              L9_2 = "live"
+              L7_2 = L7_2(L8_2, L9_2)
+              if L7_2 then
+                L1_2.live = L6_2
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  return L1_2
+end
+ExtractIdentifiers = L0_1
+function L0_1(A0_2)
+  local L1_2, L2_2, L3_2, L4_2, L5_2, L6_2, L7_2, L8_2, L9_2, L10_2, L11_2, L12_2, L13_2
+  if A0_2 then
+    L1_2 = A0_2.webhook
+    if L1_2 then
+      goto lbl_7
+    end
+  end
+  L1_2 = Webhook
+  ::lbl_7::
+  if not L1_2 or "" == L1_2 then
+    return
+  end
+  L2_2 = {}
+  L3_2 = {}
+  L4_2 = Config
+  L4_2 = L4_2.WebhookColor
+  L3_2.color = L4_2
+  L4_2 = {}
+  L5_2 = Config
+  L5_2 = L5_2.IconURL
+  L4_2.icon_url = L5_2
+  L5_2 = Config
+  L5_2 = L5_2.ServerName
+  L6_2 = " - Logs"
+  L5_2 = L5_2 .. L6_2
+  L4_2.name = L5_2
+  L3_2.author = L4_2
+  L3_2.title = "CHAT"
+  L4_2 = "**Type:** "
+  L5_2 = A0_2.type
+  L6_2 = [[
+
+**Message:** ]]
+  L7_2 = A0_2.message
+  L8_2 = [[
+
+
+**ID:** ]]
+  L9_2 = A0_2.playerid
+  L10_2 = [[
+
+**Identifier:** ]]
+  L11_2 = A0_2.identifier
+  L12_2 = [[
+
+**Discord:** ]]
+  L13_2 = A0_2.discord
+  L4_2 = L4_2 .. L5_2 .. L6_2 .. L7_2 .. L8_2 .. L9_2 .. L10_2 .. L11_2 .. L12_2 .. L13_2
+  L3_2.description = L4_2
+  L4_2 = {}
+  L5_2 = os
+  L5_2 = L5_2.date
+  L6_2 = Config
+  L6_2 = L6_2.DateFormat
+  L5_2 = L5_2(L6_2)
+  L4_2.text = L5_2
+  L3_2.footer = L4_2
+  L2_2[1] = L3_2
+  L3_2 = PerformHttpRequest
+  L4_2 = L1_2
+  function L5_2(A0_3, A1_3, A2_3)
+  end
+  L6_2 = "POST"
+  L7_2 = json
+  L7_2 = L7_2.encode
+  L8_2 = {}
+  L9_2 = Config
+  L9_2 = L9_2.BotName
+  L8_2.username = L9_2
+  L8_2.embeds = L2_2
+  L7_2 = L7_2(L8_2)
+  L8_2 = {}
+  L8_2["Content-Type"] = "application/json"
+  L3_2(L4_2, L5_2, L6_2, L7_2, L8_2)
+end
+discordWebhook = L0_1
+function L0_1(A0_2)
+  local L1_2, L2_2, L3_2, L4_2, L5_2, L6_2, L7_2, L8_2, L9_2
+  if A0_2 then
+    L1_2 = A0_2.PlayerData
+    if L1_2 then
+      goto lbl_8
+    end
+  end
+  L1_2 = false
+  do return L1_2 end
+  ::lbl_8::
+  L1_2 = ipairs
+  L2_2 = Config
+  L2_2 = L2_2.StaffGroups
+  L1_2, L2_2, L3_2, L4_2 = L1_2(L2_2)
+  for L5_2, L6_2 in L1_2, L2_2, L3_2, L4_2 do
+    L7_2 = QBCore
+    L7_2 = L7_2.Functions
+    L7_2 = L7_2.HasPermission
+    L8_2 = A0_2.PlayerData
+    L8_2 = L8_2.source
+    L9_2 = L6_2
+    L7_2 = L7_2(L8_2, L9_2)
+    if L7_2 then
+      L7_2 = true
+      return L7_2
+    end
+  end
+  L1_2 = false
+  return L1_2
+end
+isAdmin = L0_1
+function L0_1(A0_2)
+  local L1_2, L2_2, L3_2
+  if A0_2 then
+    L1_2 = A0_2.PlayerData
+    if L1_2 then
+      L1_2 = A0_2.PlayerData
+      L1_2 = L1_2.charinfo
+      if L1_2 then
+        goto lbl_12
+      end
+    end
+  end
+  L1_2 = ""
+  do return L1_2 end
+  ::lbl_12::
+  L1_2 = A0_2.PlayerData
+  L1_2 = L1_2.charinfo
+  L1_2 = L1_2.firstname
+  if not L1_2 then
+    L1_2 = ""
+  end
+  L2_2 = " "
+  L3_2 = A0_2.PlayerData
+  L3_2 = L3_2.charinfo
+  L3_2 = L3_2.lastname
+  if not L3_2 then
+    L3_2 = ""
+  end
+  L1_2 = L1_2 .. L2_2 .. L3_2
+  return L1_2
+end
+getName = L0_1
+function L0_1(A0_2)
+  local L1_2
+  if A0_2 then
+    L1_2 = A0_2.PlayerData
+    if L1_2 then
+      L1_2 = A0_2.PlayerData
+      L1_2 = L1_2.name
+      if L1_2 then
+        goto lbl_11
+      end
+    end
+  end
+  L1_2 = ""
+  ::lbl_11::
+  return L1_2
+end
+getSteamName = L0_1
+function L0_1(A0_2)
+  local L1_2, L2_2, L3_2, L4_2, L5_2, L6_2, L7_2, L8_2, L9_2, L10_2
+  L1_2 = ipairs
+  L2_2 = QBCore
+  L2_2 = L2_2.Functions
+  L2_2 = L2_2.GetPlayers
+  L2_2, L3_2, L4_2, L5_2, L6_2, L7_2, L8_2, L9_2, L10_2 = L2_2()
+  L1_2, L2_2, L3_2, L4_2 = L1_2(L2_2, L3_2, L4_2, L5_2, L6_2, L7_2, L8_2, L9_2, L10_2)
+  for L5_2, L6_2 in L1_2, L2_2, L3_2, L4_2 do
+    L7_2 = QBCore
+    L7_2 = L7_2.Functions
+    L7_2 = L7_2.GetPlayer
+    L8_2 = L6_2
+    L7_2 = L7_2(L8_2)
+    if L7_2 then
+      L8_2 = A0_2
+      L9_2 = L6_2
+      L10_2 = L7_2
+      L8_2(L9_2, L10_2)
+    end
+  end
+end
+function L1_1(A0_2)
+  local L1_2, L2_2
+  L1_2 = L0_1
+  function L2_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = Config
+    L2_3 = L2_3.ShowIDOnMessage
+    if not L2_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil == L2_3 then
+        L2_3 = A0_2
+        L3_3 = A0_3
+        L2_3(L3_3)
+    end
+    else
+      L2_3 = Config
+      L2_3 = L2_3.ShowIDOnMessage
+      if L2_3 then
+        L2_3 = chatsHidden
+        L3_3 = A1_3.PlayerData
+        L3_3 = L3_3.source
+        L2_3 = L2_3[L3_3]
+        if nil == L2_3 then
+          L2_3 = isAdmin
+          L3_3 = A1_3
+          L2_3 = L2_3(L3_3)
+          if not L2_3 then
+            L2_3 = A0_2
+            L3_3 = A0_3
+            L2_3(L3_3)
+          end
+        end
+      end
+    end
+  end
+  L1_2(L2_2)
+end
+showAll = L1_1
+function L1_1(A0_2)
+  local L1_2, L2_2
+  L1_2 = L0_1
+  function L2_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = isAdmin
+    L3_3 = A1_3
+    L2_3 = L2_3(L3_3)
+    if L2_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil == L2_3 then
+        L2_3 = A0_2
+        L3_3 = A0_3
+        L2_3(L3_3)
+      end
+    end
+  end
+  L1_2(L2_2)
+end
+showOnlyForAdmins = L1_1
+function L1_1(A0_2)
+  local L1_2, L2_2
+  L1_2 = L0_1
+  function L2_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = Config
+    L2_3 = L2_3.ShowStaffMessageWhenHidden
+    if not L2_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil ~= L2_3 then
+        goto lbl_14
+      end
+    end
+    L2_3 = A0_2
+    L3_3 = A0_3
+    L2_3(L3_3)
+    ::lbl_14::
+  end
+  L1_2(L2_2)
+end
+showToEveryoneNotHidden = L1_1
+function L1_1(A0_2, A1_2)
+  local L2_2, L3_2
+  L2_2 = L0_1
+  function L3_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = chatsHidden
+    L3_3 = A1_3.PlayerData
+    L3_3 = L3_3.source
+    L2_3 = L2_3[L3_3]
+    if nil == L2_3 then
+      L2_3 = A0_2
+      if L2_3 ~= A0_3 then
+        L2_3 = A1_2
+        L3_3 = A0_3
+        L2_3(L3_3)
+      end
+    end
+  end
+  L2_2(L3_2)
+end
+showMuteMessageToEveryone = L1_1
+function L1_1(A0_2, A1_2)
+  local L2_2, L3_2
+  L2_2 = L0_1
+  function L3_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = Config
+    L2_3 = L2_3.ShowIDOnMessage
+    if not L2_3 then
+      L2_3 = A1_3.PlayerData
+      L2_3 = L2_3.job
+      L2_3 = L2_3.name
+      L3_3 = A0_2
+      if L2_3 == L3_3 then
+        L2_3 = chatsHidden
+        L3_3 = A1_3.PlayerData
+        L3_3 = L3_3.source
+        L2_3 = L2_3[L3_3]
+        if nil == L2_3 then
+          L2_3 = A1_2
+          L3_3 = A0_3
+          L2_3(L3_3)
+      end
+    end
+    else
+      L2_3 = Config
+      L2_3 = L2_3.ShowIDOnMessage
+      if L2_3 then
+        L2_3 = isAdmin
+        L3_3 = A1_3
+        L2_3 = L2_3(L3_3)
+        if not L2_3 then
+          L2_3 = A1_3.PlayerData
+          L2_3 = L2_3.job
+          L2_3 = L2_3.name
+          L3_3 = A0_2
+          if L2_3 == L3_3 then
+            L2_3 = chatsHidden
+            L3_3 = A1_3.PlayerData
+            L3_3 = L3_3.source
+            L2_3 = L2_3[L3_3]
+            if nil == L2_3 then
+              L2_3 = A1_2
+              L3_3 = A0_3
+              L2_3(L3_3)
+            end
+          end
+        end
+      end
+    end
+  end
+  L2_2(L3_2)
+end
+showForJob = L1_1
+function L1_1(A0_2, A1_2)
+  local L2_2, L3_2
+  L2_2 = L0_1
+  function L3_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = A1_3.PlayerData
+    L2_3 = L2_3.job
+    L2_3 = L2_3.name
+    L3_3 = A0_2
+    if L2_3 == L3_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil == L2_3 then
+        L2_3 = isAdmin
+        L3_3 = A1_3
+        L2_3 = L2_3(L3_3)
+        if L2_3 then
+          L2_3 = A1_2
+          L3_3 = A0_3
+          L2_3(L3_3)
+        end
+      end
+    end
+  end
+  L2_2(L3_2)
+end
+showForJobAdmins = L1_1
+function L1_1(A0_2, A1_2)
+  local L2_2, L3_2, L4_2, L5_2
+  L2_2 = GetPlayerPed
+  L3_2 = A0_2
+  L2_2 = L2_2(L3_2)
+  L3_2 = GetEntityCoords
+  L4_2 = L2_2
+  L3_2 = L3_2(L4_2)
+  L4_2 = L0_1
+  function L5_2(A0_3, A1_3)
+    local L2_3, L3_3, L4_3
+    L2_3 = Config
+    L2_3 = L2_3.ShowIDOnMessage
+    if not L2_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil == L2_3 then
+        goto lbl_26
+      end
+    end
+    L2_3 = Config
+    L2_3 = L2_3.ShowIDOnMessage
+    if L2_3 then
+      L2_3 = isAdmin
+      L3_3 = A1_3
+      L2_3 = L2_3(L3_3)
+      if not L2_3 then
+        L2_3 = chatsHidden
+        L3_3 = A1_3.PlayerData
+        L3_3 = L3_3.source
+        L2_3 = L2_3[L3_3]
+        ::lbl_26::
+        if nil == L2_3 then
+          L2_3 = GetEntityCoords
+          L3_3 = GetPlayerPed
+          L4_3 = A1_3.PlayerData
+          L4_3 = L4_3.source
+          L3_3, L4_3 = L3_3(L4_3)
+          L2_3 = L2_3(L3_3, L4_3)
+          L3_3 = L3_2
+          L3_3 = L3_3 - L2_3
+          L3_3 = #L3_3
+          L4_3 = Config
+          L4_3 = L4_3.OOCDistance
+          if L3_3 < L4_3 then
+            L3_3 = A1_2
+            L4_3 = A0_3
+            L3_3(L4_3)
+          end
+        end
+      end
+    end
+  end
+  L4_2(L5_2)
+end
+showToClosePlayers = L1_1
+function L1_1(A0_2, A1_2)
+  local L2_2, L3_2, L4_2, L5_2
+  L2_2 = GetPlayerPed
+  L3_2 = A0_2
+  L2_2 = L2_2(L3_2)
+  L3_2 = GetEntityCoords
+  L4_2 = L2_2
+  L3_2 = L3_2(L4_2)
+  L4_2 = L0_1
+  function L5_2(A0_3, A1_3)
+    local L2_3, L3_3, L4_3
+    L2_3 = chatsHidden
+    L3_3 = A1_3.PlayerData
+    L3_3 = L3_3.source
+    L2_3 = L2_3[L3_3]
+    if nil == L2_3 then
+      L2_3 = isAdmin
+      L3_3 = A1_3
+      L2_3 = L2_3(L3_3)
+      if L2_3 then
+        L2_3 = GetEntityCoords
+        L3_3 = GetPlayerPed
+        L4_3 = A1_3.PlayerData
+        L4_3 = L4_3.source
+        L3_3, L4_3 = L3_3(L4_3)
+        L2_3 = L2_3(L3_3, L4_3)
+        L3_3 = L3_2
+        L3_3 = L3_3 - L2_3
+        L3_3 = #L3_3
+        L4_3 = Config
+        L4_3 = L4_3.OOCDistance
+        if L3_3 < L4_3 then
+          L3_3 = A1_2
+          L4_3 = A0_3
+          L3_3(L4_3)
+        end
+      end
+    end
+  end
+  L4_2(L5_2)
+end
+showToClosePlayersAdmins = L1_1
+function L1_1(A0_2)
+  local L1_2, L2_2, L3_2, L4_2, L5_2, L6_2, L7_2
+  L1_2 = ipairs
+  L2_2 = Config
+  L2_2 = L2_2.WhatJobsCantSeeAnonymousChat
+  L1_2, L2_2, L3_2, L4_2 = L1_2(L2_2)
+  for L5_2, L6_2 in L1_2, L2_2, L3_2, L4_2 do
+    L7_2 = A0_2.PlayerData
+    L7_2 = L7_2.job
+    L7_2 = L7_2.name
+    if L7_2 == L6_2 then
+      L7_2 = true
+      return L7_2
+    end
+  end
+  L1_2 = false
+  return L1_2
+end
+isAnonymousChatBlacklisted = L1_1
+function L1_1(A0_2)
+  local L1_2, L2_2
+  L1_2 = L0_1
+  function L2_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = Config
+    L2_3 = L2_3.ShowIDOnMessage
+    if not L2_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil == L2_3 then
+        L2_3 = isAnonymousChatBlacklisted
+        L3_3 = A1_3
+        L2_3 = L2_3(L3_3)
+        if not L2_3 then
+          L2_3 = A0_2
+          L3_3 = A0_3
+          L2_3(L3_3)
+      end
+    end
+    else
+      L2_3 = Config
+      L2_3 = L2_3.ShowIDOnMessage
+      if L2_3 then
+        L2_3 = chatsHidden
+        L3_3 = A1_3.PlayerData
+        L3_3 = L3_3.source
+        L2_3 = L2_3[L3_3]
+        if nil == L2_3 then
+          L2_3 = isAdmin
+          L3_3 = A1_3
+          L2_3 = L2_3(L3_3)
+          if not L2_3 then
+            L2_3 = isAnonymousChatBlacklisted
+            L3_3 = A1_3
+            L2_3 = L2_3(L3_3)
+            if not L2_3 then
+              L2_3 = A0_2
+              L3_3 = A0_3
+              L2_3(L3_3)
+            end
+          end
+        end
+      end
+    end
+  end
+  L1_2(L2_2)
+end
+showOnlyForAnonymous = L1_1
+function L1_1(A0_2)
+  local L1_2, L2_2
+  L1_2 = L0_1
+  function L2_2(A0_3, A1_3)
+    local L2_3, L3_3
+    L2_3 = isAdmin
+    L3_3 = A1_3
+    L2_3 = L2_3(L3_3)
+    if L2_3 then
+      L2_3 = chatsHidden
+      L3_3 = A1_3.PlayerData
+      L3_3 = L3_3.source
+      L2_3 = L2_3[L3_3]
+      if nil == L2_3 then
+        L2_3 = isAnonymousChatBlacklisted
+        L3_3 = A1_3
+        L2_3 = L2_3(L3_3)
+        if not L2_3 then
+          L2_3 = A0_2
+          L3_3 = A0_3
+          L2_3(L3_3)
+        end
+      end
+    end
+  end
+  L1_2(L2_2)
+end
+showOnlyForAdminsAnonymous = L1_1

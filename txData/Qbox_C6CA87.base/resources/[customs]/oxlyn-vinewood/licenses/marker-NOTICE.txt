@@ -1,0 +1,12 @@
+Permanent Marker
+Copyright (c) 2010 by Font Diner, Inc. All rights reserved.
+Licensed under the Apache License, Version 2.0. See marker-LICENSE.txt.
+Source: https://github.com/google/fonts/tree/main/apache/permanentmarker
+
+Oxlyn modifications, September 2026:
+- Converted the complete original font to WOFF2 for local editor and planar-text rendering.
+- Converted the supported 71 uppercase/accented/numeric/punctuation outlines to centered,
+  extruded, beveled 3D glyphs with four levels of detail and natural/emissive material variants.
+- Native model prefix: oxvw_k. Runtime font identifier: marker.
+
+The generated 3D models and WOFF2 are derivative conversions, not the original TTF file.

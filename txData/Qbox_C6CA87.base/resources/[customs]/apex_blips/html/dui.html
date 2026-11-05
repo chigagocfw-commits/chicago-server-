@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<!--
+  apex_blips — sheet compositor (ONE DUI for every image blip).
+
+  GTA draws every blip from atlas sheets inside the `minimap` texture
+  dictionary — individual radar_* textures do not exist, so per-sprite
+  AddReplaceTexture can never work. Instead, THIS page re-renders the whole
+  `blips_texturesheet_ng_2` sheet: the vanilla art (img/sheet_ng2.png,
+  extracted from the exact minimap.ytd this resource streams) plus the
+  player images painted into the cells of the hijacked sprites. Lua binds
+  the page to a runtime texture (CreateRuntimeTextureFromDuiHandle) and
+  replaces the sheet with it — every other blip keeps its vanilla pixels.
+
+  Messages (SendDuiMessage, JSON):
+    { set:   { sprite, x, y, w, h, image } }   paint image into that cell
+    { clear: { sprite } }                      restore the vanilla cell
+  Identical payloads are ignored, so the resend fast-lane/heartbeat from
+  slots.lua costs nothing in steady state.
+-->
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+  var cv = document.getElementById('cv');
+  var ctx = null;
+  var ready = false;
+  var cells = {};                       // sprite -> { x, y, w, h, image, img }
+
+  var base = new Image();
+  base.onload = function () {
+    cv.width = base.naturalWidth;
+    cv.height = base.naturalHeight;
+    ctx = cv.getContext('2d');
+    ctx.drawImage(base, 0, 0);
+    ready = true;
+    for (var k in cells) paint(cells[k]);
+  };
+  base.src = 'img/sheet_ng2.png';
+
+  function restoreBase(c) {
+    ctx.clearRect(c.x, c.y, c.w, c.h);
+    ctx.drawImage(base, c.x, c.y, c.w, c.h, c.x, c.y, c.w, c.h);
+  }
+
+  function roundPath(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function paint(c) {
+    if (!ready) return;
+    restoreBase(c);
+    if (!c.img) return;
+    var pad = Math.round(c.w * 0.05);
+    var ax = c.x + pad, ay = c.y + pad;
+    var aw = c.w - pad * 2, ah = c.h - pad * 2;
+    ctx.clearRect(c.x, c.y, c.w, c.h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.save();
+    if (c.shape === 'circle' || c.shape === 'rounded') {
+      // masked shapes crop the picture to FILL the shape (cover fit)
+      if (c.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(c.x + c.w / 2, c.y + c.h / 2, aw / 2, 0, Math.PI * 2);
+      } else {
+        roundPath(ax, ay, aw, ah, aw * 0.22);
+      }
+      ctx.clip();
+      var sc = Math.max(aw / c.img.naturalWidth, ah / c.img.naturalHeight);
+      var cw = c.img.naturalWidth * sc, ch = c.img.naturalHeight * sc;
+      ctx.drawImage(c.img, ax + (aw - cw) / 2, ay + (ah - ch) / 2, cw, ch);
+    } else {
+      // plain images keep their full frame (contain fit)
+      var s = Math.min(aw / c.img.naturalWidth, ah / c.img.naturalHeight);
+      var w = c.img.naturalWidth * s, h = c.img.naturalHeight * s;
+      ctx.drawImage(c.img, c.x + (c.w - w) / 2, c.y + (c.h - h) / 2, w, h);
+    }
+    ctx.restore();
+  }
+
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+
+    if (d.set) {
+      var s = d.set;
+      var cur = cells[s.sprite];
+      if (cur && cur.image === s.image && cur.shape === s.shape) return;   // dedupe resends
+      var rec = { x: s.x, y: s.y, w: s.w, h: s.h, image: s.image, shape: s.shape, img: null };
+      cells[s.sprite] = rec;
+      var im = new Image();
+      im.onload = function () {
+        if (cells[s.sprite] === rec) { rec.img = im; paint(rec); }
+      };
+      im.src = s.image;
+      return;
+    }
+
+    if (d.clear) {
+      var c = cells[d.clear.sprite];
+      if (c) {
+        delete cells[d.clear.sprite];
+        if (ready) restoreBase(c);
+      }
+    }
+  });
+</script>
+</body>
+</html>

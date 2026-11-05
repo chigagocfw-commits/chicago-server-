@@ -1,0 +1,241 @@
+<div class="w-full h-full">
+	<div class="w-full h-[12.75%] flex items-start">
+		<div class="w-full h-[69.5%] flex items-end">
+			<div class="w-full h-[73%] flex">
+				<div class="w-[50%] h-full flex">
+					<div
+						@click="ChangeMarketCategory('buy')"
+						:class="SelectedMarketCategory == 'buy' ? 'selectedcategorybutton' : 'categorybutton'"
+						class="w-[26.5%] h-full flex items-center justify-center cursor-pointer"
+					>
+						<h2 class="font-['Gilroy-Bold'] pl-[0.5vw] pr-[0.5vw] text-[0.9vw] text-white">{{Locales['buy']}}</h2>
+					</div>
+					<div
+						@click="ChangeMarketCategory('sell')"
+						:class="SelectedMarketCategory == 'sell' ? 'selectedcategorybutton' : 'categorybutton'"
+						class="w-[26.5%] h-full ml-[1.2vw] flex items-center justify-center cursor-pointer"
+					>
+						<h2 class="font-['Gilroy-Bold'] pl-[0.5vw] pr-[0.5vw] text-[0.9vw] text-white">{{Locales['sell']}}</h2>
+					</div>
+				</div>
+				<div class="w-[50%] h-full flex items-center justify-end">
+					<div class="inline-flex h-[50%] mr-[1.9vw] items-center">
+						<img src="/html/images/cashicon.png" class="h-full" alt="" />
+						<h2 class="font-['Gilroy-Bold'] ml-[1vw] text-[0.9vw] text-[#A2F695]">{{currencyUnit}} {{PlayerMoney.cash.toLocaleString()}}</h2>
+					</div>
+					<div class="inline-flex h-[50%] mr-[1.5vw] items-center">
+						<img src="/html/images/bankicon.png" class="h-full" alt="" />
+						<h2 class="font-['Gilroy-Bold'] ml-[1vw] text-[0.9vw] text-[#95D9F6]">{{currencyUnit}} {{PlayerMoney.bank.toLocaleString()}}</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="w-full h-[84.4%] flex justify-between">
+		<div class="w-[59%] h-full flex flex-col">
+			<div v-if="SelectedMarketCategory == 'buy'" class="w-full h-[79.5%] flex flex-wrap content-start items-start justify-between overflow-auto no-scrollbar">
+				<div
+					v-for="(data, key, index) in MarketItems"
+					:class="index <= 3 ? '' : 'mt-[2vh]', data.classname"
+					@click="addMarketBasket(data)"
+					@mouseover="debouncedMouseOver(data)"
+					@mouseleave="debouncedMouseLeave"
+					class="w-[22.7%] h-[26%] borderred relative flex items-start justify-center cursor-pointer flex-wrap content-start"
+				>
+					<div class="w-full h-full flex items-center justify-center absolute">
+						<img class="h-[50%]" :src="'/html/images/itemimages/'+data.name+'.png'" alt="" />
+						<img v-if="Number(data.requiredLevel) > Number(PlayerInfo.level)" src="/html/images/lockicon.png" class="h-[50%] absolute" alt="" />
+					</div>
+					<div class="w-[90%] h-[20%] flex items-end">
+						<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center">
+							<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">{{currencyUnit}} {{data.price}}</h2>
+						</div>
+					</div>
+					<div class="w-[90%] h-[55%]"></div>
+					<div class="w-[90%] h-[20%] flex items-end justify-center">
+						<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center fixtext">
+							<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white fixtext">{{data.label}}</h2>
+						</div>
+					</div>
+				</div>
+				<div v-for="data in 3" class="w-[22.7%] h-[26%]"></div>
+			</div>
+			<div v-if="SelectedMarketCategory == 'sell'" class="w-full h-[79.5%] flex flex-wrap content-start items-start justify-between overflow-auto no-scrollbar">
+				<div
+					v-for="(data, index) in SellableItems"
+					:class="index <= 3 ? '' : 'mt-[2vh]', data.classname"
+					@click="addMarketBasket(data)"
+					@mouseover="debouncedMouseOver(data)"
+					@mouseleave="debouncedMouseLeave"
+					class="w-[22.7%] h-[26%] borderred relative flex items-start justify-center cursor-pointer flex-wrap content-start"
+				>
+					<div class="w-full h-full flex items-center justify-center absolute">
+						<img style="object-fit: cover; max-height: 50%" :src="'/html/images/itemimages/'+data.name+'.png'" alt="" />
+					</div>
+					<div class="w-[90%] h-[20%] flex items-end justify-between">
+						<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center">
+							<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">{{currencyUnit}} {{data.price}}</h2>
+						</div>
+						<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center">
+							<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">x {{data.count}}</h2>
+						</div>
+					</div>
+					<div class="w-[90%] h-[55%]"></div>
+					<div class="w-[90%] h-[20%] flex items-end justify-center">
+						<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center fixtext">
+							<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white fixtext">{{data.label}}</h2>
+						</div>
+					</div>
+				</div>
+				<div v-for="data in 3" class="w-[22.7%] h-[26%]"></div>
+			</div>
+			<transition-group name="ItemInfoHover2">
+				<div v-if="ItemHoverInfo" class="flex-1 flex iteminfobackground">
+					<div class="w-[20.5%] h-full flex items-center justify-end">
+						<div class="w-[89%] h-[82%] iteminfoimage flex items-center justify-center">
+							<img :src="'/html/images/itemimages/'+ItemHoverInfo.name+'.png'" style="max-height: 50%" alt="" />
+						</div>
+					</div>
+					<div class="flex-1">
+						<div class="w-full h-[32%] flex items-end justify-center">
+							<div class="w-[97%] h-[60%] flex justify-between">
+								<div class="inline-flex h-full bg-black/20 rounded-full items-center justify-center">
+									<h2 class="font-['Gilroy-Bold'] pl-[0.5vw] pr-[0.5vw] text-[0.8vw] text-white">{{ItemHoverInfo.label}}</h2>
+								</div>
+								<div class="inline-flex h-full rounded-full items-center justify-center" :class="ItemHoverInfo.classname">
+									<h2 :class="ItemHoverInfo.classname.replace('class', '')+'textcolor'" class="font-['Gilroy-Bold'] pl-[0.5vw] pr-[0.5vw] text-[0.8vw]">
+										{{ Locales[ItemHoverInfo.classname.replace('class', '')] }}
+									</h2>
+								</div>
+							</div>
+						</div>
+						<div class="w-full h-[60%] flex items-center justify-center">
+							<div class="w-[96%] h-full relative">
+								<h2 class="font-['Gilroy-Bold'] text-[0.7vw] mt-[0.8vh] text-white leading-[100%]">{{GetItemHoverClass()}}</h2>
+								<div class="inline-flex h-[30%] bg-black/20 absolute bottom-0 right-0 rounded-full items-center justify-center">
+									<h2 class="font-['Gilroy-Bold'] pl-[0.5vw] pr-[0.5vw] text-[0.9vw] text-white">{{currencyUnit}} {{ItemHoverInfo.price}}</h2>
+								</div>
+								<div class="inline-flex h-[30%] bg-black/20 absolute bottom-0 left-0 rounded-full items-center justify-center">
+									<h2 class="font-['Gilroy-Bold'] pl-[0.5vw] pr-[0.5vw] text-[0.9vw] text-white">Lv.{{ItemHoverInfo.requiredLevel}}</h2>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</transition-group>
+		</div>
+		<div class="w-[38%] h-full flex items-center justify-center bg-[length:100%_100%] bg-[url('/html/images/marketbasketbackground.png')]">
+			<div class="w-[90.3%] h-[96.5%] flex flex-col relative">
+				<div class="w-full h-[6.8%] flex items-end">
+					<div class="w-full h-[85.9%] flex">
+						<div class="w-[10%] h-full">
+							<img src="/html/images/mycarticon.png" class="w-full h-full" alt="" />
+						</div>
+
+						<div class="w-[40%] h-full flex items-center">
+							<h2 class="font-['Gilroy-Bold'] text-[0.9vw] text-white fixtext ml-[0.3vw]">{{Locales['mycart']}}</h2>
+						</div>
+						<div class="flex-1 flex justify-end items-center">
+							<h2
+								class="font-['Gilroy-Bold'] text-[0.9vw] text-white fixtext ml-[0.3vw] mr-[0.2vw] animated-price"
+								:class="{ up: isAnimating }"
+								style="transition: transform 0.5s ease, color 0.5s ease"
+							>
+								{{Locales['total']}} - {{ currencyUnit }} {{ GetBasketTotalPrice }}
+							</h2>
+						</div>
+					</div>
+				</div>
+				<!-- <transition-group name="fadein">
+					<div v-if="marketBasket.length <= 0" class="w-full h-[90%] borderred flex items-center justify-center">
+						<h2 class="font-['Gilroy-Bold'] text-[0.7vw] mt-[0.8vh] text-white leading-[100%]">Your cart is empty. Please add items to your cart.</h2>
+					</div>
+				</transition-group> -->
+				<transition-group name="fadein">
+					<div v-if="marketBasket.length > 0" class="w-full h-[95%] flex flex-wrap">
+						<div class="w-full h-[70%] overflow-auto no-scrollbar">
+							<div class="w-full h-[2%]"></div>
+							<transition-group name="marketitems">
+								<div v-for="data in marketBasket" :key="data.name" class="w-full h-[22%] mt-[0.8vh] flex marketbasketitem overflow-hidden">
+									<div class="w-[24.4%] h-full flex items-center justify-end">
+										<div class="w-[89.5%] h-[80%] borderred flex items-center justify-center rounded-[0.5vw]" :class="data.classname">
+											<img :src="'/html/images/itemimages/'+data.name+'.png'" style="max-height: 50%" alt="" />
+										</div>
+									</div>
+									<div class="w-[51.5%] h-full">
+										<div class="w-full h-[25%] mt-[2.5vh]">
+											<div class="h-[100%] inline-flex bg-black/20 rounded-full flex items-center ml-[0.5vw]">
+												<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">{{data.label}}</h2>
+											</div>
+										</div>
+										<div class="w-full h-[25%] mt-[1vh]">
+											<div class="h-[100%] inline-flex bg-black/20 rounded-full flex items-center ml-[0.5vw]">
+												<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">
+													{{currencyUnit}} {{SelectedMarketCategory === 'buy' ? data.price * data.amount : data.price * data.amount }}
+												</h2>
+											</div>
+										</div>
+										<!-- <div class="h-[25%] inline-flex bg-black/20 rounded-full flex items-center ml-[0.5vw]">
+										<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">Standart Rod</h2>
+									</div>
+									<div class="h-[25%] inline-flex bg-black/20 rounded-full flex items-center">
+										<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">Standart Rod</h2>
+									</div> -->
+									</div>
+									<div class="w-[7%] h-full flex items-center justify-center">
+										<div class="w-full h-[68%] rounded-full bg-black/20">
+											<div class="w-full h-[30%] flex items-end justify-center">
+												<img class="h-[60%] anim-hover-1 cursor-pointer" @click="additemamount(data)" src="/html/images/+icon.png" alt="" />
+											</div>
+											<div class="w-full h-[40%] flex items-end justify-center">
+												<input
+													type="text"
+													disabled
+													v-model="data.amount"
+													class="w-full h-full outline-none border-none flex items-center text-center pt-[0.4vh] justify-center bg-transparent text-white text-[0.9vw] font-['Gilroy-Bold']"
+												/>
+											</div>
+											<div class="w-full h-[30%] flex items-center justify-center">
+												<img class="h-[10%] anim-hover-1 cursor-pointer mb-[0.5vh]" @click="removeitemamount(data)" src="/html/images/-icon.png" alt="" />
+											</div>
+										</div>
+									</div>
+									<div class="w-[13%] h-full flex items-center justify-end">
+										<div class="w-[74%] h-[39%]">
+											<img src="/html/images/closeicon.png" @click="RemoveItem(data)" class="w-full h-full anim-hover-1 cursor-pointer" alt="" />
+										</div>
+									</div>
+								</div>
+							</transition-group>
+						</div>
+						<div class="w-full h-[5.1%] flex items-end">
+							<div class="w-full h-[78%] bg-[url('/html/images/paymentoptionbackground.png')] bg-[length:100%_100%] flex items-center justify-center">
+								<div class="w-[46%] h-full flex items-center justify-center">
+									<h2 class="font-['Gilroy-Bold'] text-[0.9vw] text-white fixtext">{{Locales['paymentoption']}}</h2>
+								</div>
+							</div>
+						</div>
+
+						<div class="w-full flex-1 flex flex-col content-end items-end justify-end">
+							<div class="w-full h-[37%] mb-[1.25vh]">
+								<div class="w-full h-full relative cashpaymentbutton flex items-center justify-center cursor-pointer" @click="BuyOrSellItem('cash')">
+									<img class="absolute left-[0.7vw]" alt="" />
+									<h2 class="font-['Gilroy-Bold'] text-[0.9vw] fixtext">{{SelectedMarketCategory == 'buy' ? Locales['paywithcash'] : Locales['receivebycash']}}</h2>
+								</div>
+							</div>
+							<div class="w-full h-[37%] mb-[1.25vh]">
+								<div class="w-full h-full relative bankpaymentbutton flex items-center justify-center cursor-pointer" @click="BuyOrSellItem('bank')">
+									<img class="absolute left-[0.7vw]" alt="" />
+									<h2 class="font-['Gilroy-Bold'] text-[0.9vw] fixtext">{{SelectedMarketCategory == 'buy' ? Locales['paywithbank'] : Locales['transfertobankcard']}}</h2>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div v-else class="flex-1 absolute flex items-center justify-center w-full h-full">
+						<h2 class="font-['Gilroy-Bold'] text-[0.7vw] mt-[0.8vh] text-white leading-[100%]">{{Locales['yourcartisempty']}}</h2>
+					</div>
+				</transition-group>
+			</div>
+		</div>
+	</div>
+</div>

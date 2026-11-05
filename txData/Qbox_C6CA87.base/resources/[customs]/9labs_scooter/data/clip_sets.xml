@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fwClipSetManager>
+  <clipSets>
+    <Item type="fwClipSet" key="clipset@labscoot@stand@front@base">
+      <fallbackId>clipset@veh@bike@scooter@front@base</fallbackId>
+      <clipDictionaryName>labscoot_stand@front@base</clipDictionaryName>
+      <clipItems />
+      <moveNetworkFlags />
+    </Item>
+    <Item type="fwClipSet" key="clipset@labscoot@stand@front@ds">
+      <fallbackId>clipset@veh@bike@scooter@front@ds</fallbackId>
+      <clipDictionaryName>labscoot_stand@front@ds</clipDictionaryName>
+      <clipItems />
+      <moveNetworkFlags />
+    </Item>
+  </clipSets>
+  <clipDictionaryMetadatas>
+    <Item type="fwClipDictionaryMetadata" key="labscoot_stand@front@base">
+      <streamingPolicy>SP_STREAMING</streamingPolicy>
+      <memoryGroup>MG_Vehicle</memoryGroup>
+      <streamingPriority>SP_Low</streamingPriority>
+    </Item>
+    <Item type="fwClipDictionaryMetadata" key="labscoot_stand@front@ds">
+      <streamingPolicy>SP_STREAMING</streamingPolicy>
+      <memoryGroup>MG_Vehicle</memoryGroup>
+      <streamingPriority>SP_Low</streamingPriority>
+    </Item>
+  </clipDictionaryMetadatas>
+</fwClipSetManager>

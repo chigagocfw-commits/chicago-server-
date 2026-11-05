@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
+  <title>Apex Blip Studio</title>
+
+  <!-- Inter carries the UI voice, JetBrains Mono every number. Both stacks
+       fall back to a system face in style.css, so a client with no internet
+       still gets a readable studio. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
+
+  <!-- Leaflet drives the big live map (same tiles and the same world
+       transform as the apex_bossmenu tactical map). If it cannot load,
+       app.js leaves a quiet placeholder and everything else keeps working. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="css/style.css?v=12">
+</head>
+
+<!--
+  ════════════════════════════════════════════════════════════════════════════
+  APEX BLIP STUDIO / NUI SHELL (fullscreen, apex_minimap silhouette)
+  ════════════════════════════════════════════════════════════════════════════
+  Layout: icon rail (56px, logo on top, close pinned at the bottom) on the
+  left, the LIVE MAP as the full-size centrepiece, and a dock on the right
+  whose panes follow the rail tabs (Blips / Editor / Images / Developer).
+
+  The page is ui_page and therefore ALWAYS resident, even with the studio
+  shut. It must paint absolutely nothing until it is opened:
+
+      open  ->  document.body.classList.remove('hidden')
+      close ->  document.body.classList.add('hidden')
+
+  i18n: every static string carries a key from locales/en.lua.
+      data-i18n       -> textContent
+      data-i18n-ph    -> placeholder attribute
+      data-i18n-title -> title attribute
+  app.js walks these with T(key, fallbackEnglish); the English written in the
+  markup IS that fallback, so a missing locale key never renders empty.
+-->
+<body class="hidden">
+
+<!-- ═══ Icon sprite ═══════════════════════════════════════════════════════ -->
+<svg id="i-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.2s7-5.6 7-11.2a7 7 0 1 0-14 0c0 5.6 7 11.2 7 11.2Z"/><circle cx="12" cy="9.8" r="2.7"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8.6 6h11M8.6 12h11M8.6 18h11"/><path d="M4.4 6h.02M4.4 12h.02M4.4 18h.02"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4.6 19.4l4.2-.9L19.6 7.7a1.8 1.8 0 0 0 0-2.5l-.8-.8a1.8 1.8 0 0 0-2.5 0L5.5 15.2l-.9 4.2Z"/><path d="M14.6 6.1l3.3 3.3"/></symbol>
+    <symbol id="i-images" viewBox="0 0 24 24"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="2.2"/><circle cx="8.8" cy="9.6" r="1.7"/><path d="m4 16.6 4.6-4.2 3.4 3 3-2.6 5 4.4"/></symbol>
+    <symbol id="i-dev" viewBox="0 0 24 24"><path d="m8.4 7.6-4.6 4.4 4.6 4.4M15.6 7.6l4.6 4.4-4.6 4.4"/><path d="m13.4 4.8-2.8 14.4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.2v13.6M5.2 12h13.6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m15.6 15.6 4.2 4.2"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.6 6.6h14.8"/><path d="M9.4 6.6V4.8h5.2v1.8"/><path d="M6.4 6.6 7.3 19a1.4 1.4 0 0 0 1.4 1.3h6.6a1.4 1.4 0 0 0 1.4-1.3l.9-12.4"/><path d="M10.4 10.2v6M13.6 10.2v6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.4" y="8.4" width="11.2" height="11.2" rx="2"/><path d="M15.6 8.4V6.4a2 2 0 0 0-2-2H6.4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-dup" viewBox="0 0 24 24"><rect x="7.8" y="7.8" width="12" height="12" rx="2.2"/><path d="M16.2 4.4H6.6a2.2 2.2 0 0 0-2.2 2.2v9.6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.4 12S6 5.6 12 5.6 21.6 12 21.6 12 18 18.4 12 18.4 2.4 12 2.4 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M4 4.4 20 19.6"/><path d="M9.6 6.1A9.6 9.6 0 0 1 12 5.8c6 0 9.6 6.2 9.6 6.2a17 17 0 0 1-3.3 3.9"/><path d="M6.2 8.2A17 17 0 0 0 2.4 12s3.6 6.2 9.6 6.2a9.7 9.7 0 0 0 3.2-.5"/><path d="M10 10.1a3 3 0 0 0 4.1 4.2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.6 4.6 4.6L19 6.8"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="12" r="2.4"/><path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.6v-11"/><path d="m7.6 8.8 4.4-4.4 4.4 4.4"/><path d="M4.6 17.6v1.4a1.6 1.6 0 0 0 1.6 1.6h11.6a1.6 1.6 0 0 0 1.6-1.6v-1.4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8.6 4.8 7.2 7.2-7.2 7.2"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m4.8 8.6 7.2 7.2 7.2-7.2"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.3 4.2 2.9 17.2a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9.4v4.2M12 17.2h.02"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 11.2v5M12 7.9h.02"/></symbol>
+    <symbol id="i-zone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="3.4 3.4"/><circle cx="12" cy="12" r="2.2"/></symbol>
+    <symbol id="i-pos" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v4M12 17.4v4M2.6 12h4M17.4 12h4"/></symbol>
+    <symbol id="i-badge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M8.6 10h.02M15.4 10h.02"/><path d="M8.4 14.2a4.6 4.6 0 0 0 7.2 0"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.4" y="3.4" width="7.2" height="7.2" rx="1.7"/><rect x="13.4" y="3.4" width="7.2" height="7.2" rx="1.7"/><rect x="3.4" y="13.4" width="7.2" height="7.2" rx="1.7"/><rect x="13.4" y="13.4" width="7.2" height="7.2" rx="1.7"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18.4" r="2.2"/><circle cx="18" cy="5.6" r="2.2"/><path d="M8 17.2h6.4a3.2 3.2 0 0 0 0-6.4H9.6a3.2 3.2 0 0 1 0-6.4h6"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3.4v11"/><path d="m7.6 10.2 4.4 4.4 4.4-4.4"/><path d="M4.6 17.6v1.4a1.6 1.6 0 0 0 1.6 1.6h11.6a1.6 1.6 0 0 0 1.6-1.6v-1.4"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M4.6 6.4a2 2 0 0 1 2-2h9.2l3.6 3.6v9.6a2 2 0 0 1-2 2H6.6a2 2 0 0 1-2-2Z"/><path d="M8.4 4.4v4.8h6.2V4.4"/><rect x="8" y="13" width="8" height="6.6" rx="1.2"/></symbol>
+  </defs>
+</svg>
+
+<div id="app">
+
+  <!-- ─── Rail (apex_minimap style: 56px, logo top, close pinned bottom) ── -->
+  <nav class="rail" id="rail">
+    <div class="rail-logo" data-tip="Apex Blip Studio" data-tip-pos="right"><svg class="ic"><use href="#i-pin"/></svg></div>
+    <span class="rail-sep"></span>
+    <button class="rail-tab is-active" data-tab="blips" data-tip="Blips" data-i18n-tip="tab_blips" data-tip-pos="right">
+      <svg class="ic"><use href="#i-list"/></svg>
+    </button>
+    <button class="rail-tab" data-tab="editor" data-tip="Editor" data-i18n-tip="tab_editor" data-tip-pos="right">
+      <svg class="ic"><use href="#i-edit"/></svg>
+    </button>
+    <button class="rail-tab" data-tab="images" data-tip="Images" data-i18n-tip="tab_images" data-tip-pos="right">
+      <svg class="ic"><use href="#i-images"/></svg>
+    </button>
+    <button class="rail-tab" data-tab="dev" data-tip="Developer" data-i18n-tip="tab_dev" data-tip-pos="right">
+      <svg class="ic"><use href="#i-dev"/></svg>
+    </button>
+    <span class="rail-spacer"></span>
+    <button class="rail-btn" id="rail-world" data-tip="Show every game blip" data-i18n-tip="tip_world" data-tip-pos="right">
+      <svg class="ic"><use href="#i-eye"/></svg>
+    </button>
+    <button class="rail-btn" id="rail-save" data-tip="Save blip" data-i18n-tip="btn_save" data-tip-pos="right">
+      <svg class="ic"><use href="#i-save"/></svg>
+      <span id="rail-dirty" hidden></span>
+    </button>
+    <button class="rail-btn rail-close" id="btn-close" data-tip="Close" data-i18n-tip="btn_close" data-tip-pos="right">
+      <svg class="ic"><use href="#i-close"/></svg>
+    </button>
+  </nav>
+
+  <!-- ─── Stage: the live map IS the studio ──────────────────────────────── -->
+  <main class="stage">
+    <div id="prev-map"></div>
+
+    <div class="stage-top">
+      <div class="stage-brand">
+        <span class="brand-kicker" data-i18n="app_kicker">APEX</span>
+        <span class="brand-title" data-i18n="app_title">Blip Studio</span>
+      </div>
+      <span class="chip chip-count"><b id="hd-count">0</b>&nbsp;<span data-i18n="chip_blips">blips</span></span>
+      <span class="chip chip-warn" id="hd-dirty" hidden data-i18n="chip_unsaved">UNSAVED</span>
+    </div>
+
+    <div class="stage-legend" id="stage-legend" hidden>
+      <span class="legend-ic" id="prev-legend-ic"></span>
+      <div class="stage-legend-txt">
+        <span class="legend-name" id="prev-legend-name"></span>
+        <span class="mono stage-legend-sub" id="prev-coords">0.0 · 0.0</span>
+      </div>
+      <span class="chip mono" id="prev-meta">×0.90 · 255</span>
+    </div>
+
+    <div class="stage-hint">
+      <span class="keycap">ESC</span><span data-i18n="hint_esc">close</span>
+      <span class="stage-hint-dot">·</span>
+      <span data-i18n="prev_map_hint">Click the map (or drag the marker) to move the blip.</span>
+    </div>
+  </main>
+
+  <!-- ─── Dock ────────────────────────────────────────────────────────────── -->
+  <aside class="dock">
+
+    <!-- ═══ PANE · BLIPS ═══════════════════════════════════════════════════ -->
+    <section class="pane is-active" id="pane-blips">
+      <div class="pane-toolbar">
+        <label class="input-well search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input id="bl-search" type="text" data-i18n-ph="search_ph" placeholder="Search blips…">
+        </label>
+        <button class="btn btn-primary" id="bl-new">
+          <svg class="ic"><use href="#i-plus"/></svg><span data-i18n="new_blip">New blip</span>
+        </button>
+      </div>
+      <div class="scroll" id="bl-scroll">
+        <div id="bl-list" class="rows"></div>
+        <div class="empty" id="bl-empty" hidden>
+          <svg class="ic ic-lg"><use href="#i-pin"/></svg>
+          <h3 data-i18n="list_empty_t">No blips yet</h3>
+          <p data-i18n="list_empty_d">Create your first blip: pick a sprite, upload a logo or bake an emoji badge.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PANE · EDITOR ══════════════════════════════════════════════════ -->
+    <section class="pane" id="pane-editor">
+      <!-- Nothing open: the editor NEVER invents a blip on its own -->
+      <div class="ed-empty" id="ed-empty" hidden>
+        <div class="empty">
+          <svg class="ic ic-lg"><use href="#i-edit"/></svg>
+          <h3 data-i18n="ed_empty_t">No blip open</h3>
+          <p data-i18n="ed_empty_d">Create a new one, or click a blip on the map or in the list.</p>
+          <button class="btn btn-primary" id="ed-empty-new">
+            <svg class="ic"><use href="#i-plus"/></svg><span data-i18n="new_blip">New blip</span>
+          </button>
+        </div>
+      </div>
+      <div class="ed-form scroll" id="ed-form">
+
+        <div class="ed-head">
+          <h2 id="ed-title" data-i18n="ed_new_t">New blip</h2>
+          <span class="chip mono" id="ed-id" hidden></span>
+        </div>
+
+        <!-- Icon -->
+        <section class="card sec">
+          <header class="sec-head"><span class="eyebrow" data-i18n="sec_icon">Icon</span></header>
+          <div class="seg" id="ic-mode">
+            <button class="seg-btn is-active" data-v="sprite"><svg class="ic"><use href="#i-grid"/></svg><span data-i18n="icon_sprite">GTA sprite</span></button>
+            <button class="seg-btn" data-v="image"><svg class="ic"><use href="#i-images"/></svg><span data-i18n="icon_image">Image</span></button>
+            <button class="seg-btn" data-v="badge"><svg class="ic"><use href="#i-badge"/></svg><span data-i18n="icon_badge">Badge</span></button>
+          </div>
+
+          <div class="ic-panel" id="icp-sprite">
+            <div class="ic-current">
+              <span class="thumb" id="ic-sprite-thumb"><img alt=""></span>
+              <div class="ic-current-txt">
+                <span class="ic-current-name" id="ic-sprite-name">radar_level</span>
+                <span class="ic-current-sub mono" id="ic-sprite-id">#1</span>
+              </div>
+              <button class="btn btn-soft" id="ic-sprite-pick" data-i18n="pick_sprite">Choose sprite</button>
+            </div>
+            <p class="hint" data-i18n="sprite_hint">Native icons, tintable and always crisp.</p>
+          </div>
+
+          <div class="ic-panel" id="icp-image" hidden>
+            <div class="lib-strip" id="ic-lib"></div>
+            <div class="ic-image-row">
+              <button class="btn btn-secondary" id="ic-upload">
+                <svg class="ic"><use href="#i-upload"/></svg><span data-i18n="upload_image">Upload image</span>
+              </button>
+              <input type="file" id="ic-file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+              <div class="field">
+                <span class="field-label" data-i18n="img_shape">Image shape</span>
+                <div class="seg seg-sm" id="ic-shape">
+                  <button class="seg-btn is-active" data-v="none" data-i18n="shape_original">Original</button>
+                  <button class="seg-btn" data-v="rounded" data-i18n="shape_rounded">Rounded</button>
+                  <button class="seg-btn" data-v="circle" data-i18n="shape_circle">Circle</button>
+                </div>
+              </div>
+            </div>
+            <p class="hint"><span data-i18n="image_hint">Any picture becomes a real blip. One image slot per distinct picture; blips sharing a picture share the slot.</span> <span data-i18n="img_shape_hint">Rounded and Circle crop the picture to fill the shape.</span></p>
+          </div>
+
+          <div class="ic-panel" id="icp-badge" hidden>
+            <div class="badge-row">
+              <div class="field">
+                <span class="field-label" data-i18n="emoji_pick">Pick an emoji or icon</span>
+                <div class="emoji-wrap">
+                  <button class="btn btn-secondary emoji-btn" id="bd-emoji-btn" type="button" data-tip="Pick an emoji or icon" data-i18n-tip="emoji_pick">
+                    <span id="bd-emoji-face">😀</span>
+                    <svg class="ic"><use href="#i-chevron-down"/></svg>
+                  </button>
+                  <div class="emoji-pop" id="bd-emoji-pop" hidden></div>
+                </div>
+              </div>
+              <label class="field grow">
+                <span class="field-label" data-i18n="icon_badge">Badge</span>
+                <span class="input-well"><input id="bd-text" type="text" maxlength="6" data-i18n-ph="badge_text_ph" placeholder="🍕 or ABC"></span>
+              </label>
+            </div>
+            <div class="badge-row">
+              <label class="field">
+                <span class="field-label" data-i18n="badge_bg">Disc</span>
+                <input class="colorwell" id="bd-bg" type="color" value="#1F5EFF">
+              </label>
+              <label class="field">
+                <span class="field-label" data-i18n="badge_fg">Ink</span>
+                <input class="colorwell" id="bd-fg" type="color" value="#FFFFFF">
+              </label>
+              <div class="field grow">
+                <span class="field-label" data-i18n="badge_shape">Shape</span>
+                <div class="seg seg-sm" id="bd-shape">
+                  <button class="seg-btn is-active" data-v="circle" data-i18n="shape_circle">Circle</button>
+                  <button class="seg-btn" data-v="rounded" data-i18n="shape_rounded">Rounded</button>
+                  <button class="seg-btn" data-v="square" data-i18n="shape_square">Square</button>
+                  <button class="seg-btn" data-v="none" data-i18n="shape_nobg">No disc</button>
+                </div>
+              </div>
+              <span class="thumb" id="bd-prev"><canvas id="bd-canvas" width="64" height="64"></canvas></span>
+            </div>
+            <button class="btn btn-soft" id="bd-bake" data-i18n="badge_bake">Bake badge into library</button>
+            <p class="hint" data-i18n="badge_hint">Emoji or up to 3 characters on a coloured disc, baked into an image.</p>
+          </div>
+        </section>
+
+        <!-- Identity -->
+        <section class="card sec">
+          <header class="sec-head"><span class="eyebrow" data-i18n="sec_identity">Identity</span></header>
+          <label class="field">
+            <span class="field-label" data-i18n="f_name">Name</span>
+            <span class="input-well"><input id="f-name" type="text" maxlength="48" data-i18n-ph="f_name_ph" placeholder="Shown in the pause-map legend"></span>
+          </label>
+          <div class="field" id="f-colour-field">
+            <span class="field-label"><span data-i18n="f_colour">Colour</span> <span class="mono field-val" id="f-colour-val">0</span></span>
+            <div class="swatches" id="f-colour"></div>
+            <p class="hint" data-i18n="colour_hint">GTA tint. 0 keeps the sprite untinted. Image blips always render untinted.</p>
+          </div>
+          <div class="field">
+            <span class="field-label"><span data-i18n="f_scale">Scale</span> <input class="mono field-val" id="f-scale-val" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" aria-label="Scale"></span>
+            <input id="f-scale" type="range" min="0.1" max="4" step="0.05" value="0.9">
+          </div>
+          <div class="field">
+            <span class="field-label"><span data-i18n="f_alpha">Opacity</span> <input class="mono field-val" id="f-alpha-val" type="text" inputmode="numeric" spellcheck="false" autocomplete="off" aria-label="Opacity"></span>
+            <input id="f-alpha" type="range" min="20" max="255" step="1" value="255">
+          </div>
+        </section>
+
+        <!-- Position -->
+        <section class="card sec">
+          <header class="sec-head"><span class="eyebrow" data-i18n="sec_position">Position</span></header>
+          <div class="pos-row">
+            <label class="field"><span class="field-label" data-i18n="f_x">X</span>
+              <span class="input-well"><input id="f-x" type="number" step="0.1" class="mono"></span></label>
+            <label class="field"><span class="field-label" data-i18n="f_y">Y</span>
+              <span class="input-well"><input id="f-y" type="number" step="0.1" class="mono"></span></label>
+            <label class="field"><span class="field-label" data-i18n="f_z">Z</span>
+              <span class="input-well"><input id="f-z" type="number" step="0.1" class="mono"></span></label>
+          </div>
+          <div class="row-gap">
+            <button class="btn btn-secondary" id="pos-me"><svg class="ic"><use href="#i-pos"/></svg><span data-i18n="btn_mypos">My position</span></button>
+            <button class="btn btn-secondary" id="pos-wp"><svg class="ic"><use href="#i-pin"/></svg><span data-i18n="btn_waypoint">Use waypoint</span></button>
+            <button class="btn btn-secondary" id="pos-map"><svg class="ic"><use href="#i-target"/></svg><span data-i18n="btn_pickmap">Pick on map</span></button>
+          </div>
+          <p class="hint" data-i18n="pickmap_hint">Opens the map. Place a waypoint where the blip should live.</p>
+        </section>
+
+        <!-- Behaviour -->
+        <section class="card sec">
+          <header class="sec-head"><span class="eyebrow" data-i18n="sec_behaviour">Behaviour</span></header>
+          <div class="tog-grid">
+            <label class="tog"><input type="checkbox" id="f-shortrange" checked><span class="tog-track"></span><span class="tog-txt" data-i18n="f_shortrange">Short range</span></label>
+            <label class="tog"><input type="checkbox" id="f-flash"><span class="tog-track"></span><span class="tog-txt" data-i18n="f_flash">Flashing</span></label>
+            <label class="tog"><input type="checkbox" id="f-route"><span class="tog-track"></span><span class="tog-txt" data-i18n="f_route">GPS route</span></label>
+          </div>
+          <p class="hint" data-i18n="shortrange_hint">Only appears on the minimap when you are nearby. Off = always on the minimap edge.</p>
+          <div class="field" id="f-routecolour-field" hidden>
+            <span class="field-label"><span data-i18n="f_route_colour">Route colour</span> <span class="mono field-val" id="f-routecolour-val">0</span></span>
+            <div class="swatches" id="f-routecolour"></div>
+          </div>
+          <div class="field">
+            <span class="field-label" data-i18n="f_category">Category</span>
+            <div class="seg seg-sm seg-wrap" id="f-category">
+              <button class="seg-btn is-active" data-v="1" data-i18n="cat_1">Default</button>
+              <button class="seg-btn" data-v="2" data-i18n="cat_2">Shows distance</button>
+              <button class="seg-btn" data-v="10" data-i18n="cat_10">Property</button>
+              <button class="seg-btn" data-v="11" data-i18n="cat_11">Owned property</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label" data-i18n="f_display">Show on</span>
+            <div class="seg seg-sm seg-wrap" id="f-display">
+              <button class="seg-btn is-active" data-v="2" data-i18n="disp_2">Minimap + map</button>
+              <button class="seg-btn" data-v="3" data-i18n="disp_3">Pause map only</button>
+              <button class="seg-btn" data-v="5" data-i18n="disp_5">Minimap only</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Zone -->
+        <section class="card sec">
+          <header class="sec-head"><span class="eyebrow" data-i18n="sec_zone">Map zone</span></header>
+          <div class="seg" id="z-mode">
+            <button class="seg-btn is-active" data-v="none" data-i18n="zone_none">None</button>
+            <button class="seg-btn" data-v="radius" data-i18n="zone_radius">Circle</button>
+            <button class="seg-btn" data-v="area" data-i18n="zone_area">Rectangle</button>
+          </div>
+          <div id="z-body" hidden>
+            <div id="z-radius-row">
+              <div class="field grow">
+                <span class="field-label"><span data-i18n="f_radius">Radius</span> <input class="mono field-val" id="z-radius-val" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" aria-label="Radius"><span class="field-unit">m</span></span>
+                <input id="z-radius" type="range" min="5" max="2000" step="5" value="50">
+              </div>
+            </div>
+            <div id="z-area-row" hidden>
+              <div class="field grow">
+                <span class="field-label"><span data-i18n="f_width">Width</span> <input class="mono field-val" id="z-w-val" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" aria-label="Width"><span class="field-unit">m</span></span>
+                <input id="z-w" type="range" min="5" max="4000" step="5" value="100">
+              </div>
+              <div class="field grow">
+                <span class="field-label"><span data-i18n="f_height">Height</span> <input class="mono field-val" id="z-h-val" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" aria-label="Height"><span class="field-unit">m</span></span>
+                <input id="z-h" type="range" min="5" max="4000" step="5" value="100">
+              </div>
+              <div class="field grow">
+                <span class="field-label"><span data-i18n="f_rot">Rotation</span> <input class="mono field-val" id="z-rot-val" type="text" inputmode="numeric" spellcheck="false" autocomplete="off" aria-label="Rotation"><span class="field-unit">&deg;</span></span>
+                <input id="z-rot" type="range" min="0" max="359" step="1" value="0">
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label"><span data-i18n="f_zone_colour">Zone colour</span> <span class="mono field-val" id="z-colour-val">1</span></span>
+              <div class="swatches" id="z-colour"></div>
+            </div>
+            <div class="field grow">
+              <span class="field-label"><span data-i18n="f_zone_alpha">Zone opacity</span> <input class="mono field-val" id="z-alpha-val" type="text" inputmode="numeric" spellcheck="false" autocomplete="off" aria-label="Zone opacity"></span>
+              <input id="z-alpha" type="range" min="10" max="255" step="1" value="80">
+            </div>
+            <label class="tog"><input type="checkbox" id="z-events"><span class="tog-track"></span><span class="tog-txt" data-i18n="f_zone_events">Fire enter / exit events</span></label>
+            <p class="hint" data-i18n="zone_events_hint">Other resources can listen: apex_blips:client:zoneEnter / zoneExit (client) and apex_blips:zone (server). See the Developer tab.</p>
+          </div>
+        </section>
+
+        <!-- Visibility -->
+        <section class="card sec">
+          <header class="sec-head"><span class="eyebrow" data-i18n="sec_visibility">Visibility</span></header>
+          <div class="seg" id="v-mode">
+            <button class="seg-btn is-active" data-v="everyone" data-i18n="vis_everyone">Everyone</button>
+            <button class="seg-btn" data-v="jobs" data-i18n="vis_jobs">Jobs</button>
+            <button class="seg-btn" data-v="private" data-i18n="vis_private">Only me</button>
+          </div>
+          <div id="v-jobs-body" hidden>
+            <label class="field">
+              <span class="field-label" data-i18n="f_jobs">Job names</span>
+              <span class="input-well"><input id="v-jobs-input" type="text" data-i18n-ph="f_jobs_ph" placeholder="police, ambulance…  (Enter adds)"></span>
+            </label>
+            <div class="jobchips" id="v-jobs-chips"></div>
+            <p class="hint" data-i18n="vis_jobs_hint">Only players with one of these framework jobs receive the blip.</p>
+          </div>
+          <p class="hint" id="v-private-hint" hidden data-i18n="vis_private_hint">Only you receive this blip, a personal marker.</p>
+        </section>
+
+        <div class="ed-actions">
+          <button class="btn btn-danger" id="ed-delete" hidden><svg class="ic"><use href="#i-trash"/></svg><span data-i18n="btn_delete">Delete</span></button>
+          <span class="spacer"></span>
+          <button class="btn btn-secondary" id="ed-cancel" data-i18n="btn_cancel">Cancel</button>
+          <button class="btn btn-primary" id="ed-save"><svg class="ic"><use href="#i-check"/></svg><span id="ed-save-label" data-i18n="btn_create">Create blip</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PANE · IMAGES ══════════════════════════════════════════════════ -->
+    <section class="pane" id="pane-images">
+      <div class="pane-toolbar">
+        <div class="pane-title">
+          <h2 data-i18n="img_t">Image library</h2>
+        </div>
+        <button class="btn btn-primary" id="img-upload-btn">
+          <svg class="ic"><use href="#i-upload"/></svg><span data-i18n="img_upload">Upload</span>
+        </button>
+        <input type="file" id="img-file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+      </div>
+      <p class="hint dock-note" data-i18n="img_d">Icons live here once. Any number of blips can point at the same image and share a single slot.</p>
+      <div class="scroll">
+        <div class="img-grid" id="img-grid"></div>
+        <div class="empty" id="img-empty" hidden>
+          <svg class="ic ic-lg"><use href="#i-images"/></svg>
+          <h3 data-i18n="img_empty_t">Library is empty</h3>
+          <p data-i18n="img_empty_d">Upload a logo or bake a badge in the editor. Saved icons appear here.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PANE · DEVELOPER ═══════════════════════════════════════════════ -->
+    <section class="pane" id="pane-dev">
+      <div class="pane-toolbar">
+        <div class="pane-title">
+          <h2 data-i18n="dev_t">Developer</h2>
+        </div>
+      </div>
+      <p class="hint dock-note" data-i18n="dev_d">Everything the studio does is scriptable. Pick a blip above and the snippets carry its real id and data.</p>
+      <div class="dev-picker" id="dev-picker"></div>
+      <div class="scroll">
+        <div id="dev-body"></div>
+      </div>
+    </section>
+
+  </aside>
+</div>
+
+<div id="modal-root"></div>
+<div id="toasts"></div>
+
+<script src="js/blipdata.js"></script>
+<script src="js/fadata.js"></script>
+<script src="js/app.js?v=14"></script>
+</body>
+</html>

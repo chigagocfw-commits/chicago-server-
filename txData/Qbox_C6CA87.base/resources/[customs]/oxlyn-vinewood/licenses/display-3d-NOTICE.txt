@@ -1,0 +1,33 @@
+OXLYN physical display lettering conversion, version 2.6.0
+
+The following native YDR meshes were generated from the same local font outlines
+bundled for the NUI. They retain each original typeface's design, including the
+supported Latin accents. Font copyright notices and the SIL Open Font License
+1.1 are included in googlefonts-OFL.txt in this directory.
+
+Runtime font id    Source typeface                 Physical weight
+bebas              Bebas Neue                      Regular 400
+oswald             Oswald                         Bold 700
+montserrat         Montserrat                     ExtraBold 800
+poppins            Poppins                        ExtraBold 800
+playfair           Playfair Display               ExtraBold 800
+cinzel             Cinzel                         ExtraBold 800
+pacifico           Pacifico                       Regular 400
+lobster            Lobster                        Regular 400
+righteous          Righteous                      Regular 400
+bangers            Bangers                        Regular 400
+monoton            Monoton                        Regular 400
+audiowide          Audiowide                      Regular 400
+russo              Russo One                      Regular 400
+teko               Teko                           Bold 700
+abril              Abril Fatface                  Regular 400
+blackops           Black Ops One                  Regular 400
+
+Conversion: static font-axis instancing where needed; cap-height normalization;
+extrusion with a small high-detail bevel; lower-detail meshes; corrected outward
+face winding; native YDR serialization; per-layer color texture UVs. Four color
+banks share one source design. Each bank supports natural and emissive shading.
+No source font has been replaced by an unrelated font or a planar text image.
+
+Geometry was created by OXLYN using Blender, Sollumz and the CodeWalker validation
+toolchain. GTA game map geometry is not part of these font conversions.

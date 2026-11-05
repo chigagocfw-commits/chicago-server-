@@ -1,0 +1,33 @@
+:root {
+    /* RedStars — deep black base, crimson accent, white text */
+    --primary: rgba(10, 5, 5, 0.96);
+    --secondary: rgba(20, 8, 8, 0.55);
+    --secondary-hover: linear-gradient(0deg, rgba(210, 30, 45, 0.18) 0%, rgba(210, 30, 45, 0.18) 100%), radial-gradient(50% 50% at 50% 50%, rgba(210, 30, 45, 0.00) 0%, rgba(210, 30, 45, 0.24) 100%);
+    --border: rgba(210, 30, 45, 0.18);
+    --accent: rgba(210, 30, 45, 0.75);
+    --accent-foreground: rgba(230, 40, 55, 1);
+    --accent-10: rgba(210, 30, 45, 0.10);
+    --accent-50: rgba(210, 30, 45, 0.50);
+    --accent-05: rgba(210, 30, 45, 0.05);
+
+    --header-color: rgba(230, 40, 55, 1);
+    --header-glow: 12px;
+
+    --text-dark: rgb(10, 5, 5);
+
+    --danger: #E6283A;
+    --danger-foreground: #FFFFFF;
+
+    --wheel-bg-start: rgba(12, 5, 5, 0.97);
+    --wheel-bg-end: rgba(5, 2, 2, 0.99);
+    --wheel-center-start: rgba(16, 6, 6, 0.98);
+    --wheel-center-end: rgba(6, 2, 2, 0.99);
+    --wheel-segment: rgba(22, 8, 8, 0.72);
+    --wheel-segment-empty: rgba(18, 6, 6, 0.42);
+    --wheel-segment-hover: rgba(210, 30, 45, 0.16);
+    --wheel-glow: rgba(210, 30, 45, 0.08);
+    --wheel-center-border: rgba(210, 30, 45, 0.14);
+}
+:root.solid-primary-mode {
+    --primary: rgb(10, 5, 5);
+}

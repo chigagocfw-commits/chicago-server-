@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CVehicleModelInfoVarGlobal>
+  <!-- labscoot uses the game's default mod kit (0_default_modkit) and light setting 0; no custom kits, lights or sirens -->
+  <Kits />
+  <Lights />
+  <Sirens />
+</CVehicleModelInfoVarGlobal>

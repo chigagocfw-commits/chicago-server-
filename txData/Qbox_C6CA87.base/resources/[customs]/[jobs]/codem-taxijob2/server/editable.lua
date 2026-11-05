@@ -1,0 +1,3 @@
+-- codem-taxijob2 / server/editable.lua
+-- NOTE: Duplicate 'codem-taxijob:Pay' handler removed to prevent double-payout race conditions.
+-- Canonical payment handling is enforced exclusively in server/main.lua with state machine validation.

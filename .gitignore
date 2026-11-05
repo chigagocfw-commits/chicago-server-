@@ -1,0 +1,22 @@
+# FXServer runtime
+/FXServer/
+
+# txAdmin runtime data, cache, crashes, logs, databases
+/txData/*/cache/
+/txData/*/crashes/
+/txData/*/logs/
+/txData/*/db/
+/txData/default/
+**/stream_cache/
+**/*.log
+**/*.dmp
+**/*.tmp
+**/*.temp
+**/*.lock
+
+# Heavy streaming asset packs (cars & clothing packs ~24GB)
+*\[clothing\]*
+*\[cars\]*
+
+# Exceeds GitHub 100MB file limit
+**/chicago_anthem.mp4

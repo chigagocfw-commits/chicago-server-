@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CWeaponModelInfo__InitDataList>
+	<InitDatas>
+		<Item>
+			<modelName>w_sb_grauvvswhite_mag1</modelName>
+			<txdName>w_sb_grauvvswhite_mag1</txdName>
+			<ptfxAssetName>NULL</ptfxAssetName>
+			<lodDist value="300"></lodDist>
+		</Item>
+		<Item>
+			<modelName>w_sb_grauvvswhite</modelName>
+			<txdName>w_sb_grauvvswhite</txdName>
+			<ptfxAssetName>NULL</ptfxAssetName>
+			<lodDist value="300"></lodDist>
+		</Item>
+	</InitDatas>
+</CWeaponModelInfo__InitDataList>
+

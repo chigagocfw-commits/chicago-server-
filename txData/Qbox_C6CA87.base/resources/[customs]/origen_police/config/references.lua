@@ -1,0 +1,3 @@
+Config.References = {}
+Config.References.DefaultSprite = 1 -- radar_level(https://docs.fivem.net/docs/game-references/blips/)
+Config.References.DefaultColor = 0 -- color_white(https://docs.fivem.net/docs/game-references/hud-colors/)

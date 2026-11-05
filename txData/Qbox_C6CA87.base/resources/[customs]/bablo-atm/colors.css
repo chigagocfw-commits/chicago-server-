@@ -1,0 +1,13 @@
+:root {
+   --color-primary: 217 100% 74%;
+      --color-accent: 217 100% 74% / 0.2;
+
+   --color-primary-glow: rgba(123, 173, 255, 0.35);
+}
+
+.drop-shadow-\[0_0_20px_rgba\(123\,173\,255\,0\.35\)\] {
+    --tw-drop-shadow: drop-shadow(0 0 20px var(--color-primary-glow));
+    filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale)
+            var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia)
+            var(--tw-drop-shadow);
+}

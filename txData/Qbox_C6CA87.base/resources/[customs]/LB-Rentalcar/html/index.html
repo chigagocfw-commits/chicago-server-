@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LB-Rental Pro</title>
+    <link rel="stylesheet" href="style.css?v=8">
+</head>
+<body>
+
+<div class="ui-overlay" id="uiOverlay">
+    <div class="ui-tablet">
+        <div class="ui-bezel">
+            <div class="ui-screen" id="uiScreen">
+                <div class="phone-notch"></div>
+                <div class="ui-noise"></div>
+
+                <div id="pageVehicles" class="page active">
+                    <div class="page-bg">
+                        <div class="bg-glow g1"></div>
+                        <div class="bg-glow g2"></div>
+                        <div class="bg-glow g3"></div>
+                    </div>
+                    <div class="page-main">
+                        <div class="vh-top vh-top-main">
+                            <div class="vh-brand">
+                                <div class="vh-brand-icon" id="brandLogo">
+                                    <img id="logoImg" src="" alt="logo" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex';">
+                                    <span id="logoFallback" class="logo-fallback" style="display:flex;">LB</span>
+                                </div>
+                                <div>
+                                    <div class="vh-brand-title" id="brandName">LB Rental</div>
+                                    <div class="vh-brand-sub" id="brandSub">Premium Vehicles</div>
+                                </div>
+                            </div>
+                            <button class="icon-btn notify-btn" id="returnBtn" onclick="showReturnPage()" aria-label="My rentals">
+                                <span class="icon-bell"></span>
+                            </button>
+                        </div>
+                        <div class="vh-search">
+                            <input class="vs-input" id="vsInput" type="text" placeholder="Search vehicles..." oninput="onSearchInput(this)">
+                            <span class="search-icon" aria-hidden="true"></span>
+                        </div>
+                        <div class="vh-cats" id="catTabs">
+                            <button class="cat-tab active" data-cat="all" onclick="setCategory('all')">All</button>
+                            <button class="cat-tab" data-cat="super" onclick="setCategory('super')">Super</button>
+                            <button class="cat-tab" data-cat="sports" onclick="setCategory('sports')">Sports</button>
+                            <button class="cat-tab" data-cat="coupes" onclick="setCategory('coupes')">Coupes</button>
+                            <button class="cat-tab" data-cat="sedans" onclick="setCategory('sedans')">Sedans</button>
+                            <button class="cat-tab" data-cat="suvs" onclick="setCategory('suvs')">SUVs</button>
+                            <button class="cat-tab" data-cat="compacts" onclick="setCategory('compacts')">Compact</button>
+                            <button class="cat-tab" data-cat="motorcycles" onclick="setCategory('motorcycles')">Bikes</button>
+                        </div>
+                        <div class="vh-stats">
+                            <span id="vehCount">0 vehicles</span>
+                        </div>
+                        <div class="veh-grid" id="vehGrid"></div>
+                    </div>
+                    <div class="bottom-nav">
+                        <button class="nav-item active" onclick="showVehiclesPage()" aria-label="Home">
+                            <span class="nav-icon icon-home"></span>
+                            <span class="nav-label">Home</span>
+                        </button>
+                        <button class="nav-item" id="navRentalsBtn" onclick="showReturnPage()" aria-label="My rentals">
+                            <span class="nav-icon icon-key"></span>
+                            <span class="nav-label">My Rentals</span>
+                        </button>
+                        <button class="nav-item" type="button" aria-label="Profile">
+                            <span class="nav-icon icon-user"></span>
+                            <span class="nav-label">Profile</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="pageReturn" class="page">
+                    <div class="page-bg">
+                        <div class="bg-glow g4"></div>
+                        <div class="bg-glow g5"></div>
+                    </div>
+                    <div class="page-main page-main-return">
+                        <div class="vh-top">
+                            <button class="icon-btn round" onclick="showVehiclesPage()" aria-label="Back">
+                                <span class="icon-arrow-left"></span>
+                            </button>
+                            <div class="vh-copy">
+                                <div class="vh-brand-title" id="retTitle">Return Vehicle</div>
+                                <div class="vh-brand-sub" id="retSub">End your rental</div>
+                            </div>
+                            <button class="icon-btn round" onclick="doClose()" aria-label="Close">
+                                <span class="icon-close"></span>
+                            </button>
+                        </div>
+                        <div class="ret-wrap">
+                            <div class="ret-card">
+                                <div class="ret-glow"></div>
+                                <div class="ret-icon-wrap">
+                                    <div class="ret-icon">
+                                        <span class="icon-return"></span>
+                                    </div>
+                                </div>
+                                <h3 class="ret-title" id="retCardTitle">Finish Rental?</h3>
+                                <p class="ret-desc" id="retCardDesc">Return the vehicle to receive your deposit refund</p>
+                                <div class="ret-info" id="retInfo"></div>
+                                <button class="ret-btn" id="retConfirmBtn" onclick="doReturn()">Confirm Return</button>
+                                <button class="ret-btn ghost" id="retCancelBtn" onclick="showVehiclesPage()">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-modal">
+        <div class="confirm-header">
+            <div class="confirm-img-w">
+                <img id="confirmImg" src="" alt="">
+                <span id="confirmImgFallback" style="display:none;">&#x1F697;</span>
+            </div>
+            <div class="confirm-info">
+                <div class="confirm-title" id="confirmLabel">Adder</div>
+                <div class="confirm-sub" id="confirmCategory">super</div>
+                <div class="confirm-price" id="confirmPrice">$500/hr</div>
+            </div>
+        </div>
+        <div class="confirm-body">
+            <div class="confirm-row">
+                <span id="confirmDurationLabel">Rental Duration</span>
+                <span id="confirmDuration">1 hour</span>
+            </div>
+            <div class="confirm-row">
+                <span id="confirmDepositLabel">Deposit (25%)</span>
+                <span id="confirmDeposit">$125</span>
+            </div>
+            <div class="confirm-row total">
+                <span id="confirmTotalLabel">Total Charge</span>
+                <span id="confirmTotal">$125</span>
+            </div>
+        </div>
+        <button class="confirm-btn" id="confirmRentBtn" onclick="doConfirmRent()">Confirm Rental</button>
+        <button class="confirm-btn ghost" id="confirmCancelBtn" onclick="doCancelRent()">Cancel</button>
+    </div>
+</div>
+
+<div id="notification-container" class="notification-container"></div>
+
+<div id="interactPrompt" class="interact-prompt">
+    <div class="ip-halo"></div>
+    <span class="ip-pulse"></span>
+    <div class="ip-key">E</div>
+    <div class="ip-divider"></div>
+    <div class="ip-copy">
+        <div class="ip-label">Open Rental Menu</div>
+        <div class="ip-sub">Interact</div>
+    </div>
+    <span class="ip-chev">&#9656;</span>
+    <div class="ip-sheen"></div>
+</div>
+    <script src="script.js?v=6"></script>
+</body>
+</html>

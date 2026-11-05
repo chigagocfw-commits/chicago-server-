@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>·</title>
+<!--
+  APEX LOADING: YouTube referrer bridge.
+
+  A loading screen is served from nui://, which sends no Referer header, and
+  YouTube refuses referrer-less embeds with "Error 153". This page is the fix:
+  it is served from a real http(s) origin (the resource's cfx-nui host, or the
+  server's public cfx.re URL via sv_yt.lua), so the official player inside it
+  gets a referrer and plays. The loading screen embeds THIS page in an iframe
+  and drives it with postMessage: never the YouTube player directly.
+
+  Query:  v=<videoId>  k=<routing key>  loop=0|1  muted=0|1  vol=0..100
+  In:     {apx:'yt-cmd', cmd:'volume'|'mute'|'unmute'|'play'|'pause'|'load'}
+  Out:    {apx:'yt', k, ev:'boot'|'ready'|'playing'|'buffering'|'ended'|'error'|'slow'}
+-->
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #p, #p iframe { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; border: 0; }
+</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var vid = String(q.get('v') || '').replace(/[^A-Za-z0-9_-]/g, '');
+  var key = String(q.get('k') || '');
+  var loop = q.get('loop') !== '0';
+  var wantMuted = q.get('muted') === '1';
+  var wantVol = Math.max(0, Math.min(100, parseInt(q.get('vol') || '100', 10) || 0));
+
+  function post(ev, extra) {
+    var m = { apx: 'yt', k: key, ev: ev };
+    if (extra) { for (var kk in extra) m[kk] = extra[kk]; }
+    try { parent.postMessage(m, '*'); } catch (e) {}
+  }
+  // fires the instant this HTML runs: proof for the parent that this bridge
+  // origin is reachable at all, before YouTube enters the picture
+  post('boot');
+
+  if (!vid) { post('error', { code: 'no-video' }); return; }
+
+  var player = null;
+  var ready = false;
+
+  function applyAudio() {
+    if (!ready || !player) return;
+    try {
+      if (wantMuted) { player.mute(); }
+      else { player.unMute(); player.setVolume(wantVol); }
+    } catch (e) {}
+  }
+
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || d.apx !== 'yt-cmd') return;
+    if (d.cmd === 'volume') { wantVol = Math.max(0, Math.min(100, d.v | 0)); applyAudio(); }
+    else if (d.cmd === 'mute') { wantMuted = true; applyAudio(); }
+    else if (d.cmd === 'unmute') { wantMuted = false; applyAudio(); }
+    else if (d.cmd === 'play') { try { if (player) player.playVideo(); } catch (e2) {} }
+    else if (d.cmd === 'pause') { try { if (player) player.pauseVideo(); } catch (e2) {} }
+    else if (d.cmd === 'load' && d.id) {
+      loop = d.loop !== false;
+      vid = String(d.id).replace(/[^A-Za-z0-9_-]/g, '');
+      try { if (player) player.loadVideoById(vid); } catch (e2) {}
+    }
+  });
+
+  window.onYouTubeIframeAPIReady = function () {
+    try {
+      player = new YT.Player('p', {
+        videoId: vid,
+        width: '100%', height: '100%',
+        host: 'https://www.youtube.com',
+        playerVars: {
+          autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0,
+          modestbranding: 1, iv_load_policy: 3, playsinline: 1, enablejsapi: 1,
+          // this page always has a real origin (that is its whole job) but
+          // a file:// dev open reports "null", which would break the player
+          origin: /^https?:\/\//i.test(location.origin || '') ? location.origin : undefined,
+          loop: loop ? 1 : 0,
+          playlist: loop ? vid : undefined
+        },
+        events: {
+          onReady: function (e) {
+            ready = true;
+            // autoplay is only guaranteed muted; start that way, then lift it
+            try { e.target.mute(); e.target.playVideo(); } catch (err) {}
+            applyAudio();
+            setTimeout(applyAudio, 400);
+            setTimeout(applyAudio, 1500);
+            post('ready');
+          },
+          onStateChange: function (e) {
+            if (e.data === 1) { post('playing'); applyAudio(); }
+            else if (e.data === 3) { post('buffering'); }
+            else if (e.data === 0) {
+              // the playlist trick usually loops on its own, but not for
+              // every video, so restart explicitly as well
+              if (loop) { try { e.target.seekTo(0); e.target.playVideo(); } catch (err) {} }
+              else { post('ended'); }
+            }
+          },
+          onError: function (e) { post('error', { code: e && e.data }); }
+        }
+      });
+    } catch (err) { post('error', { code: 'create' }); }
+  };
+
+  var s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  s.onerror = function () { post('error', { code: 'api' }); };
+  document.head.appendChild(s);
+  setTimeout(function () { if (!ready) post('slow'); }, 12000);
+})();
+</script>
+</body>
+</html>

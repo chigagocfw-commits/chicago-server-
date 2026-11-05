@@ -1,0 +1,100 @@
+--[[
+░▒▓████████▓▒░▒▓██████▓▒░       ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░  
+   ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+   ░▒▓█▓▒░  ░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+   ░▒▓█▓▒░  ░▒▓█▓▒░             ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░  
+   ░▒▓█▓▒░  ░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+   ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+   ░▒▓█▓▒░   ░▒▓██████▓▒░       ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░  
+                                                                         
+ This File Leaked By TC HUB Team, Join Our Server For More
+ DISCORD: - https://discord.gg/k3S8RjkPWc - https://t.me/+RgDxwPX3L7w2ODBk - https://tchub.shop/
+--]]
+
+if Config.Framework ~= "esx" then
+    return
+end
+
+debugprint("Loading ESX")
+
+local export, obj = pcall(function()
+    return exports.es_extended:getSharedObject()
+end)
+
+if export then
+    ESX = obj
+else
+    while not ESX do
+        TriggerEvent("esx:getSharedObject", function(obj)
+            ESX = obj
+        end)
+
+        Wait(500)
+    end
+end
+
+local isFirstPlayerLoaded = true
+
+RegisterNetEvent("esx:playerLoaded", function(playerData)
+    ESX.PlayerData = playerData
+    ESX.PlayerLoaded = true
+
+    if not isFirstPlayerLoaded then
+        if type(FetchPhone) == "function" then
+            FetchPhone()
+        else
+            pcall(function() exports["lb-phone"]:FetchPhone() end)
+        end
+    end
+
+    isFirstPlayerLoaded = false
+end)
+
+AddEventHandler("esx:setPlayerData", function(key, val, last)
+    if GetInvokingResource() == "es_extended" and ESX.PlayerData then
+        ESX.PlayerData[key] = val
+    end
+end)
+
+RegisterNetEvent("esx:onPlayerLogout", function()
+    if type(LogOut) == "function" then
+        LogOut()
+    else
+        pcall(function() exports["lb-phone"]:LogOut() end)
+    end
+end)
+
+while not ESX.PlayerLoaded do
+    Wait(500)
+end
+
+FrameworkLoaded = true
+
+debugprint("ESX loaded")
+
+RegisterNetEvent("esx:setAccountMoney", function(account)
+    if account.name ~= "bank" then
+        return
+    end
+
+    SendNUIAction("wallet:setBalance", math.floor(account.money))
+end)
+
+local isHandcuffed = false
+
+RegisterNetEvent("esx_policejob:handcuff", function()
+	isHandcuffed = not isHandcuffed
+
+    if isHandcuffed and phoneOpen then
+        ToggleOpen(false)
+    end
+end)
+
+AddCheck("openPhone", function()
+    if ESX.PlayerData.dead or isHandcuffed then
+        return false
+    end
+
+    return true
+end)
+

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<script src="./js/vue.global.js"></script>
+		<script src="./js/vuex.global.js"></script>
+		<link rel="stylesheet" href="./css/index.css" />
+		<link rel="stylesheet" href="./css/loading-bar.min.css" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+		<script src="./js/util/tailwind.js"></script>
+
+		<title>Codem Fishing</title>
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						aspectRatio: {
+							square: '1 / 1',
+						},
+					},
+				},
+			};
+		</script>
+	</head>
+
+	<body>
+		<div id="app" style="display: none">
+			<div class="w-screen h-screen relative">
+				<div v-if="ShowMiniGameBar && !FishCaught" class="w-full h-full absolute flex items-end justify-center">
+					<div class="w-[100%] h-[15%]">
+						<transition-group name="ItemInfoHover">
+							<div v-if="ShowMiniGameBar && !FishCaught" class="w-full h-[10.5vh] flex items-center justify-center relative">
+								<div class="absolute w-[34.9%] h-full left-0 flex justify-end">
+									<div class="inline-flex h-full flex flex-wrap">
+										<div class="w-full h-[60%] flex items-end justify-center">
+											<img src="/html/images/mouseicon.png" class="h-[45%] mb-[0.5vh]" alt="" />
+										</div>
+										<div class="w-full h-[40%] flex justify-center">
+											<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] pr-[1vw] pl-[1vw] text-white">{{Locales['clicksteady']}}</h2>
+										</div>
+									</div>
+								</div>
+								<div class="w-[30.3%] h-full flex items-center justify-center relative">
+									<div
+										class="w-[14%] h-full absolute flex items-center justify-center"
+										:style="{'left': FishingBarLocation[SelectedFisingBarLocation].left + '%'}"
+										style="background-image: url(/html/images/fishingbarbackground.png); transition: 8s all; background-size: 100% 100%"
+									>
+										<div class="w-full h-[75%] relative">
+											<div class="w-full h-full absolute flex items-center justify-center z-[2]">
+												<img v-if="MiniGameFishProgressBarValue >= 100" class="h-[50%]" src="/html/images/blackfishicon.png" alt="" />
+												<img v-else class="h-[50%]" src="/html/images/fishicon.png" alt="" />
+											</div>
+											<div
+												class="fishingbar"
+												data-fill-background="#1e704c99"
+												data-fill-background-extrude="0"
+												data-fill-dir="btt"
+												data-type="fill"
+												data-fill="#49CE92"
+												data-path="M17.3346 61.1751C11.9813 55.8218 8.03889 51.8765 5.42249 48.4472C2.82369 45.0411 1.62747 42.262 1.62747 39.2548C1.62747 36.2477 2.82369 33.4686 5.42249 30.0624C8.03889 26.6332 11.9812 22.6878 17.3346 17.3345C22.6879 11.9812 26.6333 8.03884 30.0625 5.42244C33.4686 2.82364 36.2477 1.62742 39.2549 1.62742C42.262 1.62742 45.0412 2.82364 48.4473 5.42244C51.8765 8.03884 55.8219 11.9812 61.1752 17.3345C66.5285 22.6878 70.4709 26.6332 73.0873 30.0624C75.6861 33.4686 76.8823 36.2477 76.8823 39.2548C76.8823 42.262 75.6861 45.0411 73.0873 48.4472C70.4709 51.8765 66.5285 55.8218 61.1752 61.1751C55.8219 66.5285 51.8765 70.4708 48.4473 73.0872C45.0412 75.686 42.262 76.8822 39.2549 76.8822C36.2477 76.8822 33.4686 75.686 30.0625 73.0872C26.6333 70.4708 22.6879 66.5285 17.3346 61.1751Z"
+											></div>
+											<div
+												v-if="MiniGameFishProgressBarValue >=100"
+												class="fishingbar2"
+												data-fill-background="#EBD747"
+												data-fill-background-extrude="0"
+												data-fill-dir="btt"
+												data-type="fill"
+												data-fill="#EBD747"
+												data-path="M17.3346 61.1751C11.9813 55.8218 8.03889 51.8765 5.42249 48.4472C2.82369 45.0411 1.62747 42.262 1.62747 39.2548C1.62747 36.2477 2.82369 33.4686 5.42249 30.0624C8.03889 26.6332 11.9812 22.6878 17.3346 17.3345C22.6879 11.9812 26.6333 8.03884 30.0625 5.42244C33.4686 2.82364 36.2477 1.62742 39.2549 1.62742C42.262 1.62742 45.0412 2.82364 48.4473 5.42244C51.8765 8.03884 55.8219 11.9812 61.1752 17.3345C66.5285 22.6878 70.4709 26.6332 73.0873 30.0624C75.6861 33.4686 76.8823 36.2477 76.8823 39.2548C76.8823 42.262 75.6861 45.0411 73.0873 48.4472C70.4709 51.8765 66.5285 55.8218 61.1752 61.1751C55.8219 66.5285 51.8765 70.4708 48.4473 73.0872C45.0412 75.686 42.262 76.8822 39.2549 76.8822C36.2477 76.8822 33.4686 75.686 30.0625 73.0872C26.6333 70.4708 22.6879 66.5285 17.3346 61.1751Z"
+											></div>
+										</div>
+									</div>
+									<div class="w-full h-[18%] rounded-full bg-white/20">
+										<div class="h-full bg-[#00F59D] rounded-full minigamebar" style="transition: 0.4s all" :style="{'width' : MiniGameProgressBarValue + '%'}"></div>
+									</div>
+								</div>
+								<div class="w-[34.5%] h-full absolute right-0 flex items-center">
+									<div class="inline-flex h-[40%] ml-[0.5vw] timer flex items-center justify-center">
+										<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] pr-[1vw] pl-[1vw] text-white">{{MiniGameTimer}} s</h2>
+									</div>
+								</div>
+							</div>
+						</transition-group>
+					</div>
+				</div>
+				<transition-group name="infopopup">
+					<div v-if="CoughtFishNotification.length > 0" class="w-[20%] h-full absolute flex justify-end">
+						<div class="w-[94%] h-[38%] flex items-end flex-wrap content-end">
+							<div
+								class="w-full h-[20%] mb-[1vh] relative overflow-hidden"
+								:style="{'background-image' : 'url(/html/images/'+CoughtFishNotification[0].class.replace('class', '')+'notificationbackground.png)', 'background-size' : '100% 100%'}"
+							>
+								<div class="w-[25%] h-[60%] absolute right-[-1.7vw] top-[2vh] flex items-center justify-center">
+									<img :src="'/html/images/itemimages/'+CoughtFishNotification[0].fishname+'.png'" class="h-[70%]" style="transform: rotate(30deg) scale(1.5)" alt="" />
+								</div>
+								<div class="w-full h-[40%] flex items-end justify-center">
+									<div class="w-[95%] h-[79%] flex">
+										<div class="w-[9%] h-full">
+											<img :src="'/html/images/'+CoughtFishNotification[0].class.replace('class', '')+'fishnotificationicon.png'" class="w-full h-full" alt="" />
+										</div>
+										<div class="flex-1 h-full flex items-center">
+											<h2 class="font-[Gilroy-Bold] text-[0.9vw] ml-[0.5vw] text-white">{{Locales['congrats']}}</h2>
+										</div>
+									</div>
+								</div>
+								<div class="w-full h-[60%] flex items-center justify-center">
+									<div class="w-[95%] h-full">
+										<h2
+											class="font-[Gilroy-bold] text-[0.75vw] mt-[1vh] ml-[0.1vw] text-white"
+											v-html="translate('youhavecouht', { fishname: CoughtFishNotification[0].fishlabel, classname: CoughtFishNotification[0].class+'textcolor' })"
+										></h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</transition-group>
+				<transition-group name="fadein">
+					<div
+						:class="notificationlocation == 'top' ? 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' : ' left-[4vh] '"
+						class="w-[20%] inline-flex absolute flex items-start justify-start z-[2]"
+						style="background-image: url(/html/images/mainnotification.png); background-size: 100% 100%; min-height: 7vh; background-size: 100% 100%"
+						:style="{ [notificationlocation == 'top' ? 'top' : 'bottom']: `${4 + (index * 9)}vh` }"
+						v-for="(notification, index) in notifications"
+						:key="notification.id"
+					>
+						<div class="w-[15%] flex items-center justify-center" style="min-height: 7vh">
+							<img style="max-height: 3vh" src="/html/images/dailymissionicon.png" alt="" />
+						</div>
+						<div class="w-[70%] inline-flex flex-col">
+							<h2 class="font-['Gilroy-SemiBold'] text-[0.85vw] text-white pt-[1.5vh]">{{notification.header}}</h2>
+							<h2 class="font-['Gilroy-Regular'] text-white/50 text-[0.75vw] text-white pt-[0.1vh] pb-[1vh]" style="line-height: 100%">{{notification.text}}</h2>
+						</div>
+					</div>
+				</transition-group>
+				<transition-group name="rentmenuanim">
+					<div v-if="RentMenu" class="w-full h-full">
+						<div class="w-[26.7%] h-full" style="background-image: url(/html/images/rentbackground.png); background-size: 100% 100%">
+							<div class="w-full h-[10%] flex items-end justify-center">
+								<div
+									class="inline-flex h-[80%] rounded-[1vw] flex items-center justify-center"
+									style="background: linear-gradient(97deg, #5747eb 0%, #6bcce1 100%); box-shadow: 0px 10px 17.399999618530273px rgba(0, 0, 0, 0.25)"
+								>
+									<h2 class="font-[Gilroy-Semibold] pl-[2vw] pr-[2vw] text-[1.2vw] text-white leading-[100%]">{{Locales['fishingboat']}}</h2>
+								</div>
+							</div>
+							<div class="w-full h-[81%] flex items-center justify-center">
+								<div class="w-[85%] h-[92%] flex flex-wrap content-start overflow-auto no-scrollbar">
+									<div
+										style="background-image: url(/html/images/rentvehiclebackground.png); background-size: 100% 100%"
+										v-for="(data, index) in RentFishingVehicles"
+										:key="index"
+										:class="index > 0 ? 'mt-[1.5vh]' : ''"
+										class="w-full h-[32%] relative"
+									>
+										<div class="w-full h-full absolute flex items-center justify-center">
+											<img :src="'/html/images/'+data.name+'.png'" class="h-[50%]" alt="" />
+										</div>
+										<div class="w-full h-full flex flex-wrap content-start items-start justify-center relative z-[2]">
+											<div class="w-[93%] h-[17%] flex items-end justify-between">
+												<div class="inline-flex h-[70%] bg-black/20 rounded-full flex items-center justify-center">
+													<h2 class="font-[Gilroy-Bold] pl-[0.5vw] pr-[0.5vw] text-[0.7vw] text-white leading-[100%]">{{data.label}}</h2>
+												</div>
+												<div class="inline-flex h-[70%] bg-[#00F59D]/20 rounded-full flex items-center justify-center">
+													<h2 class="font-[Gilroy-Bold] pl-[0.5vw] pr-[0.5vw] text-[0.7vw] text-[#00F59D] leading-[100%]">{{currencyUnit}} {{data.price}}</h2>
+												</div>
+											</div>
+											<div class="w-full h-[78.5%] flex items-end justify-center">
+												<div
+													@click="RentVehicle(data.name, data.price)"
+													class="w-[50%] h-[29%] rounded-[1vw] flex items-center justify-center cursor-pointer anim-hover-1"
+													style="background: linear-gradient(97deg, #5747eb 0%, #6bcce1 100%); box-shadow: 0px 10px 17.399999618530273px rgba(0, 0, 0, 0.25)"
+												>
+													<h2 class="font-[Gilroy-Bold] text-[1.1vw] text-white leading-[100%]">{{Locales['rent']}}</h2>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="w-full h-[6.5%] flex items-start justify-center">
+								<div class="w-[87%] inline-flex flex bg-black/20 rounded-[1.5vw]">
+									<div class="w-[15%] flex items-center justify-center" style="min-height: 3vh">
+										<img class="h-[40%]" src="/html/images/infoicon3.png" alt="" />
+									</div>
+									<div class="w-[85%] flex items-center justify-center" style="min-height: 3vh">
+										<h2 class="font-[Gilroy-Semibold] text-[0.7vw] text-white pr-[1vw] leading-[100%]">{{Locales['receivemoney']}}</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</transition-group>
+				<div v-if="InfoPopup.PlayerZone" class="w-full h-full relative" @mousedown="startIncrement" @mouseup="stopIncrement" @mouseleave="stopIncrement">
+					<div
+						v-if="!InfoPopup.SelectBait"
+						class="w-full h-full absolute flex items-end justify-end z-[2]"
+						style="background-image: url(/html/images/backgroundminigame.png); background-size: 100% 100%"
+					>
+						<div class="w-[41.5%] h-[69.8%]" style="filter: blur(1vw)">
+							<div class="w-[50.5%] h-[68.5%] bg-white/40 rounded-[0.5vw] z-[2]">
+								<div class="w-full h-[14%] flex items-end justify-center">
+									<div class="w-[12%] h-[70%]">
+										<img src="/html/images/popupbaticon.png" class="w-full h-full" alt="" />
+									</div>
+								</div>
+								<div class="w-full h-[9%] flex items-end justify-center">
+									<h2 class="font-[Gilroy-Bold] text-[1.2vw] text-black/50 leading-[100%]">Select Your Bait</h2>
+								</div>
+
+								<div class="w-full h-[56%]">
+									<div class="w-full h-[81%] flex items-end justify-center">
+										<div class="w-[40%] h-[87%] borderred"></div>
+									</div>
+									<div class="w-full h-[13.5%] flex items-end justify-center">
+										<h2 class="font-[Gilroy-Bold] text-[1.2vw] text-black/50 leading-[100%]">Spoon Lore</h2>
+									</div>
+									<div class="w-full h-[5%] flex items-center justify-center">
+										<h2 class="font-[Gilroy-Bold] text-[0.65vw] text-black/50 leading-[100%]">123x</h2>
+									</div>
+								</div>
+								<div class="w-full h-[16.5%] flex items-end justify-center">
+									<div
+										class="w-[79%] h-[60%] flex items-center justify-center rounded-[0.7vw] cursor-pointer anim-hover-1"
+										style="background: linear-gradient(97deg, #5747eb 0%, #6bcce1 100%)"
+									>
+										<h2 class="font-[Gilroy-Bold] text-[1vw] text-white">Select Bait</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="w-[41.5%] h-[69.8%] absolute">
+							<div class="w-[50.5%] h-[68.5%] bg-white/40 rounded-[0.5vw] z-[2]">
+								<div class="w-full h-[14%] flex items-end justify-center">
+									<div class="w-[12%] h-[70%]">
+										<img src="/html/images/popupbaticon.png" class="w-full h-full" alt="" />
+									</div>
+								</div>
+								<div class="w-full h-[9%] flex items-end justify-center">
+									<h2 class="font-[Gilroy-Bold] text-[1.2vw] text-black/50 leading-[100%]">{{Locales['selectyourbait']}}</h2>
+								</div>
+
+								<div class="w-full h-[56%] baitswipercontainer">
+									<div class="w-full h-[81%] flex items-end justify-center relative">
+										<div class="w-[15%] h-[87%] absolute left-0 flex items-center justify-center">
+											<img src="/html/images/leftgrayicon.png" @click="ChangeBait('right')" class="h-[15%] cursor-pointer anim-hover-1" alt="" />
+										</div>
+										<div class="w-[15%] h-[87%] absolute right-0 flex items-center justify-center">
+											<img src="/html/images/leftgrayicon.png" @click="ChangeBait('left')" style="transform: rotate(180deg)" class="h-[15%] cursor-pointer anim-hover-1" alt="" />
+										</div>
+										<div class="w-[40%] h-[87%] overflow-hidden" id="baitswiper">
+											<div class="w-full h-full swiper-wrapper">
+												<div
+													class="w-full h-full swiper-slide flex items-center justify-center"
+													style="background-image: url(/html/images/selectbaitbackground.png); background-size: 100% 100%"
+												>
+													<img style="max-height: 35%" :src="'/html/images/itemimages/'+ BaitList[ActiveBaitSwiperIndex].name+'.png'" class="h-[50%]" alt="" />
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="w-full h-[13.5%] flex items-end justify-center">
+										<h2 class="font-[Gilroy-Bold] text-[1.2vw] text-black/50 leading-[100%]">{{BaitList[ActiveBaitSwiperIndex].label}}</h2>
+									</div>
+									<div class="w-full h-[5%] flex items-center justify-center">
+										<h2 class="font-[Gilroy-Bold] text-[0.65vw] text-black/50 leading-[100%]">
+											{{ BaitList[ActiveBaitSwiperIndex].amount ? BaitList[ActiveBaitSwiperIndex].amount : '0' }}x
+										</h2>
+									</div>
+								</div>
+								<div class="w-full h-[16.5%] flex items-end justify-center">
+									<div
+										@click="SelectBait(BaitList[ActiveBaitSwiperIndex].name)"
+										class="w-[79%] h-[60%] flex items-center justify-center rounded-[0.7vw] cursor-pointer anim-hover-1"
+										style="background: linear-gradient(97deg, #5747eb 0%, #6bcce1 100%)"
+									>
+										<h2 class="font-[Gilroy-Bold] text-[1vw] text-white">{{Locales['selectbait']}}</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="w-[20%] h-full absolute flex justify-end">
+						<div class="w-[94%] h-[62.5%] flex items-end flex-wrap content-end">
+							<transition-group name="infopopup">
+								<div
+									v-if="InfoPopup.show"
+									class="w-full h-[40%] flex items-center justify-center"
+									style="background-image: url(/html/images/popupbackground.png); background-size: 100% 100%"
+								>
+									<div class="w-[95%] h-full">
+										<div class="w-full h-[19%] flex" style="border-bottom: 2px solid rgba(255, 255, 255, 0.305)">
+											<div class="w-[11%] h-full flex items-center justify-center">
+												<img src="/html/images/mapicon.png" class="h-[70%]" alt="" />
+											</div>
+											<div class="flex-1 flex items-center">
+												<h2 class="font-[Gilroy-Bold] text-[0.9vw] ml-[0.5vw] text-white">{{Locales['fishingarea']}}</h2>
+											</div>
+										</div>
+										<div class="w-full h-[14%] mt-[1vh] flex">
+											<div class="w-[8.5%] h-full flex items-center justify-center">
+												<img src="/html/images/hookicon.png" class="h-[40%]" alt="" />
+											</div>
+											<div class="flex-1 flex items-center">
+												<h2 class="text-[0.7vw] ml-[0.5vw] text-white font-[Gilroy-Medium']">
+													<span class="font-[Gilroy-Bold]">{{InfoPopup.SelectBait.amount}} {{InfoPopup.SelectBait.label}}</span> {{Locales['baitsleft']}}
+												</h2>
+											</div>
+										</div>
+										<div class="w-full h-[14%] mt-[0.8vh] flex">
+											<div class="w-[8.5%] h-full flex items-center justify-center">
+												<img src="/html/images/fishicon.png" class="h-[50%]" alt="" />
+											</div>
+											<div class="flex-1 flex items-center">
+												<h2 class="text-[0.7vw] ml-[0.5vw] text-white font-[Gilroy-Medium']">
+													<span class="font-[Gilroy-Bold]">{{BaitLeft}}</span> {{Locales['fishescought']}}
+												</h2>
+											</div>
+										</div>
+										<div class="w-full h-[14%] mt-[0.8vh] flex">
+											<div class="w-[8.5%] h-full flex items-center justify-center">
+												<img src="/html/images/rodicon.png" class="h-[40%]" alt="" />
+											</div>
+											<div class="flex-1 flex items-center">
+												<h2 class="text-[0.7vw] ml-[0.5vw] text-white font-[Gilroy-Medium']">
+													<span v-if="SelectedRod" class="font-[Gilroy-Bold]">{{$store.state.ConfigItems[SelectedRod].label}}</span> {{Locales['fishing']}}
+												</h2>
+											</div>
+										</div>
+										<div class="w-full h-[5%]" style="border-bottom: 2px solid rgba(255, 255, 255, 0.305)"></div>
+										<div class="w-full h-[17%] flex items-end justify-center">
+											<div class="w-[97%] h-[70%] flex justify-between">
+												<!-- <div class="inline-flex h-full flex">
+													<div class="w-[1.7vw] h-full bg-[#00000042] rounded-[0.5vw] flex items-center justify-center">
+														<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] text-white">E</h2>
+													</div>
+													<div class="inline-flex h-full flex items-center pl-[0.5vw] pr-[0.5vw]">
+														<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] text-white">Start</h2>
+													</div>
+												</div> -->
+												<div class="inline-flex h-full flex">
+													<div class="w-[1.7vw] h-full bg-[#00000042] rounded-[0.5vw] flex items-center justify-center">
+														<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] text-white">{{KeyMapping['stopfishing']}}</h2>
+													</div>
+													<div class="inline-flex h-full flex items-center pl-[0.5vw] pr-[0.5vw]">
+														<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] text-white">{{Locales['stop']}}</h2>
+													</div>
+												</div>
+												<div class="inline-flex h-full flex">
+													<div class="w-[1.7vw] h-full bg-[#00000042] rounded-[0.5vw] flex items-center justify-center">
+														<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] text-white">{{KeyMapping['baitmenu']}}</h2>
+													</div>
+													<div class="inline-flex h-full flex items-center pl-[0.5vw] pr-[0.5vw]">
+														<h2 class="font-[Gilroy-SemiBold] text-[0.7vw] text-white">{{Locales['baits']}}</h2>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</transition-group>
+						</div>
+					</div>
+				</div>
+
+				<div v-if="OpenMenu" class="w-full h-full bg-[url('/html/images/background.png')] flex bg-[length:100%_100%] relative">
+					<div class="w-[35%] h-full flex items-end"></div>
+					<div class="w-[63.5%] h-full flex flex-col">
+						<div class="w-full h-[13.3%] flex items-center relative">
+							<div class="w-full h-[1%] absolute bottom-0 bg-white/20">
+								<div :style="{'margin-left': GetNavLeft() + '%'}" style="transition: 0.5s all" class="w-[18.2%] h-full flex items-center justify-center">
+									<div class="bg-[#6ABFE3] w-[25%] h-full"></div>
+								</div>
+							</div>
+							<div class="w-full h-[56%] flex">
+								<div class="w-[78.5%] h-full flex justify-between">
+									<div
+										v-for="data in MainCategories"
+										@click="ChangePage(data.name)"
+										class="w-[23.5%] h-full flex items-center justify-center cursor-pointer"
+										:class="activePage === data.name ? 'selectedcategorybutton text-white' : 'categorybutton anim-hover-1 text-white/50'"
+									>
+										<h2 class="font-['Gilroy-Bold'] text-[1vw]">{{data.label}}</h2>
+									</div>
+								</div>
+								<div class="flex-1 flex items-center justify-end">
+									<div class="w-[90%] h-[80%] flex items-center justify-between">
+										<div class="w-[70%] mr-[0.4vw] h-full">
+											<div class="w-full h-[50%] flex items-end justify-end">
+												<h2 class="font-['Gilroy-Bold'] text-[1vw] text-white leading-[100%] fixtext">{{PlayerInfo.name}}</h2>
+											</div>
+											<div class="w-full h-[50%] flex items-center justify-end">
+												<h2 class="font-['Gilroy-Bold'] text-[1vw] text-[#838383] fixtext mr-[0.5vw]">{{Locales['shortlevel']}}{{PlayerInfo.level}}</h2>
+												<img class="h-[60%] mb-[0.2vh]" src="/html/images/levelicongray.png" alt="" />
+											</div>
+										</div>
+										<div class="w-[28%] aspect-square rounded-full relative p-[0.1vw]" style="border: 2px solid #5951ea">
+											<img
+												:src="PlayerInfo.profilephoto"
+												class="w-full h-full rounded-full blur-[0.7vw] absolute aspect-square"
+												style="object-fit: cover; object-position: center"
+												alt=""
+											/>
+											<img
+												:src="PlayerInfo.profilephoto"
+												style="object-fit: cover; object-position: center"
+												class="w-full h-full rounded-full z-[2] relative aspect-square"
+												alt=""
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="w-full h-[86.5%]">
+							<transition-group name="fadein">
+								<component v-if="activePage" :is="activePage"></component>
+							</transition-group>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+		<script src="./js/util/loading-bar.min.js"></script>
+		<script src="./js/app.js" type="module"></script>
+	</body>
+</html>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<CWeaponModelInfo__InitDataList>
+	<InitDatas>
+		<Item>
+			<modelName>w_ar_ak47goldblack_mag1</modelName>
+			<txdName>w_ar_ak47goldblack_mag1</txdName>
+			<ptfxAssetName>NULL</ptfxAssetName>
+			<lodDist value="500"></lodDist>
+		</Item>
+		<Item>
+			<modelName>w_ar_ak47goldblack</modelName>
+			<txdName>w_ar_ak47goldblack</txdName>
+			<ptfxAssetName>NULL</ptfxAssetName>
+			<lodDist value="500"></lodDist>
+		</Item>
+	</InitDatas>
+</CWeaponModelInfo__InitDataList>
+

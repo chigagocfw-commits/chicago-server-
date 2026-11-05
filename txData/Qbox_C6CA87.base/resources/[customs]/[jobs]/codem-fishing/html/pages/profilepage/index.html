@@ -1,0 +1,106 @@
+<div class="w-full h-full">
+	<div class="w-full h-[20.8%] flex items-end justify-center">
+		<div class="w-full h-[84.5%] flex bg-[url('/html/images/levelbackground.png')] bg-[length:100%_100%] relative">
+			<div class="w-full h-[18%] bottom-0 absolute flex items-center justify-center">
+				<h2 class="font-['Gilroy-Bold'] text-white text-[0.7vw]">{{Locales['shortlevel']}}{{PlayerInfo.level}}</h2>
+			</div>
+			<div class="w-[50%] h-full flex flex-col justify-center">
+				<h2 class="ml-[7vw] font-['Gilroy-Bold'] text-white text-[1.3vw] leading-[90%]">{{Locales['shortlevel']}}{{PlayerInfo.level}} {{Locales['profession']}}</h2>
+				<h2 class="ml-[7vw] font-['Gilroy-Medium'] text-white/50 text-[1vw] leading-[90%] mt-[1vh]">
+					{{AllLevel[Number(PlayerInfo.level) + 1] - Number(PlayerInfo.xp) }}{{Locales['xptonextlevel']}}
+				</h2>
+			</div>
+			<div class="w-[50%] h-full flex items-center justify-end">
+				<h2 class="ml-[7vw] font-['Gilroy-Medium'] text-white text-[1vw] leading-[90%] mt-[1vh] mr-[2.9vw]">{{Locales['progressin']}}</h2>
+			</div>
+		</div>
+	</div>
+	<div class="w-full h-[19.5%] flex items-end justify-center">
+		<div class="w-full h-[88.5%] flex justify-between">
+			<div class="w-[49%] h-full flex flex-col items-center justify-center bg-[url('/html/images/earningsbackground.png')] bg-[length:100%_100%]">
+				<h2 class="font-['Gilroy-Bold'] text-white text-[1.7vw] leading-[90%]">{{currencyUnit}} {{PlayerInfo.totalearnings.toLocaleString()}}</h2>
+				<h2 class="font-['Gilroy-Medium'] text-white/50 text-[0.9vw] leading-[90%] mt-[1vh]">{{Locales['yourtotalearnings']}}</h2>
+			</div>
+			<div class="w-[49%] h-full flex flex-col items-center justify-center bg-[url('/html/images/totalfishsold.png')] bg-[length:100%_100%]">
+				<h2 class="font-['Gilroy-Bold'] text-white text-[1.7vw] leading-[90%]">{{PlayerInfo.totalfishes}}</h2>
+				<h2 class="font-['Gilroy-Medium'] text-white/50 text-[0.9vw] leading-[90%] mt-[1vh]">{{Locales['totalfishessold']}}</h2>
+			</div>
+		</div>
+	</div>
+	<div class="w-full h-[57.5%] flex items-end">
+		<div class="w-full h-[96%] flex items-end justify-center historybackground">
+			<div class="w-[100%] h-[91%] flex items-start flex-wrap content-start justify-center">
+				<div class="w-[92.6%] h-[9.3%] flex">
+					<div class="w-[3.6%] h-full">
+						<img src="/html/images/latetesticon.png" class="w-full h-full" alt="" />
+					</div>
+					<div class="flex-1 flex items-start ml-[1.4vw] flex-col">
+						<h2 class="font-['Gilroy-Bold'] text-white text-[1.3vw] leading-[90%]">{{Locales['latestfishinghistory']}}</h2>
+						<h2 class="font-['Gilroy-Medium'] text-white/50 text-[0.9vw] leading-[90%]">{{Locales['inthissession']}}</h2>
+					</div>
+				</div>
+				<div class="w-full h-[7%]"></div>
+				<div class="w-full h-[82%] flex justify-center overflow-auto flex-wrap content-start" id="profilepage">
+					<div v-for="data in PlayerInfo.latetest.slice().reverse()" class="w-[92.6%] h-[23%] borderred mt-[1.1vh] flex leaderboardgradient">
+						<div class="w-[9%] h-full flex items-center justify-center">
+							<img class="h-[58%]" :src="'/html/images/'+data.icon+'.png'" alt="" />
+						</div>
+						<div class="w-[20%] h-full flex flex-col items-start justify-center fixtext content-center">
+							<h2 class="font-['Gilroy-Bold'] text-white text-[1vw] leading-[100%]">{{data.header}}</h2>
+							<h2 class="font-['Gilroy-Medium'] text-white/50 text-[0.75vw] leading-[100%]">{{data.label}}</h2>
+						</div>
+						<div v-if="data.type == 'marketbuy' || data.type == 'marketsell'" class="flex-1 flex justify-end mr-[1vw]">
+							<div class="inline-flex h-full flex items-center justify-center">
+								<div class="w-full h-[60%] flex">
+									<div class="w-[2.5vw] h-full" style="min-width: 2.5vw; max-width: 2.5vw">
+										<img src="/html/images/itemwalleticon.png" class="w-full h-full" alt="" />
+									</div>
+									<div class="w-full h-full flex items-center ml-[0.5vw]">
+										<h2 class="font-['Gilroy-Bold'] text-white text-[1vw] leading-[90%]">{{data.amounttype}} {{currencyUnit}} {{data.amount.toLocaleString()}}</h2>
+									</div>
+								</div>
+							</div>
+							<div class="inline-flex h-full flex items-center justify-center mr-[1vw] ml-[1vw]">
+								<div class="w-full h-[60%] flex">
+									<div class="w-[2.5vw] h-full" style="min-width: 2.5vw; max-width: 2.5vw">
+										<img src="/html/images/itemsamounticon.png" class="w-full h-full" alt="" />
+									</div>
+									<div class="w-full h-full flex items-center ml-[0.5vw]">
+										<h2 class="font-['Gilroy-Bold'] text-white text-[1vw] leading-[90%]">{{data.itemamount}} {{data.label}}</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div v-if="data.type == 'fishescought' " class="flex-1 flex justify-end mr-[1vw]">
+							<div class="inline-flex h-full flex items-center justify-center mr-[1vw] ml-[1vw]">
+								<div class="w-full h-[60%] flex">
+									<div class="w-[2.5vw] h-full" style="min-width: 2.5vw; max-width: 2.5vw">
+										<img src="/html/images/itemsamounticon.png" class="w-full h-full" alt="" />
+									</div>
+									<div class="w-full h-full flex items-center ml-[0.5vw]">
+										<h2 class="font-['Gilroy-Bold'] text-white text-[1vw] leading-[90%]">{{data.amount}} {{Locales['fishedcought']}}</h2>
+									</div>
+								</div>
+							</div>
+							<div class="inline-flex h-full flex items-center justify-center mr-[1vw] ml-[1vw]">
+								<div class="w-full h-[60%] flex">
+									<div class="w-[2.5vw] h-full" style="min-width: 2.5vw; max-width: 2.5vw">
+										<img src="/html/images/itemxpicon.png" class="w-full h-full" alt="" />
+									</div>
+									<div class="w-full h-full flex items-center ml-[0.5vw]">
+										<h2 class="font-['Gilroy-Bold'] text-white text-[1vw] leading-[90%]">+ {{data.xp}} XP</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- <div class="w-[92.6%] h-[20%] borderred mt-[1.1vh]">
+					<div class="w-[9%] h-full borderred flex items-center justify-center">
+						<img class="h-[50%]" src="/html/images/market.png" alt="" />
+					</div>
+				</div> -->
+			</div>
+		</div>
+	</div>
+</div>

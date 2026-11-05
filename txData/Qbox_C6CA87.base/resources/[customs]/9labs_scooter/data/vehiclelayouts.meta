@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CVehicleMetadataMgr>
+  <!--
+    LABSCOOT v1.5 stand-up layout.
+    * Inside: our clip set (26 native scooter clip names; still/sit_to_still/still_to_sit = one foot down, keyed transitions).
+      SeatAmbientContext is empty on purpose: ON_BIKE_SCOOTER pulls the vanilla seated idle variations
+      (amb@code_human_on_bike_idles@scooter@...) over the standing pose and made the idle "start and snap back".
+    * Entry/exit: our own ds clip set (get_in / get_on_quick / get_out keyed stand-beside -> foot on deck) with an
+      EntryTranslation matched to LABSCOOT: 0.50 m to the LEFT of the seat attach, 0.18 m BELOW it (standing root height).
+      Only the front seat exists (no passenger on a kick scooter) and it is entered from the left; the right-side entry point
+      is removed (our ds clips are authored for the left side only; a mirrored set would be needed for the right).
+  -->
+  <AnimRateSets />
+  <ClipSetMaps>
+    <Item type="CClipSetMap">
+      <Name>INSIDE_CLIPSET_MAP_LABSCOOT_STAND</Name>
+      <Maps>
+        <Item>
+          <ClipSetId>clipset@labscoot@stand@front@base</ClipSetId>
+          <VarClipSetId>InsideVarClipSet</VarClipSetId>
+          <ConditionFlags />
+          <InformationFlags />
+        </Item>
+      </Maps>
+    </Item>
+    <Item type="CClipSetMap">
+      <Name>ENTRY_CLIPSET_MAP_LABSCOOT_FRONT</Name>
+      <Maps>
+        <Item>
+          <ClipSetId>clipset@labscoot@stand@front@ds</ClipSetId>
+          <VarClipSetId>EntryVarClipSet</VarClipSetId>
+          <ConditionFlags />
+          <InformationFlags />
+        </Item>
+      </Maps>
+    </Item>
+    <Item type="CClipSetMap">
+      <Name>EXIT_CLIPSET_MAP_LABSCOOT_FRONT</Name>
+      <Maps>
+        <Item>
+          <ClipSetId>clipset@labscoot@stand@front@ds</ClipSetId>
+          <VarClipSetId>ExitVarClipSet</VarClipSetId>
+          <ConditionFlags />
+          <InformationFlags />
+        </Item>
+      </Maps>
+    </Item>
+  </ClipSetMaps>
+  <VehicleCoverBoundOffsetInfos />
+  <BicycleInfos />
+  <POVTuningInfos />
+  <EntryAnimVariations />
+  <VehicleExtraPointsInfos />
+  <DrivebyWeaponGroups />
+  <VehicleDriveByAnimInfos />
+  <VehicleDriveByInfos />
+  <VehicleSeatInfos />
+  <VehicleSeatAnimInfos>
+    <Item type="CVehicleSeatAnimInfo">
+      <Name>SEAT_ANIM_LABSCOOT_STAND_FRONT</Name>
+      <DriveByInfo ref="DRIVEBY_BIKE_SCOOTER" />
+      <InsideClipSetMap ref="INSIDE_CLIPSET_MAP_LABSCOOT_STAND" />
+      <PanicClipSet />
+      <AgitatedClipSet />
+      <DuckedClipSet />
+      <FemaleClipSet />
+      <LowriderLeanClipSet />
+      <AltLowriderLeanClipSet />
+      <LowLODIdleAnim>SCOOTER_BIKE_FRONT_IDLE</LowLODIdleAnim>
+      <SeatAmbientContext />
+      <InVehicleMoveNetwork>VEHICLE_DEFAULT</InVehicleMoveNetwork>
+      <SeatAnimFlags>CanDetachViaRagdoll UseBikeInVehicleAnims SupportsInAirState UseRestrictedTorsoLeanIK FallsOutWhenDead</SeatAnimFlags>
+      <SteeringSmoothing value="0.100000" />
+      <ExitToAimInfoName />
+      <MaleGestureClipSetId />
+      <FemaleGestureClipSetId />
+    </Item>
+  </VehicleSeatAnimInfos>
+  <VehicleEntryPointInfos />
+  <VehicleEntryPointAnimInfos>
+    <Item type="CVehicleEntryPointAnimInfo">
+      <Name>ENTRY_POINT_ANIM_LABSCOOT_FRONT_LEFT</Name>
+      <CommonClipSetMap ref="COMMON_CLIPSET_MAP_BIKE_LOW_LEFT" />
+      <EntryClipSetMap ref="ENTRY_CLIPSET_MAP_LABSCOOT_FRONT" />
+      <ExitClipSetMap ref="EXIT_CLIPSET_MAP_LABSCOOT_FRONT" />
+      <AlternateTryLockedDoorClipId />
+      <AlternateForcedEntryClipId />
+      <AlternateJackFromOutSideClipId />
+      <AlternateBeJackedFromOutSideClipId />
+      <AlternateEntryPointClipSetId />
+      <EnterVehicleMoveNetwork>ENTER_VEHICLE_STD</EnterVehicleMoveNetwork>
+      <EntryTranslation x="-0.498100" y="0.144400" z="-0.180000" />
+      <OpenDoorTranslation x="0.000000" y="0.000000" />
+      <OpenDoorHeadingChange value="0.000000" />
+      <EntryHeadingChange value="-1.570000" />
+      <ExtraZForWaterEntry value="0.000000" />
+      <EntryPointFlags>JackIncludesGetIn UsesNoDoorTransitionForEnter UsesNoDoorTransitionForExit FixUpMoverToEntryPointOnExit UseGetUpAfterJack JackVariationsIncludeGetIn DeadJackIncludesGetIn</EntryPointFlags>
+      <EntryAnimVariations ref="NULL" />
+    </Item>
+  </VehicleEntryPointAnimInfos>
+  <VehicleExplosionInfos />
+  <VehicleLayoutInfos>
+    <Item type="CVehicleLayoutInfo">
+      <Name>LAYOUT_LABSCOOT_STAND</Name>
+      <Seats>
+        <Item>
+          <SeatInfo ref="SEAT_BIKE_FRONT" />
+          <SeatAnimInfo ref="SEAT_ANIM_LABSCOOT_STAND_FRONT" />
+        </Item>
+      </Seats>
+      <EntryPoints>
+        <Item>
+          <EntryPointInfo ref="ENTRY_POINT_BIKE_FRONT_LEFT" />
+          <EntryPointAnimInfo ref="ENTRY_POINT_ANIM_LABSCOOT_FRONT_LEFT" />
+        </Item>
+      </EntryPoints>
+      <LayoutFlags>StreamAnims BikeLeansUnlessMoving UsePickUpPullUp UseStillToSitTransition UseFinerAlignTolerance DisableFastPoseWhenDrivebying</LayoutFlags>
+      <BicycleInfo ref="NULL" />
+      <HandsUpClipSetId>busted_vehicle_bike_scooter</HandsUpClipSetId>
+      <SteeringWheelOffset x="0.000000" y="0.350000" z="0.320000" />
+    </Item>
+  </VehicleLayoutInfos>
+  <VehicleScenarioLayoutInfos />
+  <SeatOverrideAnimInfos />
+  <InVehicleOverrideInfos />
+  <FirstPersonDriveByLookAroundData />
+</CVehicleMetadataMgr>

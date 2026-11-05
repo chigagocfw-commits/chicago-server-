@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OXLYN Handling Studio</title>
+<!-- ?v= cache-buster: CEF caches NUI assets hard across resource restarts —
+     bump this whenever css/js change or the old build keeps being served. -->
+<link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body>
+<div id="app" class="hidden">
+
+    <!-- ══ Main panel ══════════════════════════════════════════════════ -->
+    <aside id="panel">
+        <div class="panel-sheen"></div>
+
+        <!-- Header -->
+        <header id="header">
+            <div class="head-left">
+                <div class="eyebrow">OXLYN<span class="dot">•</span><span id="hSub"></span></div>
+                <h1 id="hTitle">HANDLING STUDIO</h1>
+            </div>
+            <div class="head-right">
+                <div class="veh-chip">
+                    <svg viewBox="0 0 24 24"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11m-14 0h14m-14 0a2 2 0 0 0-2 2v3h2m14-5a2 2 0 0 1 2 2v3h-2m-14 0v2h2v-2m10 0v2h2v-2m-12 0h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="vehLabel">—</span>
+                    <code id="vehModel">—</code>
+                </div>
+                <div id="tuneBadge" class="badge stock"></div>
+                <button id="btnSettings" class="icon-btn" title="">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5v2.3M12 18.2v2.3M3.5 12h2.3M18.2 12h2.3M6 6l1.6 1.6M16.4 16.4L18 18M18 6l-1.6 1.6M7.6 16.4L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+                <button id="btnExport" class="icon-btn" title="">
+                    <svg viewBox="0 0 24 24"><path d="M12 15V4m0 0L8 8m4-4l4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button id="btnCopyTune" class="icon-btn" title="">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 15V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+                <button id="btnPasteTune" class="icon-btn" title="">
+                    <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="3" width="6" height="4" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10.5v6m0 0l-2.4-2.4M12 16.5l2.4-2.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button id="btnLayout" class="icon-btn" title="">
+                    <svg viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button id="btnClose" class="icon-btn" title="Close">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Body: vertical category rail + content -->
+        <div id="body">
+            <nav id="rail">
+                <div id="railCats"></div>
+                <button id="advToggle" title="">
+                    <span class="adv-track"><span class="adv-knob"></span></span>
+                    <span class="adv-label" id="advLabel"></span>
+                </button>
+            </nav>
+
+            <div id="content">
+                <div class="search-wrap">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <input id="search" type="text" autocomplete="off" spellcheck="false">
+                    <span id="fieldCount" class="field-count"></span>
+                </div>
+                <main id="fieldList"></main>
+                <div id="noResults" class="hidden"></div>
+            </div>
+        </div>
+
+        <!-- Telemetry strip -->
+        <div id="teleStrip">
+            <div class="tele-item"><span class="tele-k" id="tSpeedK"></span><span class="tele-v"><b id="tSpeed">0</b> <i id="tUnit"></i></span></div>
+            <div class="tele-item"><span class="tele-k" id="tGearK"></span><span class="tele-v"><b id="tGear">N</b></span></div>
+            <div class="tele-item rpm"><span class="tele-k" id="tRpmK"></span><div class="rpm-bar"><div id="tRpmFill"></div></div></div>
+        </div>
+
+        <!-- Footer actions -->
+        <footer id="footer">
+            <div class="foot-row">
+                <div id="changeCount" class="changes"></div>
+                <div class="foot-hint" id="footHint"></div>
+            </div>
+            <div class="btn-row">
+                <button id="btnPresets" class="btn glass">
+                    <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="19" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                    <span id="btnPresetsTxt"></span>
+                </button>
+                <button id="btnVehicles" class="btn glass">
+                    <svg viewBox="0 0 24 24"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11m-14 0h14m-14 0a2 2 0 0 0-2 2v3h2m14-5a2 2 0 0 1 2 2v3h-2m-14 0v2h2v-2m10 0v2h2v-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="btnVehiclesTxt"></span>
+                </button>
+                <button id="btnResetAll" class="btn glass warn icony">
+                    <svg viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 2 6M4 10V4m0 6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="btnResetAllTxt"></span>
+                </button>
+                <button id="btnDrive" class="btn glass icony">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 12V7M12 12l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span id="btnDriveTxt"></span>
+                </button>
+                <button id="btnSave" class="btn primary">
+                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="btnSaveTxt"></span>
+                </button>
+            </div>
+        </footer>
+
+        <!-- ══ Presets drawer ══════════════════════════════════════════ -->
+        <div id="drawer" class="hidden">
+            <div class="drawer-head">
+                <h2 id="drawerTitle"></h2>
+                <button id="btnDrawerClose" class="icon-btn">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <div class="drawer-scroll">
+                <div class="drawer-sec" id="secBuiltin"><h3 id="hBuiltin"></h3><div class="preset-grid" id="builtinGrid"></div></div>
+                <div class="drawer-sec" id="secCustom"><h3 id="hCustom"></h3><div class="preset-list" id="customList"></div></div>
+            </div>
+            <div class="drawer-foot">
+                <input id="presetName" type="text" maxlength="32" autocomplete="off" spellcheck="false">
+                <button id="btnSavePreset" class="btn primary sm"><span id="btnSavePresetTxt"></span></button>
+            </div>
+        </div>
+
+        <!-- ══ Vehicles / classes drawer ═══════════════════════════════ -->
+        <div id="vehDrawer" class="hidden">
+            <div class="drawer-head">
+                <h2 id="vehTitle"></h2>
+                <button id="btnVehClose" class="icon-btn">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+
+            <div class="groups-bar">
+                <h3 id="hGroups"></h3>
+                <div id="groupChips"></div>
+                <div class="group-new">
+                    <input id="groupName" type="text" maxlength="32" autocomplete="off" spellcheck="false">
+                    <button id="btnCreateGroup" class="btn primary sm"><span id="btnCreateGroupTxt"></span></button>
+                </div>
+            </div>
+
+            <div id="groupActions" class="hidden">
+                <span class="ga-count" id="gaCount"></span>
+                <button id="btnGroupTune" class="btn glass sm">
+                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="btnGroupTuneTxt"></span>
+                </button>
+                <button id="btnGroupClear" class="btn glass sm warn">
+                    <svg viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 2 6M4 10V4m0 6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="btnGroupClearTxt"></span>
+                </button>
+                <button id="btnGroupRename" class="icon-btn" title="">
+                    <svg viewBox="0 0 24 24"><path d="M14 5l5 5L8 21H3v-5L14 5zM12 7l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button id="btnGroupDelete" class="icon-btn del" title="">
+                    <svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M8 7l1 13h6l1-13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+
+            <div class="veh-hint" id="vehHint"></div>
+
+            <div class="search-wrap veh-search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <input id="vehSearch" type="text" autocomplete="off" spellcheck="false">
+                <span id="vehCount" class="field-count"></span>
+            </div>
+
+            <div id="vehList"></div>
+        </div>
+
+        <!-- ══ Settings drawer ═════════════════════════════════════════ -->
+        <div id="setDrawer" class="hidden">
+            <div class="drawer-head">
+                <h2 id="setTitle"></h2>
+                <button id="btnSetClose" class="icon-btn">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <div class="drawer-scroll">
+                <div class="drawer-sec"><h3 id="hTheme"></h3><div id="themeGrid" class="theme-grid"></div></div>
+                <div class="drawer-sec"><h3 id="hScale"></h3><div id="scaleRow" class="scale-row"></div></div>
+                <div class="drawer-sec"><h3 id="hTilt"></h3><div id="tiltRow" class="scale-row"></div></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ══ Drive-mode HUD ══════════════════════════════════════════════ -->
+    <div id="drivePill" class="hidden">
+        <div class="gauge">
+            <svg viewBox="0 0 120 120">
+                <defs>
+                    <linearGradient id="rpmGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%"  stop-color="#30D158"/>
+                        <stop offset="60%" stop-color="#FFD60A"/>
+                        <stop offset="100%" stop-color="#FF453A"/>
+                    </linearGradient>
+                </defs>
+                <circle class="g-track" cx="60" cy="60" r="52"/>
+                <circle class="g-arc" id="gaugeArc" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="gauge-center">
+                <b id="pSpeed">0</b>
+                <i id="pUnit"></i>
+            </div>
+        </div>
+        <div class="pill-right">
+            <div class="pill-row">
+                <div class="pill-gear"><span id="pGearK"></span><b id="pGear">N</b></div>
+                <div class="pill-changes" id="pChanges"></div>
+            </div>
+            <div class="pill-hint" id="pHint"></div>
+        </div>
+    </div>
+
+    <!-- ══ Export handling.meta modal ══════════════════════════════════ -->
+    <div id="exportWrap" class="hidden">
+        <div id="exportBox">
+            <div class="export-head">
+                <h2 id="exportTitle"></h2>
+                <button id="btnExportClose" class="icon-btn">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <p id="exportHint"></p>
+            <button id="autoEditToggle" class="autoedit-toggle">
+                <span class="adv-track"><span class="adv-knob"></span></span>
+                <span class="ae-txt">
+                    <b id="autoEditLabel"></b>
+                    <i id="autoEditHint"></i>
+                </span>
+            </button>
+            <textarea id="exportText" readonly spellcheck="false"></textarea>
+            <div class="confirm-btns">
+                <button id="btnCopyExport" class="btn primary sm">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 15V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span id="btnCopyExportTxt"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Text prompt dialog (rename etc.) ════════════════════════════ -->
+    <div id="promptWrap" class="hidden">
+        <div id="promptBox">
+            <p id="promptMsg"></p>
+            <input id="promptInput" type="text" maxlength="32" autocomplete="off" spellcheck="false">
+            <div class="confirm-btns">
+                <button id="btnPromptNo" class="btn glass sm"><span></span></button>
+                <button id="btnPromptYes" class="btn primary sm"><span></span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Confirm dialog ══════════════════════════════════════════════ -->
+    <div id="confirmWrap" class="hidden">
+        <div id="confirmBox">
+            <p id="confirmMsg"></p>
+            <div class="confirm-btns">
+                <button id="btnConfirmNo" class="btn glass sm"><span></span></button>
+                <button id="btnConfirmYes" class="btn danger sm"><span></span></button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Toasts live OUTSIDE #app so notifications (e.g. "not in a vehicle")
+     show even while the editor itself is closed. -->
+<div id="toasts"></div>
+<script src="js/app.js?v=5"></script>
+</body>
+</html>

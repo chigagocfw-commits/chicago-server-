@@ -1,0 +1,94 @@
+/*  Apex Chat — 3D head bubbles
+    ──────────────────────────────────────────────────────────── */
+:root {
+    --apex-brand:     #3B82F6;
+    --apex-brandDark: #2563EB;
+    --apex-bg:        #121116;
+    --apex-bgCard:    #1A1A1E;
+    --apex-bgRaised:  #232228;
+    --apex-bgSidebar: #17161F;
+    --apex-border:    rgba(255,255,255,.07);
+    --apex-borderHi:  rgba(255,255,255,.13);
+    --apex-text:      #F4F1F6;
+    --apex-textSub:   rgba(244, 241, 246, .55);
+    --apex-info:      #4E9CE5;
+    --apex-success:   #34C77B;
+    --apex-warning:   #E5A93C;
+    --apex-error:     #E5564B;
+}
+
+.apex-bubble-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2147483600;
+}
+
+.apex-bubble {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01)), rgba(20, 19, 26, .9);
+    border: 1px solid var(--apex-borderHi);
+    border-radius: 12px;
+    padding: 8px 14px;
+    font: 400 15px/1.35 'Titillium Web', 'Inter', sans-serif;
+    letter-spacing: -0.004em;
+    color: var(--apex-text);
+    text-align: center;
+    max-width: 340px;
+    word-wrap: break-word;
+    text-wrap: balance;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .05);
+    opacity: 0;
+    transition: opacity .12s linear, transform .12s linear;
+    will-change: transform, opacity;
+}
+
+.apex-bubble.is-visible {
+    opacity: 1;
+}
+
+.apex-bubble::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: inherit;
+    border-right: 1px solid var(--apex-border);
+    border-bottom: 1px solid var(--apex-border);
+}
+
+.apex-bubble.type-me {
+    border-color: rgba(78, 156, 229, .6);
+    box-shadow: inset 0 0 0 1px rgba(78, 156, 229, .1), 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .42);
+}
+.apex-bubble.type-do {
+    border-color: rgba(52, 199, 123, .6);
+    box-shadow: inset 0 0 0 1px rgba(52, 199, 123, .1), 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .42);
+    font-style: italic;
+}
+.apex-bubble.type-try {
+    border-color: rgba(229, 86, 75, .6);
+    box-shadow: inset 0 0 0 1px rgba(229, 86, 75, .1), 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .42);
+}
+
+.apex-bubble .apex-bubble-prefix {
+    display: inline-block;
+    padding: 1px 6px;
+    margin-right: 6px;
+    font-size: 9.5px;
+    font-weight: 650;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    vertical-align: middle;
+    background: rgba(255, 255, 255, .07);
+    color: var(--apex-textSub);
+}
+.apex-bubble.type-me  .apex-bubble-prefix { background: rgba(78, 156, 229, .22);  color: #fff; padding: 2px 6px; }
+.apex-bubble.type-me  .apex-bubble-prefix i { font-size: 13px; line-height: 1; }
+.apex-bubble.type-do  .apex-bubble-prefix { background: rgba(52, 199, 123, .18);  color: var(--apex-success); }
+.apex-bubble.type-try .apex-bubble-prefix { background: rgba(229, 86, 75, .18);   color: var(--apex-error); }

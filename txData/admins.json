@@ -1,0 +1,179 @@
+[
+  {
+    "$schema": 1,
+    "name": "chigago_cfw",
+    "master": true,
+    "password_hash": "$2a$11$yq9ifGpn/BADRA/LuOaDC.3ruKK0LAwFt0XnclFvz3gZbB1/rOJyC",
+    "providers": {
+      "citizenfx": {
+        "id": "chigago_cfw",
+        "identifier": "fivem:20051181",
+        "data": {}
+      },
+      "discord": {
+        "id": "1529432494942851124",
+        "identifier": "discord:1529432494942851124",
+        "data": {}
+      }
+    },
+    "permissions": []
+  },
+  {
+    "$schema": 1,
+    "name": "blackghost",
+    "master": false,
+    "password_hash": "$2a$11$ePJeL2Kfw.yLU73bWW8vBuGbW5x9MoawVdbhGmAn9yHGxmj8H.qu.",
+    "password_temporary": true,
+    "providers": {
+      "discord": {
+        "id": "1441459013744328786",
+        "identifier": "discord:1441459013744328786",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "ghostisheremtf",
+    "master": false,
+    "password_hash": "$2a$11$DNnV9zj8ZUnZUnLQR10rT.2yKMmit3DSnSPm9dztlhTNLZEZsPww6",
+    "password_temporary": true,
+    "providers": {
+      "citizenfx": {
+        "id": "Sayf_Back",
+        "identifier": "fivem:18406596",
+        "data": {}
+      },
+      "discord": {
+        "id": "1369013235570970774",
+        "identifier": "discord:1369013235570970774",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "mralpha",
+    "master": false,
+    "password_hash": "$2a$11$S93GSeFSiqTbiTQeMN8VSeaVWU38mVEohrb90WiL/uRBNuHOogKYW",
+    "providers": {
+      "discord": {
+        "id": "1228823869897445416",
+        "identifier": "discord:1228823869897445416",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "bjs",
+    "master": false,
+    "password_hash": "$2a$11$MNu2Z748zaz6V9Q9NyQrAu8q8kwHGPDiopd7mP2Jz7QeH3MGaVO76",
+    "providers": {
+      "citizenfx": {
+        "id": "Houssam_Ghil",
+        "identifier": "fivem:17880025",
+        "data": {}
+      },
+      "discord": {
+        "id": "1484356266234220658",
+        "identifier": "discord:1484356266234220658",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "brotojrcvl",
+    "master": false,
+    "password_hash": "$2a$11$nE6xsEiA2iz/DVchIReRsOelwoMMZJ5PH4fZG/gztTsUvtM9pip8e",
+    "password_temporary": true,
+    "providers": {
+      "citizenfx": {
+        "id": "BROTO_YT",
+        "identifier": "fivem:16211024",
+        "data": {}
+      },
+      "discord": {
+        "id": "690307321645367335",
+        "identifier": "discord:690307321645367335",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "l9irch",
+    "master": false,
+    "password_hash": "$2a$11$ZDPMHCnGEEKvnKYJ9ddAI.3zBRnIUnfgj.PipeSF0KM2h2xtdHgke",
+    "password_temporary": true,
+    "providers": {
+      "discord": {
+        "id": "1418203136228724797",
+        "identifier": "discord:1418203136228724797",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "ballasjouzef04",
+    "master": false,
+    "password_hash": "$2a$11$5sIS0kq4q.aLd6.6We4Aqus.CG146Yba82WOf45kHOk1f4rkn2Tvu",
+    "password_temporary": true,
+    "providers": {
+      "citizenfx": {
+        "id": "jouzef",
+        "identifier": "fivem:18513404",
+        "data": {}
+      },
+      "discord": {
+        "id": "1470781518568755307",
+        "identifier": "discord:1470781518568755307",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "SOUH4IL",
+    "master": false,
+    "password_hash": "$2a$11$WnGkxYV0LD7TwDGthkP.v.w.TdDbnEM6PfKlXqIfOnLQt1V9tbD9a",
+    "providers": {
+      "citizenfx": {
+        "id": "SOUH4IL-555",
+        "identifier": "fivem:20069674",
+        "data": {}
+      },
+      "discord": {
+        "id": "792387618708914227",
+        "identifier": "discord:792387618708914227",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  }
+]

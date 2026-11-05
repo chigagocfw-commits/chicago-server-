@@ -1,0 +1,49 @@
+{
+    "3": {
+        "heading": 25.30684953555464,
+        "revision": 3,
+        "id": "3",
+        "coords": {
+            "z": 31.77413177490234,
+            "y": -635.2613525390625,
+            "x": -279.76226806640627
+        },
+        "name": "SCOOT HOSPITAL",
+        "color": "#ffb400",
+        "blip": {
+            "sprite": 226,
+            "color": 18,
+            "shortRange": true,
+            "flash": true
+        }
+    },
+    "2": {
+        "heading": 66.65741304680705,
+        "revision": 3,
+        "id": "2",
+        "coords": {
+            "z": 29.29823112487793,
+            "y": -808.0494995117188,
+            "x": 239.39645385742188
+        },
+        "name": "rent scoot",
+        "color": "#ffffff",
+        "blip": []
+    },
+    "4": {
+        "heading": 252.3578400351107,
+        "revision": 1,
+        "id": "4",
+        "coords": {
+            "z": 28.28779411315918,
+            "y": -985.8381958007813,
+            "x": -240.61122131347657
+        },
+        "name": "New station",
+        "color": "#ffffff",
+        "blip": {
+            "color": 17,
+            "sprite": 1
+        }
+    }
+}

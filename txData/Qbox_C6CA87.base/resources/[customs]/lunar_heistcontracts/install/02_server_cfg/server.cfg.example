@@ -1,0 +1,24 @@
+# Lunar Heist Contracts server.cfg example
+# Put your framework and inventory resources before these lines.
+
+# Core libraries
+ensure ox_lib
+ensure oxmysql
+
+# Framework, choose the one your server uses
+# ensure qb-core
+# ensure es_extended
+
+# Inventory recommended by the included bridge item functions
+ensure ox_inventory
+
+# Required by the heist resource manifest
+ensure mka-lasers
+
+# Lunar resources from this package
+ensure lunar_bridge
+ensure lunar_heistcontracts
+
+# QBCore admin tablet permission.
+# Only needed if you use QBCore and want admins to use admin actions.
+# add_ace group.admin contracts_admin allow

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8" />
+    <title>OxlynOS</title>
+    <!-- Não usamos Google Fonts: a NUI do FiveM pode não ter rede e o
+         link bloqueia o primeiro render durante segundos. Usamos a
+         pilha de fontes nativa do SO que tem aspecto idêntico ao Inter. -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ============================================ -->
+<!--   ROOT                                       -->
+<!-- ============================================ -->
+<div id="os-root" class="hidden">
+
+  <!-- ============================================ -->
+  <!--  MONITOR (bezel + suporte)                   -->
+  <!--  Tudo o que é a UI do sistema vive dentro    -->
+  <!--  de #screen — visualmente o "monitor" tem    -->
+  <!--  uma moldura preta e um suporte por baixo.   -->
+  <!-- ============================================ -->
+  <div id="monitor-wrap">
+    <div id="monitor">
+      <div id="monitor-cam"></div>
+      <div id="screen">
+
+    <!-- ============================ -->
+    <!-- Login / Lock Screen          -->
+    <!-- ============================ -->
+    <section id="login-screen" class="layer hidden">
+        <div class="login-bg" id="login-bg"></div>
+        <div class="login-overlay"></div>
+        <div class="login-clock">
+            <div class="login-day" id="login-day">terça-feira, 5 de maio</div>
+            <div class="login-time" id="login-time">12:00</div>
+        </div>
+        <div class="login-card">
+            <!-- Row de tiles de utilizadores (renderizado por JS) -->
+            <div class="login-users-row" id="login-users-row"></div>
+            <!-- Área da password do utilizador selecionado -->
+            <div class="login-password-area" id="login-password-area"></div>
+            <div class="login-error" id="login-error"></div>
+            <div class="login-hint" id="login-hint"></div>
+        </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Desktop                      -->
+    <!-- ============================ -->
+    <section id="desktop" class="layer hidden">
+
+        <!-- Top Menu Bar -->
+        <header id="menu-bar">
+            <div class="menu-left">
+                <div class="menu-item menu-apple" id="apple-menu">
+                    <svg viewBox="0 0 100 100" width="14" height="14">
+                        <path fill="currentColor" d="M50 8 L88 30 L88 70 L50 92 L12 70 L12 30 Z"/>
+                    </svg>
+                </div>
+                <div class="menu-item menu-active" id="menu-active-app">Ficheiros</div>
+                <div class="menu-item menu-bar-trigger" data-menu="ficheiro" data-i18n="app_menu_file">Ficheiro</div>
+                <div class="menu-item menu-bar-trigger" data-menu="editar"   data-i18n="app_menu_edit">Editar</div>
+                <div class="menu-item menu-bar-trigger" data-menu="ir"       data-i18n="app_menu_go">Ir</div>
+                <div class="menu-item menu-bar-trigger" data-menu="janela"   data-i18n="app_menu_window">Janela</div>
+                <div class="menu-item menu-bar-trigger" data-menu="ajuda"    data-i18n="app_menu_help">Ajuda</div>
+            </div>
+            <div class="menu-right">
+                <div class="menu-icon" id="menu-volume" title="Volume" data-i18n-title="app_tooltip_volume">
+                    <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M11 5L6 9H2v6h4l5 4V5z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+                </div>
+                <div class="menu-icon" id="menu-wifi" title="Wi-Fi" data-i18n-title="app_tooltip_wifi">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 18a2 2 0 110 4 2 2 0 010-4zM12 12a8 8 0 015.66 2.34l-1.42 1.42A6 6 0 0012 14a6 6 0 00-4.24 1.76l-1.42-1.42A8 8 0 0112 12zm0-4a12 12 0 018.49 3.51l-1.42 1.42A10 10 0 0012 10a10 10 0 00-7.07 2.93l-1.42-1.42A12 12 0 0112 8zm0-4a16 16 0 0111.31 4.69l-1.41 1.41A14 14 0 0012 6a14 14 0 00-9.9 4.1L.69 8.69A16 16 0 0112 4z"/></svg>
+                </div>
+                <div class="menu-icon" id="menu-battery" title="Bateria" data-i18n-title="app_tooltip_battery">
+                    <svg viewBox="0 0 24 14" width="22" height="12"><rect x="0.5" y="0.5" width="20" height="13" rx="3" fill="none" stroke="currentColor"/><rect x="2" y="2" width="17" height="10" rx="1.5" fill="currentColor"/><rect x="21.5" y="4" width="2" height="6" rx="1" fill="currentColor"/></svg>
+                </div>
+                <div class="menu-icon" id="menu-control" title="Centro de Controlo" data-i18n-title="app_tooltip_control_center">
+                    <svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h12M3 12h18M3 18h9"/></svg>
+                </div>
+                <div class="menu-text" id="menu-date">terça-feira 12:00</div>
+            </div>
+        </header>
+
+        <!-- System Dropdown -->
+        <div id="apple-dropdown" class="dropdown hidden">
+            <div class="dropdown-item" data-action="about"    data-i18n="app_apple_about">Sobre este PC</div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item" data-action="settings" data-i18n="app_apple_settings">Definições do Sistema...</div>
+            <div class="dropdown-item" data-action="store"    data-i18n="app_apple_store">Loja de Apps...</div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item disabled"               data-i18n="app_apple_recent">Itens Recentes</div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item" data-action="lock"     data-i18n="app_apple_lock">Bloquear Ecrã</div>
+            <div class="dropdown-item" data-action="logout"   data-i18n="app_apple_logout">Terminar Sessão</div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item" data-action="shutdown" data-i18n="app_apple_shutdown">Desligar</div>
+        </div>
+
+        <!-- Context Menu (botão direito) -->
+        <div id="context-menu" class="dropdown hidden"></div>
+
+        <!-- Menu Bar dropdowns (Ficheiro, Editar, Visualizar, etc.) -->
+        <div id="menu-bar-dropdown" class="dropdown hidden"></div>
+
+        <!-- Painéis (Wi-Fi, Bateria, Volume, Centro de Notificações) -->
+        <div id="panel-wifi" class="menu-panel hidden"></div>
+        <div id="panel-battery" class="menu-panel hidden"></div>
+        <div id="panel-volume" class="menu-panel hidden"></div>
+        <div id="panel-control" class="menu-panel hidden"></div>
+
+        <!-- Desktop Icons -->
+        <div id="desktop-icons"></div>
+
+        <!-- Window Layer -->
+        <div id="window-layer"></div>
+
+        <!-- Dock -->
+        <footer id="dock"></footer>
+
+    </section>
+
+        <!-- Container de modais — DENTRO do #screen para os modais
+             ficarem contidos dentro do monitor. -->
+        <div id="modal-root"></div>
+
+      </div><!-- /#screen -->
+      <div id="monitor-brand">OXLYN</div>
+    </div><!-- /#monitor -->
+    <div id="monitor-stand-arm"></div>
+    <div id="monitor-stand-base"></div>
+  </div><!-- /#monitor-wrap -->
+
+  <!-- Cursor agora é nativo (CSS url) — sem div nem JS necessários.
+       Eliminado: zero lag, é renderizado pelo compositor do SO. -->
+
+
+</div>
+
+<!-- ============================================ -->
+<!-- Ícone 3D flutuante — ancorado a coords do mundo (projectadas via
+     World3dToScreen2d no Lua). Aparece sobre o computador no mundo.
+     Mensagens: {action:'show3DIcon', x, y, scale} | {action:'hide3DIcon'} -->
+<!-- ============================================ -->
+<div id="world-icon" aria-hidden="true">
+    <div class="wi-glass">
+        <svg class="wi-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+    </div>
+    <div class="wi-arrow">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M12 16l-6-6h12z"/>
+        </svg>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- Interact Prompt (Liquid Glass) — pílula no fundo-centro do ecrã
+     Mensagens: {action:'showInteractPrompt', label, key} | {action:'hideInteractPrompt'} -->
+<!-- ============================================ -->
+<div id="interact-prompt" aria-hidden="true">
+    <div class="ip-card">
+        <div class="ip-key" id="ip-key">E</div>
+        <div class="ip-divider"></div>
+        <div class="ip-text">
+            <div class="ip-label" id="ip-label" data-i18n="app_interact_label_computer">Computador</div>
+            <div class="ip-hint" data-i18n="app_interact_hint">Premir para aceder</div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* Controlador isolado: prompt + ícone 3D flutuante.
+   Independente do app.js — funciona com o OS fechado. */
+(function () {
+    var el    = document.getElementById('interact-prompt');
+    var keyEl = document.getElementById('ip-key');
+    var lblEl = document.getElementById('ip-label');
+    var hintEl = el ? el.querySelector('.ip-hint') : null;
+    var icon  = document.getElementById('world-icon');
+
+    function showPrompt(label, key, hint) {
+        if (!el) return;
+        if (label) lblEl.textContent = label;
+        if (hint && hintEl) hintEl.textContent = hint;
+        keyEl.textContent = (key || 'E').toString().toUpperCase();
+        el.classList.add('ip-show');
+    }
+    function hidePrompt() { if (el) el.classList.remove('ip-show'); }
+
+    function show3DIcon(x, y, scale) {
+        if (!icon) return;
+        // x/y do World3dToScreen2d são fracções (0..1) do viewport
+        var sx = x * window.innerWidth;
+        var sy = y * window.innerHeight;
+        icon.style.left = sx + 'px';
+        icon.style.top  = sy + 'px';
+        icon.style.transform = 'translate(-50%, -50%) scale(' + (scale || 1) + ')';
+        icon.classList.add('wi-show');
+    }
+    function hide3DIcon() { if (icon) icon.classList.remove('wi-show'); }
+
+    window.addEventListener('message', function (ev) {
+        var d = ev.data || {};
+        switch (d.action) {
+            case 'showInteractPrompt': showPrompt(d.label, d.key, d.hint); break;
+            case 'hideInteractPrompt': hidePrompt(); break;
+            case 'show3DIcon': show3DIcon(d.x, d.y, d.scale); break;
+            case 'hide3DIcon': hide3DIcon(); break;
+            case 'open':
+            case 'close':
+                hidePrompt();
+                hide3DIcon();
+                break;
+        }
+    });
+})();
+</script>
+
+<!-- Biblioteca de ícones (deve carregar antes das apps) -->
+<script src="js/icons.js"></script>
+<!-- Apps (carregam-se ANTES do app.js, que faz o registo no arranque) -->
+<script src="js/calculator.js"></script>
+<script src="js/browser.js"></script>
+<script src="js/store.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/clock.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/company.js"></script>
+<script src="js/notes.js"></script>
+<script src="js/reminders.js"></script>
+<!-- Core do sistema operativo -->
+<script src="js/app.js"></script>
+</body>
+</html>

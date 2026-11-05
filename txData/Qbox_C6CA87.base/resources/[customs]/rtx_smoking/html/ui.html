@@ -1,0 +1,257 @@
+<!-- This script was leaked inside at TCHub Website so check that out https://tchub.st/dashboard -->
+
+<head>
+   <meta charset="UTF-8"/>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+   <title>RTX Housing</title>
+   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+   <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+   <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css">
+   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>  
+    <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+ <div class="smoking-root" id="smokingRoot">
+    <div class="smoking-card" id="smokingCard">
+      <div class="card-main">
+        <div class="item-art">
+          <img id="itemIconImage" src="img/vape.png" alt="Item" />
+        </div>
+
+        <div class="item-main">
+          <div class="title-row">
+            <div class="item-title" id="itemTitle">Vape</div>
+          </div>
+
+          <div class="meta-row hidden" id="metaRow">
+            <span class="meta-label" id="metaLabel">Flavor</span>
+            <span class="meta-value" id="metaValue">Not selected</span>
+          </div>
+
+          <div class="progress-stack" id="progressStack"></div>
+        </div>
+      </div>
+
+      <div class="actions-grid" id="mainActions"></div>
+    </div>
+  </div>
+
+  <div class="overlay-root hidden" id="selectionModal">
+    <div class="overlay-backdrop" data-close-overlay></div>
+    <div class="overlay-card compact-menu">
+      <div class="overlay-top">
+        <div>
+          <div class="overlay-kicker" id="selectionKicker">Settings</div>
+          <div class="overlay-title" id="selectionTitle">Select an option</div>
+          <div class="overlay-subtitle" id="selectionSubtitle">Choose a category or item.</div>
+        </div>
+        <button class="icon-btn" data-close-overlay>✕</button>
+      </div>
+      <div class="selection-grid" id="selectionGrid"></div>
+    </div>
+  </div>
+
+  <div class="overlay-root hidden" id="craftModal">
+    <div class="overlay-backdrop" data-close-craft></div>
+    <div class="overlay-card craft-menu">
+      <div class="overlay-top">
+        <div>
+          <div class="overlay-kicker">Craft</div>
+          <div class="overlay-title" id="craftTitle">Roll a joint</div>
+          <div class="overlay-subtitle" id="craftSubtitle">Choose a filling and roll it.</div>
+        </div>
+        <button class="icon-btn" data-close-craft>✕</button>
+      </div>
+
+      <div class="craft-grid" id="craftGrid"></div>
+
+    </div>
+  </div>
+
+    <div id="rtx-progress-overlay" class="rtx-progress-backdrop">
+      <div class="rtx-progress-card">
+         <div class="rtx-progress-header">
+            <div class="rtx-progress-title">
+               <i id="rtx-progress-icon" class="fa-solid fa-spinner"></i>
+               <span id="rtx-progress-title">Progress</span>
+            </div>
+         </div>
+         <div class="rtx-progress-label" id="rtx-progress-label">Lockpicking...</div>
+         <div class="rtx-progress-bar">
+            <div id="rtx-progress-inner" class="rtx-progress-bar-inner"></div>
+         </div>
+         <div class="rtx-progress-footer">
+            <span id="rtx-progress-percent" class="rtx-progress-percent">0%</span>
+         </div>
+      </div>
+   </div> 
+
+    <div id="notify-root">
+      <div id="notify-stack" class="notify-stack"></div>
+   </div>  
+
+  <div id="hookah-ui" class="hookah-root">
+    <aside class="hookah-panel">
+      <div class="hookah-panel-header">
+        <div class="hookah-panel-title"><i class="fa-solid fa-smoking"></i><span>Shisha</span></div>
+        <div id="status-ready-chip" class="hookah-status-chip"><i class="fa-solid fa-circle-dot"></i><span>Preparing</span></div>
+      </div>
+
+      <div class="hookah-panel-body">
+        <section class="hookah-status-card">
+          <div class="hookah-status-top">
+            <div class="hookah-status-main">
+              <div class="hookah-status-icon"><i class="fa-solid fa-glass-water"></i></div>
+              <div>
+                <div class="hookah-status-label">Water</div>
+                <div class="hookah-status-sub" id="water-sub">There is no water in the base.</div>
+              </div>
+            </div>
+            <div id="water-badge" class="hookah-mini-badge bad">Empty</div>
+          </div>
+          <div class="hookah-metric-row"><span>Level</span><span id="water-value">0%</span></div>
+          <div class="hookah-bar"><span id="water-bar"></span></div>
+          <div class="hookah-inline-actions">
+            <button id="btn-fill-water" class="hookah-action-btn" title="Requires one water item">
+              <i class="fa-solid fa-glass-water"></i> Add water
+            </button>
+          </div>
+        </section>
+
+        <section class="hookah-status-card">
+          <div class="hookah-status-top">
+            <div class="hookah-status-main">
+              <div class="hookah-status-icon"><i class="fa-solid fa-wheat-awn-circle-exclamation"></i></div>
+              <div>
+                <div class="hookah-status-label-row">
+                  <div class="hookah-status-label">Tobacco</div>
+                  <div id="tobacco-flavor-inline" class="hookah-flavor-inline hide-ui">[Vanille]</div>
+                </div>
+                <div class="hookah-status-sub" id="tobacco-sub">Choose a flavor for the bowl.</div>
+              </div>
+            </div>
+            <div id="tobacco-badge" class="hookah-mini-badge bad">Empty</div>
+          </div>
+          <div class="hookah-metric-row"><span>Amount</span><span id="tobacco-value">0%</span></div>
+          <div class="hookah-bar"><span id="tobacco-bar"></span></div>
+          <div class="hookah-inline-actions">
+            <button id="btn-prepare-bowl" class="hookah-action-btn"><i class="fa-solid fa-leaf"></i> Add flavor</button>
+          </div>
+        </section>
+
+        <section class="hookah-status-card">
+          <div class="hookah-status-top">
+            <div class="hookah-status-main">
+              <div class="hookah-status-icon"><i class="fa-solid fa-fire"></i></div>
+              <div>
+                <div class="hookah-status-label">Coal</div>
+                <div class="hookah-status-sub" id="coal-sub">Light the coal first.</div>
+              </div>
+            </div>
+            <div id="coal-badge" class="hookah-mini-badge bad">Missing</div>
+          </div>
+          <div id="coal-progress-wrap" class="hide-ui">
+            <div class="hookah-metric-row"><span id="coal-progress-label">Heating</span><span id="coal-value">0%</span></div>
+            <div class="hookah-bar"><span id="coal-bar"></span></div>
+          </div>
+          <div class="hookah-inline-actions">
+            <button id="btn-light-coal" class="hookah-action-btn" title="Requires one shisha_charcoal_box and one lighter">
+              <i class="fa-solid fa-fire"></i> Light coal
+            </button>
+            <button id="btn-place-coal" class="hookah-action-btn"><i class="fa-solid fa-bullseye"></i> Place coal</button>
+          </div>
+        </section>
+
+        <section class="hookah-status-card">
+          <div class="hookah-status-top">
+            <div class="hookah-status-main">
+              <div class="hookah-status-icon"><i class="fa-solid fa-link"></i></div>
+              <div>
+                <div class="hookah-status-label">Connected hoses</div>
+                <div class="hookah-status-sub" id="hose-sub">No hose connected yet.</div>
+              </div>
+            </div>
+            <div id="hose-badge" class="hookah-mini-badge neutral">0 / 1</div>
+          </div>
+          <div class="hookah-inline-actions">
+            <button id="btn-connect-hose" class="hookah-action-btn">
+              <i class="fa-solid fa-link"></i> Connect hose
+            </button>
+          </div>
+        </section>
+
+        <div class="hookah-inline-actions">
+          <button id="btn-clean" class="hookah-action-btn ghost">
+            <i class="fa-solid fa-soap"></i> Clean hookah
+          </button>
+
+          <button id="btn-remove" class="hookah-action-btn ghost">
+            <i class="fa-solid fa-trash"></i> Remove hookah
+          </button>  
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="flavor-modal" class="hookah-modal">
+    <div class="hookah-modal-card">
+      <div class="hookah-modal-head">
+        <span><i class="fa-solid fa-leaf" style="color:var(--accent);margin-right:8px"></i>Select tobacco</span>
+        <button id="close-flavor-modal" class="hookah-icon-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="flavor-grid" class="hookah-flavor-grid"></div>
+    </div>
+  </div>
+
+   <div id="pcui-keymap" class="pcui-keymap">
+      <div class="pcui-keymap-card">
+         <div class="pcui-keymap-header">
+            <i id="mapicon" class="fa-solid fa-location-dot pcui-keymap-icon"></i>
+            <span id="pcui-keymap-action" class="pcui-keymap-title">
+            Enter point
+            </span>
+         </div>
+         <ul id="pcui-keymap-list" class="pcui-keymap-list">
+         </ul>
+      </div>
+   </div>
+
+   <div id="pcui-confirm-modal" class="pcui-modal">
+      <div class="pcui-modal-card">
+         <div class="pcui-modal-head">
+            <span id="pcui-confirm-header">Confirm action</span>
+            <button id="pcui-confirm-close" class="pcui-icon-btn">
+            <i class="fa-solid fa-xmark"></i>
+            </button>
+         </div>
+         <div class="pcui-modal-body">
+            <p id="pcui-confirm-text">
+               Do you really want to perform this action?
+            </p>
+         </div>
+         <div class="pcui-modal-footer">
+            <button id="pcui-confirm-cancel" class="pcui-btn pcui-btn-ghost">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Cancel</span>
+            </button>
+            <button id="pcui-confirm-accept" class="pcui-btn pcui-btn-primary">
+            <i class="fa-solid fa-check"></i>
+            <span>Confirm</span>
+            </button>
+         </div>
+      </div>
+   </div> 
+   <div class="infonotify-container" id="infonotifyshow">
+      <div class="infonotifytext">Text</div>
+   </div>
+	<script src="scripts.js"></script>
+	<script src="progress.js"></script>
+	<script src="notify.js"></script>
+	<script src="hookah.js"></script>
+	<script src="modals.js"></script>
+	<script src="sounds.js"></script>
+</body>
+</html>

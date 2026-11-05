@@ -1,0 +1,369 @@
+<div class="w-full h-full flex flex-col relative">
+	<div v-if="CurrentMainPage == 'main'" class="w-full h-full flex flex-col">
+		<div class="w-full h-[3.3%]"></div>
+		<div class="w-full h-[47.4%]" style="background-image: url(/html/images/mainheaderbackground.png); background-size: 100% 100%">
+			<div class="w-full h-[21%] flex items-end">
+				<h2 class="font-['Gilroy-Bold'] text-[3.6vw] ml-[2vw] leading-[100%] gradienttext">{{Locales['rodswiki']}}</h2>
+			</div>
+			<div class="w-full h-[15%] flex items-end">
+				<div class="w-[80%] h-[64%] ml-[2.4vw] flex items-center">
+					<div class="w-[4.2%] h-full">
+						<img src="/html/images/mainrodicon.png" class="w-full h-full" />
+					</div>
+					<h2 class="font-['Gilroy-Regular'] text-[1vw] text-white ml-[0.7vw]">{{Locales['rodsquality']}}</h2>
+				</div>
+			</div>
+			<div class="w-full h-[16%] flex items-end">
+				<div class="w-[80%] h-[59%] ml-[2.4vw] flex items-center">
+					<div class="w-[4.2%] h-full">
+						<img src="/html/images/rodlevelsicon.png" alt="" />
+					</div>
+					<h2 class="font-['Gilroy-Regular'] text-[1vw] text-white ml-[0.7vw]">{{Locales['rodlevel']}}</h2>
+				</div>
+			</div>
+			<div class="w-full h-[16%] flex items-end">
+				<div class="w-[80%] h-[59%] ml-[2.4vw] flex items-center">
+					<div class="w-[4.2%] h-full">
+						<img src="/html/images/catchratesicon.png" alt="" />
+					</div>
+					<h2 class="font-['Gilroy-Regular'] text-[1vw] text-white ml-[0.7vw]">{{Locales['catchrates']}}</h2>
+				</div>
+			</div>
+			<div class="w-full h-[24%] flex items-end">
+				<div class="w-[22.5%] h-[55%] flex items-center justify-end">
+					<div
+						@click="OpenInspect"
+						class="w-[84%] h-full flex items-center cursor-pointer anim-hover-1 justify-center"
+						style="background: linear-gradient(97deg, #5747eb 0%, #6bcce1 100%); border-radius: 0.8vw"
+					>
+						<h2 class="font-['Gilroy-Bold'] text-[1.2vw] text-white">{{Locales['inspectwiki']}}</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="w-full h-[49%] flex items-center justify-between">
+			<div class="w-[33%] h-[88%] flex items-center justify-center" style="background-image: url(/html/images/dailymissionbackground.png); background-size: 100% 100%">
+				<div class="w-[89%] h-[95%] flex flex-col">
+					<div class="w-full h-[15%] flex items-end">
+						<div class="w-full h-[75%] flex">
+							<div class="w-[11%] h-full">
+								<img src="/html/images/dailymissionicon.png" class="w-full h-full" />
+							</div>
+							<div class="w-[60%] h-full flex items-center">
+								<h2 class="font-['Gilroy-Bold'] text-[1vw] ml-[1vw] text-white">{{Locales['dailymissions']}}</h2>
+							</div>
+							<div class="flex-1 flex items-center justify-end">
+								<h2 class="font-['Gilroy-Regular'] text-[0.8vw] font-regular ml-[1vw] text-white/50">{{PlayerInfo.dailymission.remainingtime.toFixed(0)}} {{Locales['hrleft']}}</h2>
+							</div>
+						</div>
+					</div>
+
+					<div class="flex-1 overflow-auto no-scrollbar">
+						<div
+							v-for="data in PlayerDailyMission"
+							class="w-full h-[28%] mt-[1.9vh] flex bg-length[100%_100%]"
+							:style="{backgroundImage : data.complete ? 'url(/html/images/finishprogress.png)' : '', background : data.complete ? 'linear-gradient(97deg, #5747eb 0%, #6bcce1 100%)' : '', borderRadius: '0.7vw', border : data.complete ?  '' : '1px rgba(255, 255, 255, 0.15) solid', backgroundSize: '100% 100%'}"
+						>
+							<div class="w-[79.5%] h-full flex">
+								<div class="w-[8%] h-full"></div>
+								<div class="w-[92%] h-full">
+									<div class="w-full h-[45%] flex items-end">
+										<h2 class="font-['Gilroy-Semibold'] text-[0.82vw] text-white fixtext leading-[100%]" :style="{ textDecoration: data.complete ? 'line-through' : '' }">
+											{{ data.label }}
+										</h2>
+									</div>
+
+									<div class="w-full h-[23%] flex items-end">
+										<div class="w-full h-[55%] rounded-full bg-white/20">
+											<div class="h-full rounded-full" :style="{'width': data.progressbar+'%'}" style="background: linear-gradient(97deg, #5747eb 0%, #6bcce1 100%)"></div>
+										</div>
+									</div>
+									<div class="w-full h-[22%] flex items-end justify-between">
+										<h2 class="font-['Gilroy-Regular'] text-[0.65vw] text-white/50 fixtext leading-[100%]">{{data.RewardXP}}XP</h2>
+										<h2 class="font-['Gilroy-Regular'] text-[0.65vw] text-white/50 fixtext leading-[100%]">{{data.currentCount}}/{{data.Count}}</h2>
+									</div>
+								</div>
+							</div>
+							<div class="w-[16%] h-full flex items-center justify-end">
+								<div v-if="!data.complete" class="w-[45%] h-[30%]" style="background-image: url(/html/images/inactiveicon.png); background-size: 100% 100%"></div>
+								<div v-else class="w-[45%] h-[30%]" style="background-image: url(/html/images/dailymissionicon.png); background-size: 100% 100%"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="w-[29.4%] h-[88%]" style="background-image: url(/html/images/deliverybackground.png); background-size: 100% 100%">
+				<div class="w-full h-[13.5%] flex items-end justify-center">
+					<div class="w-[87%] h-[55%] flex items-center">
+						<div class="w-[10%] h-full">
+							<img src="/html/images/dailyfishicon.png" class="h-full" alt="" />
+						</div>
+						<h2 class="font-['Gilroy-Bold'] text-[1vw] ml-[0.85vw] text-white">Special Deliveries</h2>
+					</div>
+				</div>
+				<div class="w-full h-[79%] flex relative items-end justify-center overflow-hidden">
+					<div class="absolute w-[13%] flex items-center justify-end h-[90%] bottom-0 left-0">
+						<img src="/html/images/lefticon.png" class="h-[10%] mr-[0.9vw] buttonprev" alt="" />
+					</div>
+					<div class="absolute w-[13%] flex items-center justify-end h-[90%] bottom-0 right-0">
+						<img src="/html/images/lefticon.png" class="h-[10%] mr-[0.9vw] buttonnext" style="transform: rotate(180deg)" alt="" />
+					</div>
+					<div class="w-[73%] h-[90%] overflow-hidden" id="deliverieswipers">
+						<div class="w-full h-full swiper-wrapper">
+							<div v-for="data in ConfigDailyDelivery" class="w-full h-full swiper-slide">
+								<div class="w-full h-[33%] flex items-end justify-center relative">
+									<img :src="'/html/images/'+data.name+'.png'" class="absolute" style="max-height: 90%; min-height: 70%; filter: blur(1vw); object-fit: cover" alt="" />
+									<img :src="'/html/images/'+data.name+'.png'" class="z-[2]" style="max-height: 90%; min-height: 70%; object-fit: cover" alt="" />
+								</div>
+								<div class="w-full h-[19%] flex items-end justify-center">
+									<div class="inline-flex h-[50%] flex items-center justify-center rounded-full" :class="data.fishtype+'classbackground'">
+										<h2 :class="data.fishtype+'textcolor'" class="font-['Gilroy-Bold'] text-[0.9vw] pl-[0.5vw] pr-[0.5vw]">{{currencyUnit}} {{data.price}}</h2>
+									</div>
+								</div>
+								<div class="w-full h-[28%] flex items-start justify-center">
+									<h2
+										class="font-['Gilroy-Semibold'] text-[0.85vw] mt-[1vh] text-center text-white pl-[2vw] pr-[2vw] leading-[100%]"
+										v-html="transleteText(data.name, { amount: data.requiredAmount, classname: data.fishtype})"
+									></h2>
+								</div>
+								<div class="w-full h-[15.2%] flex items-center justify-center">
+									<div
+										class="w-[90%] rounded-[1vw] h-full flex items-center justify-center cursor-pointer anim-hover-1"
+										@click="DeliverFish(data.name)"
+										style="background: linear-gradient(97deg, #e700ec 0%, #9382ff 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.24) 100%)"
+									>
+										<h2 v-if="!PlayerInfo.dailydelivery.missions[data.name].complete" class="font-['Gilroy-Bold'] text-[1vw] text-black/60 fixtext pl-[0.5vw] pr-[0.5vw]">
+											{{Locales['deliver']}}
+										</h2>
+										<h2 v-else class="font-['Gilroy-Bold'] text-[1vw] text-black/60 fixtext pl-[0.5vw] pr-[0.5vw]">{{Locales['delivered']}}</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="w-[33%] h-[88%] flex items-center justify-center" style="background-image: url(/html/images/howtofishingbackground.png); background-size: 100% 100%">
+				<div class="w-[88%] h-[89%] flex flex-col justify-between">
+					<div class="w-full h-[12%] flex items-center">
+						<div class="w-[11.5%] h-full">
+							<img src="/html/images/infoicon4.png" class="w-full h-full" alt="" />
+						</div>
+						<h2 class="font-['Gilroy-Bold'] text-[0.8vw] ml-[0.75vw] text-white">{{Locales['howtostart']}}</h2>
+					</div>
+					<div class="w-full h-[82%] flex items-center justify-center">
+						<div class="w-[87%] h-full overflow-auto no-scrollbar">
+							<div class="w-full inline-flex mt-[1.4vh] flex">
+								<div class="w-[5%] h-full relative">
+									<h2 class="text-white text-[1vw] absolute top-0">.</h2>
+								</div>
+								<div class="flex-1 h-full">
+									<h2 class="font-['Gilroy-Semibold'] text-[0.7vw] text-white">{{Locales['youcanfish']}}</h2>
+								</div>
+							</div>
+							<div class="w-full inline-flex mt-[2vh] flex">
+								<div class="w-[5%] h-full relative">
+									<h2 class="text-white text-[1vw] absolute top-0">.</h2>
+								</div>
+								<div class="flex-1 h-full">
+									<h2 class="font-['Gilroy-Semibold'] text-[0.7vw] text-white">{{Locales['forspecific']}}</h2>
+								</div>
+							</div>
+							<div class="w-full inline-flex mt-[2vh] flex">
+								<div class="w-[5%] h-full relative">
+									<h2 class="text-white text-[1vw] absolute top-0">.</h2>
+								</div>
+								<div class="flex-1 h-full">
+									<h2 class="font-['Gilroy-Semibold'] text-[0.7vw] text-white">{{Locales['ifyouwnant']}}</h2>
+								</div>
+							</div>
+							<div class="w-full inline-flex mt-[2vh] flex">
+								<div class="w-[5%] h-full relative">
+									<h2 class="text-white text-[1vw] absolute top-0">.</h2>
+								</div>
+								<div class="flex-1 h-full">
+									<h2 class="font-['Gilroy-Semibold'] text-[0.7vw] text-white">{{Locales['eachsea']}}</h2>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div v-if="CurrentMainPage == 'wiki'" class="w-full h-full flex items-center justify-center absolute">
+		<div class="w-full h-[94%] flex mt-[0.3vh] bg-white/10 rounded-[1vw]" style="border: 2px rgba(255, 255, 255, 0.15) solid">
+			<div class="w-[46%] h-full flex justify-end">
+				<div class="w-[92%] h-full flex flex-wrap content-start">
+					<div class="w-full h-[16%] flex items-center justify-start">
+						<h2 class="font-['Gilroy-Bold'] text-[3.24vw] fixtext gradienttext">{{Locales['rodswiki']}}</h2>
+					</div>
+					<div class="w-full h-[84%] overflow auto no-scrollbar flex flex-wrap items-start content-start justify-between">
+						<div
+							v-for="(data, key, index) in MarketItems"
+							:class="index <= 2 ? '' : 'mt-[1.5vh]', data.classname"
+							@click="ShowWikiItem(data)"
+							class="w-[31%] h-[22%] relative flex items-start justify-center cursor-pointer flex-wrap content-start"
+						>
+							<div class="w-full h-full flex items-center justify-center absolute">
+								<img class="h-[50%]" :src="'/html/images/itemimages/'+data.name+'.png'" alt="" />
+							</div>
+							<div class="w-[90%] h-[20%] flex items-end">
+								<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center">
+									<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white">{{currencyUnit}} {{data.price}}</h2>
+								</div>
+							</div>
+							<div class="w-[90%] h-[55%]"></div>
+							<div class="w-[90%] h-[20%] flex items-end justify-center">
+								<div class="h-[70%] inline-flex bg-black/20 rounded-full flex items-center fixtext">
+									<h2 class="font-['Gilroy-Bold'] text-[0.7vw] pl-[0.5vw] pr-[0.5vw] text-white fixtext">{{data.label}}</h2>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="w-[50%] h-full flex items-center justify-end">
+				<div class="w-[84.5%] h-[89%] flex items-center justify-center bg-white/10 rounded-[1vw]" style="border: 2px rgba(255, 255, 255, 0.15) solid">
+					<div v-if="SelectedShowWikiItem && SelectedShowWikiItem.type == 'rod'" class="w-[86%] h-full">
+						<div class="w-full h-[10%] flex items-center">
+							<h2 class="font-['Gilroy-Bold'] text-[1.85vw] text-white">{{Locales[SelectedShowWikiItem.name]}}</h2>
+						</div>
+						<div class="w-full h-[35%] flex items-center justify-center relative">
+							<div class="inline-flex h-[10%] absolute top-0 bg-black/20 flex items-center justify-start left-0 rounded-full">
+								<h2 class="font-['Gilroy-Bold'] text-[0.85vw] pr-[0.5vw] pl-[0.5vw] text-white">Lv.{{SelectedShowWikiItem.requiredLevel}} {{Locales['rod']}}</h2>
+							</div>
+							<img class="h-[70%]" :src="'/html/images/itemimages/'+SelectedShowWikiItem.name+'.png'" alt="" />
+						</div>
+
+						<div class="w-full h-[7.1%]" style="border-bottom: 7px solid rgba(255, 255, 255, 0.05)"></div>
+
+						<div class="w-full h-[47%] relative">
+							<div class="w-[15%] h-full absolute flex items-center justify-center left-0">
+								<img src="/html/images/lefticon.png" class="h-[8%] z-[2] cursor-pointer anim-hover-1 prevbutton" alt="" />
+							</div>
+							<div class="w-[15%] h-full absolute flex items-center justify-center right-0">
+								<img src="/html/images/lefticon.png" style="transform: rotate(180deg)" class="h-[8%] z-[2] cursor-pointer anim-hover-1 nextbutton" alt="" />
+							</div>
+							<div class="w-full h-[22%] flex items-center">
+								<h2 class="font-['Gilroy-Bold'] text-[1.25vw] text-white">{{Locales['catchrate']}}</h2>
+							</div>
+							<div class="w-full h-[75%] overflow-hidden" id="rateswipers">
+								<div class="swiper-wrapper">
+									<div
+										v-for="(data,index) in SelectedShowWikiItem.catchRate"
+										:key="index"
+										class="swiper-slide h-full flex items-start justify-center overflow-hidden flex-wrap content-start"
+									>
+										<div
+											class="w-[60%] h-[70%] rounded-[0.5vw] flex items-center justify-center relative"
+											:style="{backgroundImage: 'url(/html/images/'+data.class+'background.png)'}"
+											style="background-size: 100% 100%"
+										>
+											<div class="w-full h-[26%] bottom-0 absolute flex justify-center">
+												<div class="w-[60%] h-[45%] flex items-center justify-center">
+													<div class="inline-flex h-full bg-black/20 rounded-full flex items-center justify-center">
+														<h2 class="font-['Gilroy-Bold'] text-[1vw] pl-[0.5vw] pr-[0.5vw] text-white fixtext">{{ data.fishtoshow.label }}</h2>
+													</div>
+												</div>
+											</div>
+											<img style="max-height: 70%" class="h-[30%] mb-[2vh]" :src="'/html/images/itemimages/'+data.fishtoshow.name+'.png'" alt="" />
+										</div>
+										<div class="w-full h-[20%] flex items-end justify-center">
+											<div class="inline-flex h-[80%] rounded-full bg-black/20 flex items-center">
+												<div class="w-[2.5vw] h-full flex items-center justify-center">
+													<img src="/html/images/infoicon.png" class="h-[60%]" alt="" />
+												</div>
+												<h2 class="font-['Gilroy-Bold'] text-[1vw] pr-[0.5vw] text-white fixtext">
+													<h2
+														class="font-['Gilroy-Bold'] text-[1vw] pr-[0.5vw] text-white fixtext"
+														v-html="translate('youcancatch', { change: data.change, classname: data.class })"
+													></h2>
+												</h2>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div v-else-if="SelectedShowWikiItem && SelectedShowWikiItem.type == 'bait'" class="w-[86%] h-full">
+						<div class="w-full h-[10%] flex items-center">
+							<h2 class="font-['Gilroy-Bold'] text-[1.85vw] text-white">{{Locales[SelectedShowWikiItem.name]}}</h2>
+						</div>
+						<div class="w-full h-[35%] flex items-center justify-center relative">
+							<div class="inline-flex h-[10%] absolute top-0 bg-black/20 flex items-center justify-start left-0 rounded-full">
+								<h2 class="font-['Gilroy-Bold'] text-[0.85vw] pr-[0.5vw] pl-[0.5vw] text-white">Lv.{{SelectedShowWikiItem.requiredLevel}} {{Locales['bait']}}</h2>
+							</div>
+							<img class="h-[70%]" :src="'/html/images/itemimages/'+SelectedShowWikiItem.name+'.png'" alt="" />
+						</div>
+
+						<div class="w-full h-[7.1%]" style="border-bottom: 7px solid rgba(255, 255, 255, 0.05)"></div>
+
+						<div class="w-full h-[47%] relative">
+							<div class="w-full h-[22%] flex items-center">
+								<h2 class="font-['Gilroy-Bold'] text-[1.25vw] text-white">{{Locales['baiteffect']}}</h2>
+							</div>
+							<div v-if="SelectedShowWikiItem.baitEffect.length <= 1" class="w-full h-[75%] relative flex items-center justify-center">
+								<img :src="'/html/images/'+SelectedShowWikiItem.name+'effect.png'" class="h-[70%] blur-[0.5vw] absolute mb-[5vh]" alt="" />
+								<img :src="'/html/images/'+SelectedShowWikiItem.name+'effect.png'" class="h-[60%] z-[2] relative mb-[5vh]" alt="" />
+								<div class="w-full h-[15%] absolute bottom-0 flex items-center justify-center">
+									<div :class="SelectedShowWikiItem.classname+'background'" class="inline-flex h-[80%] rounded-full flex items-center justify-center">
+										<h2 v-if="SelectedShowWikiItem.baitEffect[0].value <= 0" class="font-['Gilroy-Bold'] text-[0.85vw] pl-[0.5vw] pr-[0.5vw] text-white">
+											{{Locales['normalspeed']}}
+										</h2>
+										<h2 v-else :class="SelectedShowWikiItem.classname.replace('class', '')+'textcolor'" class="font-['Gilroy-Bold'] text-[0.85vw] pl-[0.5vw] pr-[0.5vw]">
+											%{{SelectedShowWikiItem.baitEffect[0].value}} {{Locales['fasteringame']}}
+										</h2>
+									</div>
+								</div>
+							</div>
+							<div v-else class="w-full h-[75%] relative flex items-start justify-center flex-wrap content-start">
+								<div class="w-[85%] h-[70%] flex items-center justify-between">
+									<div class="w-[40%] h-full flex items-center justify-center relative">
+										<img :src="'/html/images/'+SelectedShowWikiItem.name+'effect.png'" class="h-[95%] blur-[0.5vw] absolute" alt="" />
+										<img :src="'/html/images/'+SelectedShowWikiItem.name+'effect.png'" class="h-[90%] z-[2] relative" alt="" />
+									</div>
+									<div class="w-[40%] h-full flex items-center justify-center relative">
+										<img :src="'/html/images/'+SelectedShowWikiItem.name+'effect2.png'" class="h-[95%] blur-[0.5vw] absolute" alt="" />
+										<img :src="'/html/images/'+SelectedShowWikiItem.name+'effect2.png'" class="h-[90%] z-[2] relative" alt="" />
+									</div>
+								</div>
+								<div class="w-full h-[30%] flex flex-col items-center justify-between">
+									<div
+										v-for="data in SelectedShowWikiItem.baitEffect"
+										:class="SelectedShowWikiItem.classname+'background'"
+										class="inline-flex h-[45%] rounded-full flex items-center justify-center"
+									>
+										<h2
+											v-if="data.type == 'fishcount'"
+											:class="SelectedShowWikiItem.classname.replace('class', '')+'textcolor'"
+											class="font-['Gilroy-Bold'] text-[0.85vw] pl-[0.5vw] pr-[0.5vw]"
+										>
+											%{{data.value}} {{data.fishamount}} {{Locales['fishhook']}}
+										</h2>
+										<h2
+											v-if="data.type == 'speed'"
+											:class="SelectedShowWikiItem.classname.replace('class', '')+'textcolor'"
+											class="font-['Gilroy-Bold'] text-[0.85vw] pl-[0.5vw] pr-[0.5vw]"
+										>
+											%{{data.value}} {{Locales['fasteringame']}}
+										</h2>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="w-full h-full flex flex-wrap content-center items-center justify-center" v-else>
+						<div class="w-full h-[5%] flex items-center justify-center">
+							<img src="/html/images/infoicon2.png" class="h-full" alt="" />
+						</div>
+						<div class="w-full inline-flex flex items-center justify-center">
+							<h2 class="font-['Gilroy-Regular'] text-[0.8vw] pl-[0.5vw] pr-[0.5vw] text-white">{{Locales['seeinformation']}}</h2>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

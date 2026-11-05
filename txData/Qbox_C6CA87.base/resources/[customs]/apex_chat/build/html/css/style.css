@@ -1,0 +1,203 @@
+/*  ─────────────────────────────────────────────────────────────
+    Apex Chat — In-game chat overlay theme
+    Loaded by the FiveM `chat` resource via `chat_theme` in
+    fxmanifest. Re-skins every legacy okok-style class with the
+    Apex blue palette + clean Inter typography.
+    ───────────────────────────────────────────────────────────── */
+
+/*  Fonts/icons come from css/fonts.css + css/fontawesome.min.css, which
+    index.html loads locally. Do NOT re-add a remote @import here: a CSS
+    @import is render-blocking AND serialised (the browser must fetch this
+    file, parse it, then fetch the import, then its font files), which is
+    exactly what stalled the join before. */
+
+:root {
+    --apex-brand:     #1F5EFF;
+    --apex-brandDark: #0048F0;
+    --apex-bg:        #0A0A0B;
+    --apex-bgCard:    #1A1A1B;
+    --apex-bgRaised:  #232325;
+    --apex-bgSidebar: #131314;
+    --apex-border:    #1F1F21;
+    --apex-borderHi:  #2A2A2D;
+    --apex-text:      #F4F4F5;
+    --apex-textSub:   rgba(244, 244, 245, .55);
+    --apex-info:      #4E9CE5;
+    --apex-success:   #34C77B;
+    --apex-warning:   #E5A93C;
+    --apex-error:     #E5564B;
+
+    /* runtime values written by build/client/modules/visibility.lua */
+    --apex-visibility-mode: when-message;
+    --apex-hide-ms:         8000ms;
+    --apex-inactive-ms:     10000ms;
+}
+
+* { font-family: 'Inter', system-ui, sans-serif; }
+
+.chat-window {
+    position: absolute;
+    top: 2.5%;
+    left: 2.055%;
+    width: 38%;
+    height: 33.3% !important;
+    max-width: 27.5%;
+    background-color: transparent !important;
+}
+
+.msg {
+    color: var(--apex-text);
+    font-size: calc(1.7vh);
+    line-height: calc(2.6vh * 1.2);
+    margin-bottom: 0.7%;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .35));
+}
+
+.chat-messages { margin: 0; height: 100%; }
+
+.chat-message {
+    display: block !important;
+    padding: 8px 12px;
+    border-radius: 10px;
+    width: 75.6%;
+    overflow: hidden;
+    word-break: break-word;
+    box-sizing: border-box;
+    border: 1px solid var(--apex-border);
+    background: rgba(26, 26, 27, .9);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+    line-height: 1.25;
+    backdrop-filter: blur(2px);
+}
+
+.chat-message div { line-height: 1.25 !important; }
+
+.message {
+    margin-top: 4px;
+    font-weight: 400;
+    color: var(--apex-text);
+}
+
+.time {
+    margin-left: 6px;
+    font-size: calc(1.2vh);
+    color: var(--apex-textSub);
+}
+
+.msg > span > span > b {
+    font-weight: 700;
+    vertical-align: baseline;
+    padding-right: 8px;
+    line-height: 1;
+    font-size: calc(2.3vh);
+    color: var(--apex-text);
+}
+.msg > span > span > span { vertical-align: baseline; }
+.msg i:first-of-type { font-style: normal; color: #fff; }
+
+/* ───────── Input ───────── */
+.chat-input {
+    font-size: 1.65vh;
+    position: absolute;
+    top: 37%;
+    left: 2.055%;
+    width: 38%;
+    max-width: 20.8%;
+    box-sizing: border-box;
+}
+.chat-input > div.input {
+    background: rgba(10, 10, 11, .92);
+    border: 1px solid var(--apex-border);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+}
+.chat-input .prefix {
+    height: 100%;
+    vertical-align: middle;
+    padding-left: .5vh;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--apex-brand);
+    display: inline-block;
+}
+.input  { align-items: center; }
+.prefix { line-height: 3.80vh !important; }
+
+textarea {
+    resize: none;
+    font-size: calc(2vh);
+    color: var(--apex-text);
+    line-height: 1.85vh !important;
+    padding-top: 3%;
+}
+
+.multiline { margin-left: 0; text-indent: 0; }
+
+.suggestions {
+    margin-top: .9%;
+    list-style-type: none;
+    padding: .9%;
+    padding-left: 6.54%;
+    font-size: calc(1.6vh);
+    box-sizing: border-box;
+    color: #fff;
+    background: rgba(31, 94, 255, .92);
+    border-radius: 10px;
+    border: 1px solid var(--apex-brandDark);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+.suggestion { font-size: calc(1.7vh); margin-bottom: .5px; }
+
+/* ───────── Per-channel skins ───────── */
+.staff       { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(52,199,123,.55) 100%); border-color: rgba(52,199,123,.3); }
+.staffonly   { background: rgba(35,35,37,.94); border-color: rgba(255,255,255,.08); }
+.server-msg  { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(229,86,75,.55)  100%); border-color: rgba(229,86,75,.3); }
+.twitch      { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(156,112,222,.55) 100%); border-color: rgba(156,112,222,.3); }
+.youtube     { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(255,48,48,.5)   100%); border-color: rgba(255,48,48,.3); }
+.twitter     { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(201,205,209,.42) 100%); border-color: rgba(201,205,209,.3); }
+.system      { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(229,169,60,.55) 100%); border-color: rgba(229,169,60,.3); }
+.advertisement { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(52,199,123,.5) 100%); border-color: rgba(52,199,123,.3); }
+.police      { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(31,94,255,.55)  100%); border-color: rgba(31,94,255,.3); }
+.ambulance   { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(229,169,60,.55) 100%); border-color: rgba(229,169,60,.3); }
+.ooc         { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(244,244,245,.18) 100%); border-color: rgba(244,244,245,.08); }
+.anonymous   { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(19,19,20,.95)   100%); border-color: rgba(255,255,255,.05); }
+.jobchat     { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(78,156,229,.55) 100%); border-color: rgba(78,156,229,.3); }
+.muted       { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(229,169,60,.55) 100%); border-color: rgba(229,169,60,.3); }
+.pm          { background: linear-gradient(90deg, rgba(26,26,27,.92) 0%, rgba(31,94,255,.45)  100%); border-color: rgba(31,94,255,.3); }
+
+/* ───────── Icon chips ───────── */
+.fa-shield-alt        { color: #fff; background: var(--apex-success); padding: 5px; border-radius: 6px; }
+.fa-eye-slash         { color: #fff; background: var(--apex-bgRaised); padding: 5px; border-radius: 6px; }
+.fa-exclamation-circle{ color: #fff; background: var(--apex-error);   padding: 5px; border-radius: 6px; }
+.fa-twitch            { color: #fff; background: #9c70de;             padding: 5px; border-radius: 6px; }
+.fa-youtube           { color: #fff; background: #ff3030;             padding: 5px; border-radius: 6px; }
+.fa-twitter,
+.fa-x-twitter         { color: #fff; background: #000;               padding: 5px; border-radius: 6px; }
+.fa-cog               { color: #fff; background: var(--apex-warning); padding: 5px; border-radius: 6px; }
+.fa-ad                { color: #fff; background: var(--apex-success); padding: 5px; border-radius: 6px; }
+.fa-bullhorn          { color: #fff; background: var(--apex-brand);   padding: 5px; border-radius: 6px; }
+.fa-ambulance         { color: #fff; background: var(--apex-warning); padding: 5px; border-radius: 6px; }
+.fa-door-open         { color: #fff; background: var(--apex-textSub); padding: 5px; border-radius: 6px; }
+.fa-mask              { color: #fff; background: var(--apex-bgSidebar); padding: 5px; border-radius: 6px; }
+.fa-briefcase         { color: #fff; background: var(--apex-info);    padding: 5px; border-radius: 6px; }
+.fa-gavel             { color: #fff; background: var(--apex-warning); padding: 5px; border-radius: 6px; }
+.fa-comment           { color: #fff; background: var(--apex-brand);   padding: 5px; border-radius: 6px; }
+.fa-bolt              { color: #fff; background: var(--apex-brand);   padding: 5px; border-radius: 6px; }
+
+/* ───────── Visibility — auto fade in `when-message` mode ───────── */
+@keyframes apex-fade-out {
+    0%   { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-2px); }
+}
+.chat-message {
+    animation: apex-fade-out var(--apex-hide-ms, 8000ms) linear forwards;
+    animation-play-state: running;
+}
+/* In `always` mode the variable is overridden to keep messages on screen. */
+:root[style*="--apex-visibility-mode: always"] .chat-message { animation: none; opacity: 1 !important; }
+
+/* ───────── Auto-remove for custom commands tagged data-auto ───────── */
+.apex-custom[data-auto] {
+    animation: apex-fade-out attr(data-auto ms, 30000ms) linear forwards;
+}

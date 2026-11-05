@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>APEX LOADING: Creator</title>
+  <link rel="stylesheet" href="css/load.css?v=17">
+  <link rel="stylesheet" href="css/creator.css?v=17">
+  <script>
+    // dev-only: outside CEF, surface JS errors on screen for the harness
+    window.onerror = function (m, s, l) {
+      if (window.invokeNative) return;
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;left:8px;top:8px;z-index:9999;background:#7A0E2C;color:#fff;' +
+        'font:12px monospace;padding:4px 10px;border-radius:6px;';
+      d.textContent = 'ERR ' + m + ' @ ' + (s || '').split('/').pop() + ':' + l;
+      document.body.appendChild(d);
+    };
+  </script>
+</head>
+<body>
+  <div id="screen"></div>
+  <div id="enterHint" hidden><b>PRESS ENTER TO JOIN</b></div>
+
+  <script src="js/icons.js?v=17"></script>
+  <script src="js/theme.js?v=17"></script>
+  <script src="js/store.js?v=17"></script>
+  <script src="js/mock.js?v=17"></script>
+  <script src="js/progress.js?v=17"></script>
+  <script src="js/yt.js?v=17"></script>
+  <script src="js/music.js?v=17"></script>
+  <script src="js/bg.js?v=17"></script>
+  <script src="js/widgets.js?v=17"></script>
+  <script src="js/ai.js?v=17"></script>
+  <script src="js/creator.js?v=17"></script>
+</body>
+</html>

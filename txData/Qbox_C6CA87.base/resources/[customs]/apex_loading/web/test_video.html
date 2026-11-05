@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+<video id="v" autoplay muted playsinline src="media/chicago.video.mp4"></video>
+<script>
+const v = document.getElementById('v');
+v.onloadeddata = () => console.log('EVENT: LOADEDDATA');
+v.oncanplay = () => console.log('EVENT: CANPLAY');
+v.onerror = (e) => console.log('EVENT: ERROR', v.error && v.error.message, v.error && v.error.code);
+</script>
+</body>
+</html>

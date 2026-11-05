@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Apex Chat</title>
+    <!-- Fonts + icons are shipped WITH the resource. Never load them from a
+         CDN: a NUI <link> to fonts.googleapis.com / cdnjs is render-blocking
+         and is fetched while the player is still on the loading screen, so
+         every slow DNS lookup or firewalled client stalls the whole join. -->
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/fontawesome.min.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/bubbles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     3D HEAD BUBBLES — fixed-position absolute layer
+     ═══════════════════════════════════════════════════════════ -->
+<div id="apex-bubble-layer" class="apex-bubble-layer" aria-hidden="true"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LIVE CHAT WINDOW (fully custom, ox-style)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="apex-chat" class="apex-chat is-pos-top-left" data-open="false" data-vis="when-message" data-size="medium">
+    <div class="ac-head">
+        <div class="ac-head-left">
+            <div class="ac-head-title">
+                <span class="ac-head-badge" id="ac-head-badge"><i class="fas fa-globe"></i></span>
+                <span class="ac-head-name" id="ac-head-name">GLOBAL</span>
+            </div>
+            <div class="ac-quickchats" id="ac-quickchats"></div>
+        </div>
+        <div class="ac-actions">
+            <button class="ac-iconbtn" data-open="settings" title="Settings"><i class="fas fa-gear"></i></button>
+        </div>
+    </div>
+    <div class="ac-feed" id="ac-feed"></div>
+    <div class="ac-inputwrap" id="ac-inputwrap">
+        <div class="ac-hiddenbar" id="ac-hiddenbar" hidden>
+            <i class="fas fa-eye-slash"></i>
+            <span>Chat hidden — messages are paused. Type <kbd>/hide</kbd> to bring it back.</span>
+        </div>
+        <div class="ac-suggest" id="ac-suggest" hidden></div>
+        <div class="ac-suggest ac-mention" id="ac-mention" hidden></div>
+        <div class="ac-typing" id="ac-typing" hidden>
+            <span class="ac-typing-dots"><i></i><i></i><i></i></span>
+            <span id="ac-typing-text"></span>
+        </div>
+        <div class="ac-replybar" id="ac-replybar" hidden>
+            <i class="fas fa-reply"></i>
+            <div>
+                <strong id="ac-reply-name">Reply</strong>
+                <span id="ac-reply-text"></span>
+            </div>
+            <button id="ac-reply-cancel" type="button" title="Cancel reply"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="ac-inputrow">
+            <div class="ac-channel" id="ac-channel">
+                <button class="ac-prefix" id="ac-prefix" type="button"><i class="fas fa-globe"></i><span>GLOBAL</span><i class="fas fa-chevron-down ac-chev"></i></button>
+                <div class="ac-channel-menu" id="ac-channel-menu" hidden></div>
+            </div>
+            <input id="ac-field" type="text" maxlength="300" autocomplete="off" spellcheck="false" placeholder="Type a message…">
+            <div class="ac-tools" id="ac-tools">
+                <button class="ac-tool" data-tool="emoji" title="Emoji"><i class="far fa-face-smile"></i></button>
+                <button class="ac-tool" data-tool="giphy" title="GIF"><i class="fas fa-photo-film"></i></button>
+                <button class="ac-tool" data-tool="gif"   title="In-game photo"><i class="fas fa-camera"></i></button>
+                <button class="ac-tool" data-open="settings" title="Settings"><i class="fas fa-gear"></i></button>
+            </div>
+            <span class="ac-counter" id="ac-counter"></span>
+            <button class="ac-send" id="ac-send" type="button" title="Send message"><i class="fas fa-paper-plane"></i></button>
+            <div class="ac-pop" id="ac-pop" hidden></div>
+        </div>
+        <div class="ac-hint">
+            <span><kbd>Enter</kbd> send</span>
+            <span><kbd>Tab</kbd> switch channel</span>
+            <span><kbd>↑</kbd> history</span>
+            <span><kbd>Esc</kbd> close</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PHOTO FRAMING OVERLAY — custom control bar shown while the player
+     aims the camera before a chat photo (replaces the native GTA help).
+     Passive (pointer-events:none) so the mouse still moves the camera.
+     ═══════════════════════════════════════════════════════════ -->
+<div id="ac-photoframe" class="ac-photoframe" hidden>
+    <div class="ac-pf-badge"><i class="fas fa-camera"></i><span>PHOTO MODE</span></div>
+    <div class="ac-pf-bar">
+        <div class="ac-pf-ctrl ac-pf-shoot">
+            <span class="ac-pf-keys"><kbd>ENTER</kbd><span class="ac-pf-or">/</span><kbd><i class="fas fa-computer-mouse"></i></kbd></span>
+            <span class="ac-pf-label">Capture</span>
+        </div>
+        <div class="ac-pf-sep"></div>
+        <div class="ac-pf-ctrl ac-pf-cancel">
+            <span class="ac-pf-keys"><kbd>BACKSPACE</kbd><span class="ac-pf-or">/</span><kbd>ESC</kbd></span>
+            <span class="ac-pf-label">Cancel</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MANAGER OVERLAY (settings / themes / categories)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="apex-overlay" class="apex-overlay" hidden>
+
+    <!-- ─── Chat Settings ─── -->
+    <section id="panel-settings" class="apex-panel" hidden>
+        <header class="apex-panel-head">
+            <div class="apex-title">
+                <i class="fas fa-gear"></i>
+                <h1>CHAT <span class="apex-accent">SETTINGS</span></h1>
+            </div>
+            <div class="apex-head-actions">
+                <label class="apex-toggle apex-admin-toggle" title="Admin mode">
+                    <span class="apex-toggle-label"><i class="fas fa-shield-halved"></i> ADMIN MODE</span>
+                    <input id="opt-admin-mode" type="checkbox">
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span>
+                </label>
+                <button class="apex-icon-btn" data-act="close" aria-label="Close"><i class="fas fa-xmark"></i></button>
+            </div>
+        </header>
+
+        <nav class="apex-tabs" role="tablist">
+            <button class="apex-tab is-active" data-tab="design" data-i18n="tab_design">DESIGN</button>
+            <button class="apex-tab"           data-tab="themes" data-i18n="tab_themes">THEMES</button>
+            <button class="apex-tab"           data-tab="config" data-i18n="tab_config">CONFIGURATION</button>
+            <button class="apex-tab"           data-tab="shortcuts" data-i18n="tab_shortcuts">SHORTCUTS</button>
+            <button class="apex-tab"           data-tab="blocked" data-i18n="tab_blocked">BLOCKED</button>
+            <button class="apex-tab apex-tab-admin" data-tab="tags" data-i18n="tab_tags">TAGS</button>
+            <button class="apex-tab apex-tab-admin" data-tab="categories" data-i18n="tab_categories">CATEGORIES</button>
+        </nav>
+
+        <!-- DESIGN -->
+        <div class="apex-tabbody is-active" data-body="design">
+            <div class="apex-section">
+                <h3 class="apex-section-title">SELECT COLOR</h3>
+                <div id="color-grid" class="color-grid"></div>
+            </div>
+
+            <div class="apex-section">
+                <div class="apex-section-row">
+                    <h3 class="apex-section-title">THEME COLOR MODE</h3>
+                </div>
+                <div class="theme-grid">
+                    <div class="theme-card" data-mode="dark">
+                        <div class="theme-card-head"><strong>DARK MODE</strong><i class="fas fa-check tick"></i></div>
+                        <div class="theme-swatches">
+                            <div class="sw" style="background:#1F5EFF"><span>Main</span></div>
+                            <div class="sw" style="background:#1F1F21"><span>Main</span></div>
+                            <div class="sw" style="background:#2A2A2D"><span>Secondary</span></div>
+                            <div class="sw" style="background:#F4F4F5"><span class="dark">Secondary</span></div>
+                        </div>
+                    </div>
+                    <div class="theme-card" data-mode="light">
+                        <div class="theme-card-head"><strong>WHITE MODE</strong></div>
+                        <div class="theme-swatches">
+                            <div class="sw" style="background:#5B6CFF"><span>Main</span></div>
+                            <div class="sw" style="background:#F4F4F5"><span class="dark">Main</span></div>
+                            <div class="sw" style="background:#E5E7EB"><span class="dark">Secondary</span></div>
+                            <div class="sw" style="background:#0A0A0B"><span>Secondary</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="apex-section">
+                <h3 class="apex-section-title">CHAT SIZE</h3>
+                <div class="size-grid">
+                    <div class="size-card" data-size="small"><div class="size-name">SMALL</div><div class="size-px">23 PX</div></div>
+                    <div class="size-card is-active" data-size="medium"><div class="size-name">MEDIUM</div><div class="size-px">50 PX</div></div>
+                    <div class="size-card" data-size="big"><div class="size-name">BIG</div><div class="size-px">70 PX</div></div>
+                </div>
+            </div>
+
+            <div class="apex-section apex-section-split">
+                <div class="freehand-card">
+                    <div class="freehand-head">
+                        <span class="apex-pill"><i class="fas fa-arrows-up-down-left-right"></i></span>
+                        <div><strong>FREE-HAND MODE</strong><small>Drag &amp; resize freely</small></div>
+                    </div>
+                    <label class="apex-toggle">
+                        <input id="opt-freehand" type="checkbox">
+                        <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span>
+                        <span class="apex-toggle-label">Disabled</span>
+                    </label>
+                </div>
+                <div class="position-card">
+                    <div class="freehand-head">
+                        <span class="apex-pill"><i class="fas fa-table-cells"></i></span>
+                        <div><strong>POSITION</strong><small>Choose chat placement</small></div>
+                    </div>
+                    <div class="position-grid" id="position-grid">
+                        <button data-pos="top-left"      class="pos"><i class="fas fa-arrow-up-long"></i></button>
+                        <button data-pos="top-center"    class="pos"><i class="fas fa-arrow-up"></i></button>
+                        <button data-pos="top-right"     class="pos"><i class="fas fa-arrow-up-long fa-rotate-90"></i></button>
+                        <button data-pos="bottom-left"   class="pos"><i class="fas fa-arrow-down-long"></i></button>
+                        <button data-pos="bottom-center" class="pos"><i class="fas fa-arrow-down"></i></button>
+                        <button data-pos="bottom-right"  class="pos"><i class="fas fa-arrow-down-long fa-rotate-90"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="apex-section">
+                <div class="visibility-head">
+                    <span class="apex-pill"><i class="fas fa-eye"></i></span>
+                    <div><strong>CHAT VISIBILITY MODE</strong><small>Choose when the chat appears</small></div>
+                </div>
+                <div class="visibility-grid">
+                    <div class="vis-card" data-vis="always">
+                        <strong>ALWAYS ON</strong><small>Chat is always visible</small>
+                    </div>
+                    <div class="vis-card is-active" data-vis="when-message">
+                        <strong>WHEN MESSAGE</strong><small>Shows when messages arrive, hides after a few seconds</small>
+                    </div>
+                    <div class="vis-card" data-vis="when-active">
+                        <strong>WHEN ACTIVE</strong><small>Shows when opened, hides after inactivity</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THEMES -->
+        <div class="apex-tabbody" data-body="themes">
+            <div class="apex-section">
+                <h3 class="apex-section-title">CHAT THEME</h3>
+                <div id="design-grid" class="design-grid"></div>
+            </div>
+            <div class="apex-section">
+                <div class="apex-section-row">
+                    <h3 class="apex-section-title">SELECT A COLOR THEME</h3>
+                    <button class="apex-btn apex-btn-primary apex-apply-btn" id="theme-save">
+                        <span class="apply-me">APPLY FOR ME</span>
+                        <span class="apply-all"><i class="fas fa-users"></i> APPLY FOR EVERYONE</span>
+                    </button>
+                </div>
+                <div id="theme-list" class="theme-list"></div>
+            </div>
+            <div class="apex-section">
+                <h3 class="apex-section-title">LIVE PREVIEW</h3>
+                <div id="theme-preview" class="theme-preview"></div>
+            </div>
+        </div>
+
+        <!-- CONFIGURATION -->
+        <div class="apex-tabbody" data-body="config">
+            <div class="apex-section">
+                <h3 class="apex-section-title">FEATURES</h3>
+                <div class="features-grid" id="features-grid"></div>
+            </div>
+
+            <div class="apex-section">
+                <div class="apex-section-row">
+                    <h3 class="apex-section-title">MESSAGE DISPLAY</h3>
+                    <div class="apex-seg apex-seg-sm" id="opt-display-all">
+                        <button type="button" data-all="on">Show all</button>
+                        <button type="button" data-all="off">Hide all</button>
+                    </div>
+                </div>
+                <label class="apex-row"><span>Show message time</span>
+                    <span class="apex-toggle"><input id="opt-showtime" type="checkbox" checked>
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span></label>
+                <label class="apex-row"><span>Show player ID</span>
+                    <span class="apex-toggle"><input id="opt-showid" type="checkbox" checked>
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span></label>
+                <label class="apex-row"><span>Show avatars</span>
+                    <span class="apex-toggle"><input id="opt-showavatars" type="checkbox" checked>
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span></label>
+                <label class="apex-row"><span>Show message tags</span>
+                    <span class="apex-toggle"><input id="opt-showtags" type="checkbox" checked>
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span></label>
+                <label class="apex-row"><span>Highlight my messages</span>
+                    <span class="apex-toggle"><input id="opt-highlightmine" type="checkbox" checked>
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span></label>
+                <div class="apex-row"><span>Font size</span>
+                    <div class="apex-seg" id="opt-fontsize">
+                        <button type="button" data-val="sm">Small</button>
+                        <button type="button" data-val="md" class="is-active">Medium</button>
+                        <button type="button" data-val="lg">Large</button>
+                    </div></div>
+                <div class="apex-row"><span>Density</span>
+                    <div class="apex-seg" id="opt-density">
+                        <button type="button" data-val="cozy" class="is-active">Cozy</button>
+                        <button type="button" data-val="compact">Compact</button>
+                    </div></div>
+            </div>
+
+            <div class="apex-section">
+                <h3 class="apex-section-title">TIMESTAMPS &amp; SOUND</h3>
+                <div class="apex-row"><span>Time format</span>
+                    <div class="apex-seg" id="opt-timeformat">
+                        <button type="button" data-val="24" class="is-active">24h</button>
+                        <button type="button" data-val="12">12h (AM/PM)</button>
+                    </div></div>
+                <label class="apex-row"><span>Sound on new message</span>
+                    <span class="apex-toggle"><input id="opt-sound" type="checkbox">
+                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span></label>
+            </div>
+
+            <div class="apex-section">
+                <h3 class="apex-section-title">MESSAGE LIMITS</h3>
+                <label class="apex-row"><span>Maximum message length</span>
+                    <input id="opt-maxlen" type="number" min="50" max="500" step="10" value="300"></label>
+                <label class="apex-row"><span>Max history messages</span>
+                    <input id="opt-maxhist" type="number" min="0" max="50" step="1" value="10"></label>
+            </div>
+            <div class="apex-section">
+                <h3 class="apex-section-title">HEAD BUBBLES (3D)</h3>
+                <label class="apex-row"><span>Default duration (ms)</span>
+                    <input id="opt-bub-dur" type="number" min="1500" max="20000" step="100" value="8000"></label>
+                <label class="apex-row"><span>Max distance (m)</span>
+                    <input id="opt-bub-dist" type="number" min="10" max="100" step="5" value="50"></label>
+            </div>
+        </div>
+
+        <!-- SHORTCUTS -->
+        <div class="apex-tabbody" data-body="shortcuts">
+            <div class="shortcuts-head">
+                <span class="apex-pill big"><i class="fas fa-keyboard"></i></span>
+                <div><h3>Command Shortcuts</h3>
+                    <small>Create keyboard shortcuts for frequently used commands and execute them instantly</small></div>
+            </div>
+            <button id="add-shortcut" class="apex-add-tile">
+                <i class="fas fa-plus"></i><span>Add New Shortcut</span><small>Press any key combination</small>
+            </button>
+            <div id="shortcut-list" class="shortcut-list"></div>
+            <div class="apex-tip">
+                <i class="fas fa-lightbulb"></i>
+                <div><strong>How it works:</strong>
+                    <ul>
+                        <li>Press your assigned key while chat is open to execute commands</li>
+                        <li>Commands are sent directly as if you typed them manually</li>
+                        <li>Shortcuts work with any FiveM command including custom ones</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLOCKED -->
+        <div class="apex-tabbody" data-body="blocked">
+            <div class="shortcuts-head">
+                <span class="apex-pill big"><i class="fas fa-ban"></i></span>
+                <div><h3>Blocked</h3>
+                    <small>Muted players and chats you've hidden. Unblock them anytime.</small></div>
+            </div>
+            <div class="apex-section">
+                <h3 class="apex-section-title">MUTED USERS</h3>
+                <div id="blocked-users" class="blocked-list"></div>
+            </div>
+            <div class="apex-section">
+                <h3 class="apex-section-title">BLOCKED CHATS</h3>
+                <div id="blocked-chats" class="blocked-list"></div>
+            </div>
+        </div>
+
+        <!-- TAGS -->
+        <div class="apex-tabbody" data-body="tags">
+            <div class="apex-section apex-section-split">
+                <!-- ── Tag editor ── -->
+                <div class="apex-card">
+                    <div class="apex-card-head">
+                        <span class="apex-pill"><i class="fas fa-tag"></i></span>
+                        <div><strong>CREATE / EDIT TAG</strong><small>Fully customizable badge</small></div>
+                    </div>
+                    <div class="apex-card-section">
+                        <div class="apex-color-row three">
+                            <label class="apex-field"><span>TEXT</span><input id="tag-label" type="text" maxlength="24" placeholder="VIP"></label>
+                            <label class="apex-field"><span>COLOR</span><input id="tag-color" type="color" value="#1F5EFF"></label>
+                            <label class="apex-field"><span>TEXT COLOR</span><input id="tag-textcolor" type="color" value="#FFFFFF"></label>
+                        </div>
+                        <div class="apex-color-row three">
+                            <label class="apex-field"><span>FONT AWESOME ICON <em>optional</em></span>
+                                <span class="ac-iconinput"><input id="tag-icon" type="text" placeholder="fas fa-crown"><button type="button" class="ac-iconpick" data-target="tag-icon" title="Pick icon"><i class="fas fa-icons"></i></button></span></label>
+                            <label class="apex-field"><span>STYLE</span>
+                                <select id="tag-style">
+                                    <option value="badge">Badge (icon + text)</option>
+                                    <option value="full">Full (filled pill)</option>
+                                    <option value="text">Text only</option>
+                                    <option value="icon">Icon only</option>
+                                </select>
+                            </label>
+                            <label class="apex-field"><span>PRIORITY</span><input id="tag-priority" type="number" min="0" step="1" value="0"></label>
+                        </div>
+                        <div class="apex-card-sub"><span class="apex-pill sm"><i class="fas fa-eye"></i></span><div><strong>PREVIEW</strong></div></div>
+                        <div id="tag-preview" class="tag-preview"></div>
+                        <div class="tag-editor-actions">
+                            <input type="hidden" id="tag-id">
+                            <button class="apex-btn apex-btn-ghost" id="tag-new"><i class="fas fa-plus"></i> New</button>
+                            <button class="apex-btn apex-btn-primary" id="tag-save"><i class="fas fa-floppy-disk"></i> Save tag</button>
+                        </div>
+                    </div>
+                    <div class="apex-card-section">
+                        <div class="apex-card-sub"><span class="apex-pill sm"><i class="fas fa-tags"></i></span><div><strong>EXISTING TAGS</strong></div></div>
+                        <div id="tag-list" class="tag-list"></div>
+                    </div>
+                </div>
+
+                <!-- ── Player assign ── -->
+                <div class="apex-card">
+                    <div class="apex-card-head">
+                        <span class="apex-pill"><i class="fas fa-user-tag"></i></span>
+                        <div><strong>ASSIGN TO PLAYER</strong><small>Search by RP or Steam name — online or offline</small></div>
+                    </div>
+                    <div class="apex-card-section">
+                        <label class="apex-field"><span>SEARCH PLAYER</span>
+                            <input id="tag-search" type="text" placeholder="RP or Steam name…" autocomplete="off" spellcheck="false">
+                        </label>
+                        <div id="tag-results" class="tag-results"></div>
+                    </div>
+                    <div class="apex-card-section" id="tag-assign-box" hidden>
+                        <div class="apex-card-sub">
+                            <span class="apex-pill sm"><i class="fas fa-id-badge"></i></span>
+                            <div><strong id="tag-assign-name">Player</strong><small id="tag-assign-id"></small></div>
+                        </div>
+                        <div id="tag-assign-current" class="tag-assign-current"></div>
+                        <div class="apex-card-sub"><div><strong>ADD TAG</strong></div></div>
+                        <div id="tag-assign-pool" class="tag-assign-pool"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CATEGORIES (inline manager) -->
+        <div class="apex-tabbody apex-tabbody-wide" data-body="categories">
+            <div class="apex-section-row cc-toolbar">
+                <div class="apex-title sm">
+                    <i class="fas fa-layer-group"></i>
+                    <h3>CATEGORY <span class="apex-accent">MANAGER</span></h3>
+                    <small id="cat-count">0 categories</small>
+                </div>
+                <div class="apex-btn-group">
+                    <button class="apex-btn apex-btn-ghost" id="cat-new"><i class="fas fa-plus"></i> New</button>
+                    <button class="apex-btn apex-btn-primary" id="cat-save"><i class="fas fa-floppy-disk"></i> Save</button>
+                    <button class="apex-btn apex-btn-danger" id="cat-delete"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            </div>
+
+            <div class="apex-split">
+                <aside class="apex-sidebar">
+                    <div class="apex-sidebar-head">
+                        <i class="fas fa-layer-group"></i>
+                        <div><strong>CHAT<br>CATEGORIES</strong><small id="cat-side-count">0 categories</small></div>
+                    </div>
+                    <button id="cat-create-tile" class="apex-side-tile dashed">
+                        <div class="thumb"><i class="fas fa-plus"></i></div>
+                        <div><strong>Create New Category</strong><small>Add a channel with its own rules</small></div>
+                    </button>
+                    <ul id="cat-list" class="cc-list"></ul>
+                </aside>
+
+                <main class="apex-main">
+                    <div class="apex-card">
+                        <div class="apex-card-head">
+                            <span class="apex-pill"><i class="fas fa-sliders"></i></span>
+                            <div><strong>CATEGORY CONFIGURATION</strong><small>Name, command, look, permission, area &amp; visibility</small></div>
+                        </div>
+
+                        <div class="apex-card-section">
+                            <div class="apex-color-row three">
+                                <label class="apex-field"><span>LABEL</span><input id="cat-label" type="text" maxlength="32" placeholder="Global"></label>
+                                <label class="apex-field"><span>COMMAND <em class="req">/cmd</em></span><input id="cat-command" type="text" maxlength="24" placeholder="global"></label>
+                                <label class="apex-field"><span>ENABLED</span>
+                                    <span class="apex-toggle"><input id="cat-enabled" type="checkbox" checked>
+                                    <span class="apex-toggle-track"><span class="apex-toggle-thumb"></span></span></span>
+                                </label>
+                            </div>
+                            <div class="apex-color-row three cc-color-row">
+                                <label class="apex-field"><span>FONT AWESOME ICON</span>
+                                    <span class="ac-iconinput"><input id="cat-icon" type="text" placeholder="fas fa-globe"><button type="button" class="ac-iconpick" data-target="cat-icon" title="Pick icon"><i class="fas fa-icons"></i></button></span></label>
+                                <label class="apex-field"><span>COLOR</span><input id="cat-color" type="color" value="#1F5EFF"></label>
+                                <label class="apex-field"><span>IDENTITY</span>
+                                    <select id="cat-identity">
+                                        <option value="rp">RP name</option>
+                                        <option value="steam">Steam name</option>
+                                        <option value="anon">Anonymous</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label class="apex-field"><span>DISCORD WEBHOOK <em>optional</em></span><input id="cat-webhook" type="url" maxlength="300" placeholder="https://discord.com/api/webhooks/..."></label>
+                        </div>
+
+                        <div class="apex-card-section">
+                            <div class="apex-card-sub">
+                                <span class="apex-pill sm"><i class="fas fa-lock"></i></span>
+                                <div><strong>PERMISSION (who can send)</strong><small>open · job · grade · staff · role</small></div>
+                            </div>
+                            <div class="duration-grid rule-grid">
+                                <div class="dur-card is-active" data-rule="open"><strong>OPEN</strong><small>Anyone can use it</small></div>
+                                <div class="dur-card" data-rule="job"><strong>JOB</strong><small>Specific job(s)</small></div>
+                                <div class="dur-card" data-rule="grade"><strong>GRADE</strong><small>Job + minimum grade</small></div>
+                                <div class="dur-card" data-rule="staff"><strong>STAFF</strong><small>Admin groups</small></div>
+                                <div class="dur-card" data-rule="role"><strong>ROLE</strong><small>ACE / identifiers</small></div>
+                            </div>
+                            <label class="apex-field hidden" id="cat-jobs-field"><span>JOBS (comma separated, empty = sender's own job)</span><input id="cat-jobs" type="text" placeholder="police, sheriff"></label>
+                            <label class="apex-field hidden" id="cat-grade-field"><span>MINIMUM GRADE</span><input id="cat-mingrade" type="number" min="0" step="1" value="0"></label>
+                            <label class="apex-field hidden" id="cat-groups-field"><span>STAFF GROUPS (comma separated, empty = Config.StaffGroups)</span><input id="cat-groups" type="text" placeholder="admin, god"></label>
+                            <label class="apex-field hidden" id="cat-ace-field"><span>ACE PERMISSION</span><input id="cat-ace" type="text" placeholder="chat.vip"></label>
+                            <label class="apex-field hidden" id="cat-idents-field"><span>IDENTIFIERS (comma separated)</span><input id="cat-idents" type="text" placeholder="discord:123, license:abc"></label>
+                        </div>
+
+                        <div class="apex-card-section">
+                            <div class="apex-color-row">
+                                <label class="apex-field"><span>VISIBILITY (who receives)</span>
+                                    <select id="cat-visibility">
+                                        <option value="all">Everyone</option>
+                                        <option value="staff">Staff only</option>
+                                        <option value="sender">Sender only</option>
+                                        <option value="role">Same role</option>
+                                        <option value="job">Same job</option>
+                                    </select>
+                                </label>
+                                <label class="apex-field"><span>AREA RADIUS (m, 0 = global)</span><input id="cat-area" type="number" min="0" step="1" value="0"></label>
+                                <label class="apex-field"><span>ORDER</span><input id="cat-order" type="number" min="0" step="1" value="10"></label>
+                            </div>
+                        </div>
+
+                        <div class="apex-card-section">
+                            <div class="apex-card-sub"><span class="apex-pill sm"><i class="fas fa-eye"></i></span><div><strong>PREVIEW</strong><small>How a message in this channel looks</small></div></div>
+                            <div id="cat-preview" class="cat-preview"></div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <footer class="apex-panel-foot">
+            <button class="apex-btn apex-btn-danger" data-act="reset">RESET DEFAULT</button>
+            <button class="apex-btn apex-btn-primary apex-apply-btn" data-act="save">
+                <span class="apply-me">APPLY FOR ME</span>
+                <span class="apply-all"><i class="fas fa-users"></i> APPLY FOR EVERYONE</span>
+            </button>
+        </footer>
+    </section>
+
+
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/themes.js"></script>
+<script src="js/categories.js"></script>
+<script src="js/tags.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/bubbles.js"></script>
+
+</body>
+</html>
+
