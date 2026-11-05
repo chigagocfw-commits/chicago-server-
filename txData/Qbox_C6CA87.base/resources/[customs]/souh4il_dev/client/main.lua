@@ -48,6 +48,8 @@ end
 
 -- Primary Command & Key Mapping (Default: F10)
 RegisterCommand('sdev_menu', TogglePanel, false)
+RegisterCommand('sdev', TogglePanel, false)
+RegisterCommand('devmenu', TogglePanel, false)
 RegisterKeyMapping('sdev_menu', 'Open SOUH4IL-DEV Control Panel', 'keyboard', 'F10')
 
 -- Diagnostic Status Command
