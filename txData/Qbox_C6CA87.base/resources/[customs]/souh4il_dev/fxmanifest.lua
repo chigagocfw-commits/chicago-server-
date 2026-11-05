@@ -3,9 +3,11 @@ game 'gta5'
 lua54 'yes'
 
 name 'souh4il_dev'
-description 'SOUH4IL-DEV — Professional In-Game Developer Control Panel (Phase 1 Security Core)'
+description 'SOUH4IL-DEV — Professional In-Game Developer Control Panel (CHICAGO ROLEPLAY)'
 author 'SOUH4IL / Antigravity'
 version '1.0.0'
+
+ui_page 'web/index.html'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -31,10 +33,12 @@ client_scripts {
 
 files {
     'config/shared.lua',
+    'web/index.html',
+    'web/css/style.css',
+    'web/js/app.js',
 }
 
 dependencies {
     'ox_lib',
     'oxmysql',
 }
-

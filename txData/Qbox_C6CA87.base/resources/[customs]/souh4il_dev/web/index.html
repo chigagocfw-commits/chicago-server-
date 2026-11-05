@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOUH4IL-DEV — Control Panel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app" class="panel-container" style="display: none;">
+        <!-- Backdrop glow -->
+        <div class="ambient-glow"></div>
+
+        <!-- Main Window -->
+        <div class="panel-window">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polyline points="2 17 12 22 22 17"></polyline>
+                            <polyline points="2 12 12 17 22 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="brand-text">
+                        <h2>SOUH4IL<span>-DEV</span></h2>
+                        <p>CHICAGO ROLEPLAY</p>
+                    </div>
+                </div>
+
+                <!-- User Profile Badge -->
+                <div class="profile-card">
+                    <div class="avatar">
+                        <span>S</span>
+                        <div class="status-indicator online"></div>
+                    </div>
+                    <div class="profile-info">
+                        <span class="profile-name" id="profile-name">SOUH4IL</span>
+                        <span class="profile-badge owner" id="profile-badge">OWNER</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu -->
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-tab="dashboard">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-tab="self">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span>Self Control</span>
+                    </button>
+                    <button class="nav-item" data-tab="players">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>Player Management</span>
+                    </button>
+                    <button class="nav-item" data-tab="vehicles">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H7.5a1 1 0 0 0-.8.4L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3m14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>
+                        <span>Vehicle Control</span>
+                    </button>
+                    <button class="nav-item" data-tab="world">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        <span>World Control</span>
+                    </button>
+                    <button class="nav-item owner-only" data-tab="arsenal" id="nav-arsenal">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18h12"></path><path d="M6 14h12"></path><path d="M10 10l2-6 2 6"></path><path d="M3 21h18"></path></svg>
+                        <span>Owner Arsenal</span>
+                        <span class="nav-lock">★</span>
+                    </button>
+                    <button class="nav-item" data-tab="logs">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span>Security Logs</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <span class="version-tag">CORE v1.0.0</span>
+                    <span class="status-tag">SECURE</span>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content-area">
+                <!-- Topbar -->
+                <header class="topbar">
+                    <div class="breadcrumb">
+                        <span class="crumb-root">SOUH4IL-DEV</span>
+                        <span class="crumb-sep">/</span>
+                        <span class="crumb-active" id="current-tab-title">Dashboard</span>
+                    </div>
+
+                    <div class="topbar-actions">
+                        <div class="telemetry-pill">
+                            <span class="telemetry-label">SECURITY:</span>
+                            <span class="telemetry-value active">DUAL-KEY ACTIVE</span>
+                        </div>
+                        <div class="telemetry-pill">
+                            <span class="telemetry-label">SERVER:</span>
+                            <span class="telemetry-value">ONLINE</span>
+                        </div>
+                        <button class="close-btn" id="close-btn" title="Close Panel (ESC)">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Dynamic Tab Views -->
+                <div class="tab-content">
+                    <!-- Tab: Dashboard -->
+                    <section class="tab-pane active" id="pane-dashboard">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <span>SYSTEM STATUS</span>
+                                    <div class="metric-icon cyan">●</div>
+                                </div>
+                                <div class="metric-body">
+                                    <h3>OPERATIONAL</h3>
+                                    <p>Security Core Active</p>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <span>VERIFIED ROLE</span>
+                                    <div class="metric-icon blue">★</div>
+                                </div>
+                                <div class="metric-body">
+                                    <h3 id="dash-role">OWNER</h3>
+                                    <p id="dash-auth">Dual-Key Confirmed</p>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <span>RATE LIMITER</span>
+                                    <div class="metric-icon green">⚡</div>
+                                </div>
+                                <div class="metric-body">
+                                    <h3>FAIL-CLOSED</h3>
+                                    <p>Monotonic (GetGameTimer)</p>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <span>AUDIT ENGINE</span>
+                                    <div class="metric-icon purple">🔒</div>
+                                </div>
+                                <div class="metric-body">
+                                    <h3>APPEND-ONLY</h3>
+                                    <p>SHA-256 Hash Chained</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>QUICK ACTIONS</h4>
+                                <span>Immediate Personal Controls</span>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="action-btn" id="qa-revive">
+                                    <span class="btn-icon">✚</span>
+                                    <span class="btn-text">Revive Self</span>
+                                </button>
+                                <button class="action-btn" id="qa-heal">
+                                    <span class="btn-icon">♥</span>
+                                    <span class="btn-text">Heal & Feed</span>
+                                </button>
+                                <button class="action-btn" id="qa-repair">
+                                    <span class="btn-icon">🔧</span>
+                                    <span class="btn-text">Repair Vehicle</span>
+                                </button>
+                                <button class="action-btn" id="qa-clean">
+                                    <span class="btn-icon">✨</span>
+                                    <span class="btn-text">Clean Vehicle</span>
+                                </button>
+                                <button class="action-btn" id="qa-tpm">
+                                    <span class="btn-icon">📍</span>
+                                    <span class="btn-text">TP to Marker</span>
+                                </button>
+                                <button class="action-btn danger" id="qa-dv">
+                                    <span class="btn-icon">🗑</span>
+                                    <span class="btn-text">Delete Vehicle</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- System Status Overview -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>SECURITY CORE HEALTH</h4>
+                                <span>Real-time Environment State</span>
+                            </div>
+                            <div class="status-table">
+                                <div class="status-row">
+                                    <span class="row-label">Platform Framework</span>
+                                    <span class="row-val">Qbox (qbx_core v1.24.0)</span>
+                                </div>
+                                <div class="status-row">
+                                    <span class="row-label">Primary Key Binding</span>
+                                    <span class="row-val highlight">F10 (Default) or /sdev_menu</span>
+                                </div>
+                                <div class="status-row">
+                                    <span class="row-label">Canonical Identity Protection</span>
+                                    <span class="row-val success">ENFORCED (Masked in Frontend)</span>
+                                </div>
+                                <div class="status-row">
+                                    <span class="row-label">Legacy snipe-menu Status</span>
+                                    <span class="row-val">Active Coexistence (Zero Interference)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Self Control -->
+                    <section class="tab-pane" id="pane-self">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CHARACTER CONTROL</h4>
+                                <span>Personal State Adjustments</span>
+                            </div>
+                            <div class="toggles-grid">
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">God Mode</span>
+                                        <span class="toggle-desc">Invulnerability & Damage Protection</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-godmode">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Invisibility</span>
+                                        <span class="toggle-desc">Hide ped from network players</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-invis">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">NoClip Engine</span>
+                                        <span class="toggle-desc">Freecam translation & collision bypass</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-noclip">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Player Management -->
+                    <section class="tab-pane" id="pane-players">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>PLAYER ROSTER</h4>
+                                <input type="text" id="player-search" class="search-input" placeholder="Search by ID, Name or CitizenID...">
+                            </div>
+                            <div class="players-table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Ping</th>
+                                            <th>Job</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="player-table-body">
+                                        <tr>
+                                            <td colspan="5" class="table-empty">Loading active players...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Vehicles -->
+                    <section class="tab-pane" id="pane-vehicles">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>VEHICLE SPAWNER</h4>
+                                <span>Server-authoritative spawn with key injection</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="veh-model-input" class="search-input" placeholder="Enter vehicle spawn model (e.g. sultan, a19police)...">
+                                <button class="primary-btn" id="btn-spawn-veh">Spawn Vehicle</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: World -->
+                    <section class="tab-pane" id="pane-world">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>WEATHER & ENVIRONMENT</h4>
+                                <span>Renewed-Weathersync Synchronizer</span>
+                            </div>
+                            <div class="weather-grid">
+                                <button class="weather-btn" data-weather="EXTRASUNNY">Extra Sunny</button>
+                                <button class="weather-btn" data-weather="CLEAR">Clear</button>
+                                <button class="weather-btn" data-weather="CLOUDS">Cloudy</button>
+                                <button class="weather-btn" data-weather="RAIN">Rain</button>
+                                <button class="weather-btn" data-weather="THUNDER">Thunder</button>
+                                <button class="weather-btn" data-weather="FOGGY">Foggy</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Owner Arsenal -->
+                    <section class="tab-pane" id="pane-arsenal">
+                        <div class="section-card restricted">
+                            <div class="section-header">
+                                <div class="restricted-badge">★ OWNER ONLY</div>
+                                <h4>OWNER ARSENAL</h4>
+                                <span>Curated Tactical Loadouts & Custom Equipment</span>
+                            </div>
+                            <p class="restricted-notice">Protected by Dual-Key Mandatory Gate. Access strictly verified server-side.</p>
+                            <div class="arsenal-grid">
+                                <div class="loadout-card">
+                                    <h5>SWAT TACTICAL</h5>
+                                    <p>Carbine Rifle + Combat Pistol + Kevlar</p>
+                                    <button class="primary-btn loadout-btn" data-loadout="swat_tactical">Request Loadout</button>
+                                </div>
+                                <div class="loadout-card">
+                                    <h5>COVERT INFILTRATOR</h5>
+                                    <p>Silenced SMG + Heavy Pistol + Flashbang</p>
+                                    <button class="primary-btn loadout-btn" data-loadout="covert">Request Loadout</button>
+                                </div>
+                                <div class="loadout-card">
+                                    <h5>OWNER SPECIAL</h5>
+                                    <p>Special Carbine + Heavy Revolver + Full Gear</p>
+                                    <button class="primary-btn loadout-btn" data-loadout="owner_special">Request Loadout</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Security Logs -->
+                    <section class="tab-pane" id="pane-logs">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>APPEND-ONLY AUDIT LOGS</h4>
+                                <button class="secondary-btn" id="btn-refresh-logs">Refresh Logs</button>
+                            </div>
+                            <div class="logs-container" id="logs-container">
+                                <div class="log-entry">Loading secure audit chain...</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+
