@@ -165,7 +165,14 @@ plyState:set('canUseWeapons', false, false)
 
 local function GetProfilePicture()
 	if Prism.ProfileType == 'mugshot' then
-		return exports['MugShotBase64']:GetMugShotBase64(cache.ped, false)
+		local ped = (cache.ped and cache.ped ~= 0) and cache.ped or PlayerPedId()
+		if exports['MugShotBase64'] then
+			local ok, res = pcall(function()
+				return exports['MugShotBase64']:GetMugShotBase64(ped, false)
+			end)
+			if ok and res then return res end
+		end
+		return ''
 	else
 		local result = lib.callback.await('ox_inventory:GetProfilePicture', false)
 		return result
