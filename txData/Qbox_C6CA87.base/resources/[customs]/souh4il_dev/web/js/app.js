@@ -312,6 +312,8 @@ window.addEventListener('message', (event) => {
             if (badge) badge.innerText = `${allServerCharacters.length} PEDS`;
             const query = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
             renderVisualCharacters(query);
+            const inlineQuery = document.getElementById('manage-inline-ped-search')?.value || '';
+            renderManageInlinePedGrid(inlineQuery);
         }
     } else if (data.action === 'updateAllJobs') {
         if (data.jobs && Array.isArray(data.jobs) && data.jobs.length > 0) {
@@ -458,8 +460,8 @@ function updateSecurityStatus(status) {
             return;
         }
 
-        // Check if user has permission for this module
-        const hasPerm = perms[tab] === true;
+        // Check if user has permission for this module ('manage' shares 'players' permission)
+        const hasPerm = (tab === 'manage') ? (perms['players'] === true || perms['manage'] === true) : (perms[tab] === true);
         btn.style.display = hasPerm ? '' : 'none';
         if (currentTab === tab && hasPerm) {
             activeTabVisible = true;
@@ -495,6 +497,18 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             postNUI('fetchLogs');
         } else if (tab === 'players' || tab === 'teleport') {
             postNUI('fetchPlayers');
+        } else if (tab === 'manage') {
+            postNUI('fetchPlayers');
+            if (!allServerCharacters || allServerCharacters.length === 0) postNUI('fetchAllCharacters');
+            if (!allServerVehicles || allServerVehicles.length === 0) postNUI('fetchAllVehicles');
+            renderManagePlayerSelectorStrip('');
+            renderManageInlinePedGrid('');
+            const curTarget = document.getElementById('manage-target-id')?.value;
+            if (!curTarget && onlinePlayersCache && onlinePlayersCache.length > 0) {
+                selectManageTargetPlayer(onlinePlayersCache[0].id, onlinePlayersCache[0].name);
+            } else if (curTarget) {
+                postNUI('playerDetailedAction', { action: 'get_details', targetId: curTarget });
+            }
         } else if (tab === 'items') {
             const query = document.getElementById('item-search-input')?.value.toLowerCase().trim() || '';
             renderVisualItems(query);
@@ -686,7 +700,11 @@ document.getElementById('btn-unban-player')?.addEventListener('click', () => {
     if (query) postNUI('playerDetailedAction', { action: 'unban', identifier: query });
 });
 
-// Teleport Destinations
+// Teleport Destinations & Map Waypoint
+document.getElementById('btn-tp-waypoint')?.addEventListener('click', () => {
+    postNUI('teleportWaypoint');
+});
+
 document.querySelectorAll('.teleport-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const loc = btn.getAttribute('data-loc');
@@ -1543,6 +1561,13 @@ function renderPlayers(players) {
     if (countElem) countElem.innerText = onlinePlayersCache.length;
     filterPlayers('');
     filterTeleportPlayers('');
+    renderManagePlayerSelectorStrip(document.getElementById('manage-player-quicksearch')?.value || '');
+
+    // Auto-select first online player in Manage tab if none selected yet
+    const curTarget = document.getElementById('manage-target-id')?.value;
+    if (!curTarget && onlinePlayersCache.length > 0) {
+        selectManageTargetPlayer(onlinePlayersCache[0].id, onlinePlayersCache[0].name);
+    }
 }
 
 function filterPlayers(query) {
@@ -1691,39 +1716,105 @@ document.getElementById('btn-confirm-job')?.addEventListener('click', () => {
     document.getElementById('job-modal').style.display = 'none';
 });
 
-// Master Player Manage Modal
-window.openPlayerManageModal = function(targetId, name) {
-    const modal = document.getElementById('player-manage-modal');
-    document.getElementById('manage-target-id').value = targetId;
-    document.getElementById('manage-target-name').value = name;
-    document.getElementById('manage-target-info').innerText = `TARGET: [#${targetId}] ${name}`;
-    modal.style.display = 'flex';
+// Dedicated Manage Player Full-Page Tab & Live Switcher
+window.refreshManagePlayersBar = function() {
+    postNUI('fetchPlayers');
+    const curTarget = document.getElementById('manage-target-id')?.value;
+    if (curTarget) {
+        postNUI('playerDetailedAction', { action: 'get_details', targetId: curTarget });
+    }
 };
 
-document.getElementById('manage-modal-close')?.addEventListener('click', () => {
-    document.getElementById('player-manage-modal').style.display = 'none';
-});
-document.getElementById('manage-modal-close-btn')?.addEventListener('click', () => {
-    document.getElementById('player-manage-modal').style.display = 'none';
+function renderManagePlayerSelectorStrip(searchQuery = '') {
+    const strip = document.getElementById('manage-online-pills-strip');
+    const topSelect = document.getElementById('manage-top-player-select');
+    const curTargetId = document.getElementById('manage-target-id')?.value;
+    const q = (searchQuery || '').toLowerCase().trim();
+
+    if (topSelect) {
+        topSelect.innerHTML = '<option value="">-- Choisir un joueur en ligne --</option>';
+        onlinePlayersCache.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.dataset.name = p.name;
+            opt.innerText = `#${p.id} — ${p.name} (${p.charName || p.job || 'Player'})`;
+            if (String(p.id) === String(curTargetId)) opt.selected = true;
+            topSelect.appendChild(opt);
+        });
+    }
+
+    if (!strip) return;
+
+    const filtered = onlinePlayersCache.filter(p => {
+        if (!q) return true;
+        return (
+            String(p.id).includes(q) ||
+            (p.name || '').toLowerCase().includes(q) ||
+            (p.charName || '').toLowerCase().includes(q) ||
+            (p.job || '').toLowerCase().includes(q)
+        );
+    });
+
+    if (filtered.length === 0) {
+        strip.innerHTML = '<div style="font-size: 0.78rem; color: var(--text-muted); padding: 6px 10px;">Aucun joueur correspondant en ligne.</div>';
+        return;
+    }
+
+    strip.innerHTML = filtered.map(p => {
+        const isActive = String(p.id) === String(curTargetId);
+        const initials = (p.name || 'P').substring(0, 2).toUpperCase();
+        return `
+            <button type="button" class="manage-player-pill ${isActive ? 'active' : ''}" onclick="selectManageTargetPlayer(${p.id}, '${escapeHtml(p.name)}')">
+                <div class="manage-pill-avatar">${escapeHtml(initials)}</div>
+                <div class="manage-pill-info">
+                    <span class="manage-pill-name">#${p.id} ${escapeHtml(p.name)}</span>
+                    <span class="manage-pill-sub">${escapeHtml(p.charName || 'Citoyen')} • ${escapeHtml(p.job || 'unemployed')}</span>
+                </div>
+            </button>
+        `;
+    }).join('');
+}
+
+document.getElementById('manage-player-quicksearch')?.addEventListener('input', (e) => {
+    renderManagePlayerSelectorStrip(e.target.value);
 });
 
-window.openPlayerManageModal = function(targetId, targetName) {
-    const modal = document.getElementById('player-manage-modal');
-    if (!modal) return;
+document.getElementById('manage-top-player-select')?.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (!val) return;
+    const found = onlinePlayersCache.find(p => String(p.id) === String(val));
+    selectManageTargetPlayer(val, found ? found.name : `Player #${val}`);
+});
 
-    document.getElementById('manage-target-id').value = targetId;
-    document.getElementById('manage-target-name').value = targetName;
-    document.getElementById('manage-target-name-display').innerText = targetName;
-    document.getElementById('manage-target-id-badge').innerText = `ID: #${targetId}`;
-    document.getElementById('manage-target-avatar').innerText = (targetName || 'P').substring(0, 2).toUpperCase();
-    document.getElementById('manage-target-cid-display').innerText = 'Chargement des données joueur...';
+window.selectManageTargetPlayer = function(targetId, targetName) {
+    if (!targetId) return;
+    const found = onlinePlayersCache.find(p => String(p.id) === String(targetId));
+    const resolvedName = targetName || (found ? found.name : `Player #${targetId}`);
+
+    const idInput = document.getElementById('manage-target-id');
+    const nameInput = document.getElementById('manage-target-name');
+    if (idInput) idInput.value = targetId;
+    if (nameInput) nameInput.value = resolvedName;
+
+    const nameDisp = document.getElementById('manage-target-name-display');
+    const idBadge = document.getElementById('manage-target-id-badge');
+    const avatarEl = document.getElementById('manage-target-avatar');
+    const cidDisp = document.getElementById('manage-target-cid-display');
+
+    if (nameDisp) nameDisp.innerText = resolvedName;
+    if (idBadge) idBadge.innerText = `ID: #${targetId}`;
+    if (avatarEl) avatarEl.innerText = (resolvedName || 'P').substring(0, 2).toUpperCase();
+    if (cidDisp) cidDisp.innerText = 'Chargement des données joueur en direct...';
+
+    // Update active state on pills & dropdown
+    renderManagePlayerSelectorStrip(document.getElementById('manage-player-quicksearch')?.value || '');
 
     // Populate Friend / Online players dropdown (exclude current target)
     const select = document.getElementById('manage-friend-select');
     if (select) {
         select.innerHTML = '<option value="">-- Choisir un joueur connecté pour le transfert --</option>';
         onlinePlayersCache.forEach(p => {
-            if (p.id != targetId) {
+            if (String(p.id) !== String(targetId)) {
                 const opt = document.createElement('option');
                 opt.value = p.id;
                 opt.innerText = `#${p.id} - ${p.name} (${p.charName || p.job || 'Player'})`;
@@ -1749,12 +1840,46 @@ window.openPlayerManageModal = function(targetId, targetName) {
     if (propBox) propBox.innerHTML = '<div class="asset-empty-state">Chargement des propriétés enregistrées...</div>';
 
     clearVehSelection();
-    renderPedQuickStrip();
-
-    modal.style.display = 'flex';
+    if (!allServerCharacters || allServerCharacters.length === 0) {
+        postNUI('fetchAllCharacters');
+    }
+    if (!allServerVehicles || allServerVehicles.length === 0) {
+        postNUI('fetchAllVehicles');
+    }
+    renderManageInlinePedGrid(document.getElementById('manage-inline-ped-search')?.value || '');
 
     // Fetch live details
     postNUI('playerDetailedAction', { action: 'get_details', targetId });
+};
+
+window.openPlayerManageModal = function(targetId, targetName) {
+    const manageNavBtn = document.getElementById('nav-btn-manage') || document.querySelector('.nav-item[data-tab="manage"]');
+    if (manageNavBtn) {
+        manageNavBtn.click();
+    }
+    selectManageTargetPlayer(targetId, targetName);
+    switchManageSection('all');
+};
+
+window.switchManageSection = function(sec) {
+    document.querySelectorAll('#manage-subnav .manage-subnav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-section') === sec);
+    });
+    const grid = document.getElementById('manage-sections-grid');
+    const inlinePedGrid = document.getElementById('manage-inline-ped-grid');
+    if (grid) {
+        grid.style.gridTemplateColumns = (sec === 'all') ? 'repeat(2, 1fr)' : '1fr';
+    }
+    if (inlinePedGrid) {
+        inlinePedGrid.style.maxHeight = (sec === 'sec-skins') ? '560px' : '410px';
+    }
+    document.querySelectorAll('#manage-sections-grid .manage-sec-card').forEach(card => {
+        if (sec === 'all') {
+            card.style.display = '';
+        } else {
+            card.style.display = (card.getAttribute('data-sec') === sec) ? '' : 'none';
+        }
+    });
 };
 
 window.execPlayerDetailed = function(action, extra = {}) {
@@ -1823,6 +1948,10 @@ window.execPlayerDetailed = function(action, extra = {}) {
         payload = { action: 'appearance_control', targetId, appType: 'set_ped', model };
     } else if (action === 'clothing_menu') {
         payload = { action: 'appearance_control', targetId, appType: 'clothing_menu' };
+    } else if (action === 'barber_menu') {
+        payload = { action: 'appearance_control', targetId, appType: 'barber_menu' };
+    } else if (action === 'reload_skin') {
+        payload = { action: 'appearance_control', targetId, appType: 'reload_skin' };
     } else if (action === 'clean_ped') {
         payload = { action: 'appearance_control', targetId, appType: 'clean_ped' };
     } else if (action === 'message') {
@@ -2066,29 +2195,117 @@ window.selectPedModel = function(model, label) {
     execPlayerDetailed('apply_ped_target');
 };
 
-function renderPedQuickStrip() {
-    const strip = document.getElementById('manage-ped-quickstrip');
-    if (!strip) return;
-    const topPeds = [
-        { model: 'player_zero', label: 'Michael' },
-        { model: 'player_one', label: 'Franklin' },
-        { model: 'player_two', label: 'Trevor' },
-        { model: 's_m_y_cop_01', label: 'Police' },
-        { model: 's_m_y_sheriff_01', label: 'Sheriff' },
-        { model: 's_m_y_swat_01', label: 'SWAT' },
-        { model: 's_m_m_paramedic_01', label: 'EMS' },
-        { model: 'g_m_y_ballasout_01', label: 'Ballas' },
-        { model: 'a_c_chop', label: 'Chop 🐕' },
-        { model: 'mp_m_freemode_01', label: 'MP Male' },
-        { model: 'mp_f_freemode_01', label: 'MP Female' },
-    ];
-    strip.innerHTML = topPeds.map(p => `
-        <div class="ped-quick-item" onclick="selectPedModel('${p.model}', '${p.label}')" title="Appliquer ${p.label}">
-            <img src="https://docs.fivem.net/peds/${p.model}.webp" onerror="this.style.display='none'">
-            <span>${p.label}</span>
-        </div>
-    `).join('');
+let currentInlinePedFilter = 'popular';
+const POPULAR_RP_PEDS = [
+    { model: 'mp_m_freemode_01', label: 'MP Freemode Homme', category: 'multiplayer' },
+    { model: 'mp_f_freemode_01', label: 'MP Freemode Femme', category: 'multiplayer' },
+    { model: 'player_zero', label: 'Michael De Santa', category: 'vip' },
+    { model: 'player_one', label: 'Franklin Clinton', category: 'vip' },
+    { model: 'player_two', label: 'Trevor Philips', category: 'vip' },
+    { model: 's_m_y_cop_01', label: 'Officier Police LSPD', category: 'emergency' },
+    { model: 's_f_y_cop_01', label: 'Officière Police LSPD', category: 'emergency' },
+    { model: 's_m_y_sheriff_01', label: 'Sheriff Deputy', category: 'emergency' },
+    { model: 's_m_y_swat_01', label: 'Unité SWAT Tactique', category: 'emergency' },
+    { model: 's_m_y_hwaycop_01', label: 'Police Autoroute Moto', category: 'emergency' },
+    { model: 's_m_m_paramedic_01', label: 'Ambulancier EMS', category: 'emergency' },
+    { model: 's_m_m_doctor_01', label: 'Chirurgien / Docteur', category: 'emergency' },
+    { model: 's_m_y_fireman_01', label: 'Sapeur-Pompier', category: 'emergency' },
+    { model: 's_m_m_fiboffice_01', label: 'Agent Spécial FBI', category: 'emergency' },
+    { model: 's_m_m_ciasec_01', label: 'Agent Secret CIA', category: 'emergency' },
+    { model: 's_m_m_highsec_01', label: 'Garde du Corps VIP', category: 'civilian' },
+    { model: 's_m_m_armoured_01', label: 'Convoyeur de Fonds', category: 'civilian' },
+    { model: 'g_m_y_ballasout_01', label: 'Gangster Ballas', category: 'gang' },
+    { model: 'g_m_y_famca_01', label: 'Gangster Families', category: 'gang' },
+    { model: 'g_m_y_mexgoon_01', label: 'Membre Cartel Vagos', category: 'gang' },
+    { model: 'g_m_y_lost_01', label: 'Biker The Lost MC', category: 'gang' },
+    { model: 'g_m_m_chiboss_01', label: 'Boss Triade / Mafia', category: 'gang' },
+    { model: 'ig_lestercrest', label: 'Lester Crest (Hacker)', category: 'vip' },
+    { model: 'ig_lamardavis', label: 'Lamar Davis', category: 'vip' },
+    { model: 'ig_avon', label: 'Avon Hertz (Milliardaire)', category: 'vip' },
+    { model: 's_m_y_dealer_01', label: 'Dealer de Rue', category: 'gang' },
+    { model: 's_m_y_xmech_01', label: 'Chef Mécanicien', category: 'civilian' },
+    { model: 'a_c_chop', label: 'Chien Rottweiler (Chop)', category: 'animal' },
+    { model: 'a_c_shepherd', label: 'Berger Allemand K9', category: 'animal' },
+    { model: 'a_c_husky', label: 'Chien Husky', category: 'animal' },
+    { model: 'a_c_rottweiler', label: 'Rottweiler Garde', category: 'animal' },
+    { model: 'a_c_mtlion', label: 'Puma / Lion des Montagnes', category: 'animal' },
+];
+
+function renderManageInlinePedGrid(searchQuery = '') {
+    const grid = document.getElementById('manage-inline-ped-grid');
+    const countBadge = document.getElementById('manage-inline-ped-count');
+    if (!grid) return;
+
+    const fullList = (allServerCharacters && allServerCharacters.length > 0) ? allServerCharacters : VISUAL_PEDS;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
+
+    let filtered = [];
+    if (isSearching) {
+        filtered = fullList.filter(p => {
+            const model = (p.model || '').toLowerCase();
+            const label = (p.label || '').toLowerCase();
+            const cat = (p.category || '').toLowerCase();
+            return model.includes(q) || label.includes(q) || cat.includes(q);
+        });
+    } else if (currentInlinePedFilter === 'popular') {
+        filtered = POPULAR_RP_PEDS;
+    } else {
+        filtered = fullList.filter(p => {
+            const cat = (p.category || '').toLowerCase();
+            if (currentInlinePedFilter === 'all') return true;
+            if (currentInlinePedFilter === 'vip') return cat === 'vip' || cat === 'story';
+            if (currentInlinePedFilter === 'emergency') return cat === 'emergency';
+            if (currentInlinePedFilter === 'gang') return cat === 'gang' || cat === 'gangs';
+            if (currentInlinePedFilter === 'civilian') return cat === 'civilian' || cat === 'male' || cat === 'female';
+            if (currentInlinePedFilter === 'animal') return cat === 'animal' || cat === 'animals';
+            if (currentInlinePedFilter === 'multiplayer') return cat === 'multiplayer';
+            return true;
+        });
+    }
+
+    if (countBadge) {
+        countBadge.innerText = `${fullList.length} Peds (${filtered.length} affichés)`;
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="asset-empty-state" style="grid-column: 1 / -1;">Aucun Ped trouvé pour cette recherche.</div>';
+        return;
+    }
+
+    const displaySlice = filtered.slice(0, 120);
+    grid.innerHTML = displaySlice.map(p => {
+        const model = (p.model || '').toLowerCase();
+        const label = p.label || model;
+        const imgFiveM = `https://docs.fivem.net/peds/${model}.webp`;
+        const isAnimal = p.category === 'animal' || p.category === 'animals';
+        return `
+            <div class="inline-ped-card" onclick="selectPedModel('${escapeHtml(model)}', '${escapeHtml(label)}')" title="Cliquez pour appliquer ${escapeHtml(label)} (${escapeHtml(model)})">
+                <div class="inline-ped-img-box">
+                    <img src="${imgFiveM}" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="${escapeHtml(label)}">
+                    <div style="display: none; align-items: center; justify-content: center; font-size: 36px;">${isAnimal ? '🐾' : '👤'}</div>
+                </div>
+                <div class="inline-ped-name">${escapeHtml(label)}</div>
+                <div class="inline-ped-code">${escapeHtml(model)}</div>
+                <div class="inline-ped-apply-badge">🎭 Appliquer Skin</div>
+            </div>
+        `;
+    }).join('');
 }
+
+document.getElementById('manage-inline-ped-search')?.addEventListener('input', (e) => {
+    renderManageInlinePedGrid(e.target.value);
+});
+
+document.querySelectorAll('#manage-inline-ped-filters .picker-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#manage-inline-ped-filters .picker-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentInlinePedFilter = btn.getAttribute('data-filter') || 'popular';
+        const q = document.getElementById('manage-inline-ped-search')?.value || '';
+        renderManageInlinePedGrid(q);
+    });
+});
 
 // ==========================================================================
 // Visual Vehicle Catalog & Picker Logic (With Pictures)

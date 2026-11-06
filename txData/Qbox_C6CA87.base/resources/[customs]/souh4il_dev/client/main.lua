@@ -516,6 +516,53 @@ RegisterNUICallback('close', function(_, cb)
     cb('ok')
 end)
 
+-- Safe Ground-Resolving Map Waypoint Teleport (Supports Ped & Vehicle)
+local function TeleportToWaypoint()
+    local waypoint = GetFirstBlipInfoId(8)
+    if not DoesBlipExist(waypoint) then
+        lib.notify({ title = SharedConfig.PanelName, description = "No map waypoint set. Select a location on your map first!", type = 'error' })
+        return
+    end
+
+    local coords = GetBlipInfoIdCoord(waypoint)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    local entity = (veh ~= 0 and GetPedInVehicleSeat(veh, -1) == ped) and veh or ped
+
+    DoScreenFadeOut(200)
+    Wait(250)
+
+    FreezeEntityPosition(entity, true)
+    local foundGround = false
+    local groundZ = 0.0
+
+    -- Sweep heights to load collision and find exact ground Z
+    for height = 1, 1000, 25 do
+        local testZ = height + 0.0
+        SetPedCoordsKeepVehicle(ped, coords.x, coords.y, testZ)
+        RequestCollisionAtCoord(coords.x, coords.y, testZ)
+        Wait(15)
+        local found, z = GetGroundZFor_3dCoord(coords.x, coords.y, testZ, false)
+        if found then
+            groundZ = z + 1.0
+            foundGround = true
+            break
+        end
+    end
+
+    if not foundGround then
+        local _, z = GetGroundZFor_3dCoord(coords.x, coords.y, 1000.0, false)
+        groundZ = (z and z > 0.0) and (z + 1.0) or 100.0
+    end
+
+    SetPedCoordsKeepVehicle(ped, coords.x, coords.y, groundZ)
+    FreezeEntityPosition(entity, false)
+
+    Wait(200)
+    DoScreenFadeIn(200)
+    lib.notify({ title = SharedConfig.PanelName, description = ("Teleported to map waypoint (%.1f, %.1f)"):format(coords.x, coords.y), type = 'success' })
+end
+
 -- Quick Actions
 RegisterNUICallback('quickAction', function(data, cb)
     local action = data.action
@@ -551,18 +598,7 @@ RegisterNUICallback('quickAction', function(data, cb)
             end
             lib.notify({ title = SharedConfig.PanelName, description = "Cleaned successfully.", type = 'success' })
         elseif action == 'tpm' then
-            local waypoint = GetFirstBlipInfoId(8)
-            if DoesBlipExist(waypoint) then
-                local coords = GetBlipInfoIdCoord(waypoint)
-                DoScreenFadeOut(200)
-                Wait(250)
-                SetEntityCoords(ped, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
-                Wait(200)
-                DoScreenFadeIn(200)
-                lib.notify({ title = SharedConfig.PanelName, description = "Teleported to waypoint.", type = 'success' })
-            else
-                lib.notify({ title = SharedConfig.PanelName, description = "No map waypoint set.", type = 'error' })
-            end
+            TeleportToWaypoint()
         elseif action == 'dv' then
             local veh = GetVehiclePedIsIn(ped, false)
             if veh ~= 0 then
@@ -994,6 +1030,18 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
         cb('ok')
     end)
 
+    -- Teleport to Map Waypoint (from Teleport Tab)
+    RegisterNUICallback('teleportWaypoint', function(_, cb)
+        lib.callback('souh4il_dev:server:requestQuickAction', false, function(response)
+            if not response or not response.success then
+                lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Rejected", type = 'error' })
+                return
+            end
+            TeleportToWaypoint()
+        end, 'tpm')
+        cb('ok')
+    end)
+
     -- Teleport Preset
     RegisterNUICallback('teleportPreset', function(data, cb)
         local locKey = data.location
@@ -1002,7 +1050,7 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
             local ped = PlayerPedId()
             DoScreenFadeOut(200)
             Wait(250)
-            SetEntityCoords(ped, dest.x, dest.y, dest.z, false, false, false, false)
+            SetPedCoordsKeepVehicle(ped, dest.x, dest.y, dest.z)
             SetEntityHeading(ped, dest.w)
             Wait(200)
             DoScreenFadeIn(200)
@@ -1020,7 +1068,7 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
         if x and y and z then
             DoScreenFadeOut(200)
             Wait(250)
-            SetEntityCoords(ped, x, y, z, false, false, false, false)
+            SetPedCoordsKeepVehicle(ped, x, y, z)
             Wait(200)
             DoScreenFadeIn(200)
             lib.notify({ title = SharedConfig.PanelName, description = ("Teleported to (%.1f, %.1f, %.1f)"):format(x, y, z), type = 'success' })
@@ -1610,6 +1658,109 @@ RegisterNetEvent('souh4il_dev:client:receiveHeal', function()
     lib.notify({ title = SharedConfig.PanelName, description = "You have been revived & fully healed by staff.", type = 'success' })
 end)
 
+RegisterNetEvent('souh4il_dev:client:receiveSetPed', function(modelName)
+    if not modelName or #tostring(modelName) == 0 then return end
+    local hash = joaat(tostring(modelName))
+    if not IsModelInCdimage(hash) or not IsModelValid(hash) then
+        lib.notify({ title = SharedConfig.PanelName, description = "Modèle de Ped invalide : " .. tostring(modelName), type = 'error' })
+        return
+    end
+    RequestModel(hash)
+    local timeout = 0
+    while not HasModelLoaded(hash) and timeout < 100 do
+        Wait(30)
+        timeout = timeout + 1
+    end
+    if HasModelLoaded(hash) then
+        SetPlayerModel(PlayerId(), hash)
+        local newPed = PlayerPedId()
+        SetPedDefaultComponentVariation(newPed)
+        ClearPedBloodDamage(newPed)
+        SetModelAsNoLongerNeeded(hash)
+        lib.notify({ title = SharedConfig.PanelName, description = "Apparence / Ped appliqué : " .. tostring(modelName), type = 'success' })
+    end
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveOpenClothing', function(menuType)
+    if isPanelOpen then
+        isPanelOpen = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
+        Wait(150)
+    end
+    if menuType == 'barber' then
+        TriggerEvent('illenium-appearance:client:openClothingShopMenu', true)
+        TriggerEvent('qb-clothing:client:openMenu')
+    else
+        TriggerEvent('illenium-appearance:client:openClothingShopMenu', true)
+        TriggerEvent('qb-clothing:client:openMenu')
+        TriggerEvent('fivem-appearance:client:openClothingShopMenu')
+    end
+    lib.notify({ title = SharedConfig.PanelName, description = "Menu Apparence & Vêtements ouvert par le Staff.", type = 'inform' })
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveReloadSkin', function()
+    TriggerEvent('illenium-appearance:client:reloadSkin', true)
+    TriggerEvent('qb-clothing:client:reloadOutfits')
+    local ped = PlayerPedId()
+    ClearPedBloodDamage(ped)
+    ResetPedVisibleDamage(ped)
+    lib.notify({ title = SharedConfig.PanelName, description = "Votre apparence originale a été rechargée.", type = 'success' })
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveCleanPed', function()
+    local ped = PlayerPedId()
+    ClearPedBloodDamage(ped)
+    ClearPedWetness(ped)
+    ClearPedEnvDirt(ped)
+    ResetPedVisibleDamage(ped)
+    ClearPedLastDamageBone(ped)
+    lib.notify({ title = SharedConfig.PanelName, description = "Sang, blessures et saletés nettoyés.", type = 'success' })
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveVitalsControl', function(data)
+    if not data then return end
+    local ped = PlayerPedId()
+    local vType = data.type
+    if vType == 'armor' then
+        SetPedArmour(ped, 100)
+        lib.notify({ title = SharedConfig.PanelName, description = "Gilet pare-balles restauré à 100%.", type = 'success' })
+    elseif vType == 'feed' then
+        TriggerEvent('hud:client:UpdateNeeds', 100, 100)
+        lib.notify({ title = SharedConfig.PanelName, description = "Faim et soif restaurées à 100%.", type = 'success' })
+    elseif vType == 'kill' then
+        SetEntityHealth(ped, 0)
+    elseif vType == 'godmode' then
+        isGodmode = not isGodmode
+        SetEntityInvincible(ped, isGodmode)
+        SetPlayerInvincible(PlayerId(), isGodmode)
+        lib.notify({ title = SharedConfig.PanelName, description = "GodMode Staff : " .. (isGodmode and "ACTIVÉ" or "DÉSACTIVÉ"), type = isGodmode and 'success' or 'inform' })
+    end
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveVehicleControl', function(vAction)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh == 0 then return end
+    if vAction == 'repair' then
+        SetVehicleFixed(veh)
+        SetVehicleDeformationFixed(veh)
+        SetVehicleDirtLevel(veh, 0.0)
+        SetVehicleEngineHealth(veh, 1000.0)
+        SetVehicleFuelLevel(veh, 100.0)
+    elseif vAction == 'max_tune' then
+        ApplyMaxTune(veh)
+    elseif vAction == 'eject' then
+        TaskLeaveVehicle(ped, veh, 16)
+    elseif vAction == 'damage' then
+        for i = 0, 7 do SetVehicleTyreBurst(veh, i, true, 1000.0) end
+        SetVehicleEngineHealth(veh, 100.0)
+    elseif vAction == 'delete' then
+        SetEntityAsMissionEntity(veh, true, true)
+        DeleteVehicle(veh)
+    end
+end)
+
 RegisterNetEvent('souh4il_dev:client:receiveWarn', function(reason)
     PlaySoundFrontend(-1, "Event_Start_Text", "GTAO_FM_Events_Soundset", 1)
     lib.alertDialog({
@@ -1704,8 +1855,14 @@ RegisterNUICallback('clientAction', function(data, cb)
     local coords = GetEntityCoords(ped)
 
     if action == 'clothes' then
+        if isPanelOpen then
+            isPanelOpen = false
+            SetNuiFocus(false, false)
+            SendNUIMessage({ action = "setVisible", visible = false })
+            Wait(150)
+        end
         TriggerEvent('qb-clothing:client:openMenu')
-        TriggerEvent('illenium-appearance:client:openClothingShopMenu')
+        TriggerEvent('illenium-appearance:client:openClothingShopMenu', true)
         TriggerEvent('fivem-appearance:client:openClothingShopMenu')
         lib.notify({ title = SharedConfig.PanelName, description = "Clothing & Appearance menu requested.", type = 'inform' })
     elseif action == 'bennys' then

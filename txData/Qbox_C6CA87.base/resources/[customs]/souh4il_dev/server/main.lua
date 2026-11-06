@@ -1571,11 +1571,15 @@ lib.callback.register('souh4il_dev:server:controlPlayerAppearance', function(sou
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
-    local aType = data.appType -- 'set_ped', 'clothing_menu', 'clean_ped'
+    local aType = data.appType -- 'set_ped', 'clothing_menu', 'barber_menu', 'reload_skin', 'clean_ped'
     if aType == 'set_ped' then
         TriggerClientEvent('souh4il_dev:client:receiveSetPed', tId, data.model)
     elseif aType == 'clothing_menu' then
-        TriggerClientEvent('illenium-appearance:client:openClothingShopMenu', tId, true)
+        TriggerClientEvent('souh4il_dev:client:receiveOpenClothing', tId, 'clothing')
+    elseif aType == 'barber_menu' then
+        TriggerClientEvent('souh4il_dev:client:receiveOpenClothing', tId, 'barber')
+    elseif aType == 'reload_skin' then
+        TriggerClientEvent('souh4il_dev:client:receiveReloadSkin', tId)
     elseif aType == 'clean_ped' then
         TriggerClientEvent('souh4il_dev:client:receiveCleanPed', tId)
     end

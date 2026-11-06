@@ -57,6 +57,10 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                         <span>Players</span>
                     </button>
+                    <button class="nav-item" data-tab="manage" id="nav-btn-manage">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <span>Manage Player</span>
+                    </button>
                     <button class="nav-item" data-tab="teleport">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
                         <span>Teleport</span>
@@ -331,6 +335,18 @@
 
                     <!-- Tab: Teleportation -->
                     <section class="tab-pane" id="pane-teleport">
+                        <div class="section-card" style="border-color: rgba(0, 229, 255, 0.35); background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(16, 22, 34, 0.95) 100%);">
+                            <div class="section-header">
+                                <div>
+                                    <h4>📍 MAP WAYPOINT TELEPORT (GPS MARKER)</h4>
+                                    <span>Teleport instantly to the marker / waypoint selected on your pause menu map (with or without vehicle)</span>
+                                </div>
+                                <button class="primary-btn" id="btn-tp-waypoint" style="padding: 12px 24px; font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 18px rgba(0, 229, 255, 0.25);">
+                                    <span>📍</span> Teleport to Map Waypoint
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="section-card">
                             <div class="section-header">
                                 <h4>TELEPORT TO ONLINE PLAYERS</h4>
@@ -619,6 +635,336 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Dedicated Player Management Studio (Next to Players) -->
+                    <section class="tab-pane" id="pane-manage">
+                        <input type="hidden" id="manage-target-id">
+                        <input type="hidden" id="manage-target-name">
+
+                        <!-- Top Live Player Selector Strip (Switch between any connected player in 1 click) -->
+                        <div class="manage-selector-card">
+                            <div class="manage-selector-top">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="manage-selector-badge">🎯 CIBLER UN JOUEUR EN LIGNE</span>
+                                    <span style="font-size: 0.74rem; color: var(--text-muted);">Cliquez sur un joueur ci-dessous ou sélectionnez-le dans la liste pour prendre le contrôle total :</span>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="manage-player-quicksearch" class="search-input" placeholder="🔍 Filtrer joueur (ID, nom, job)..." style="width: 220px; padding: 6px 10px; font-size: 0.76rem;">
+                                    <select id="manage-top-player-select" class="search-input" style="min-width: 240px; padding: 6px 10px; font-size: 0.78rem;">
+                                        <option value="">-- Choisir un joueur connecté --</option>
+                                    </select>
+                                    <button class="secondary-btn" style="padding: 6px 12px; font-size: 0.75rem;" onclick="refreshManagePlayersBar()">🔄 Actualiser</button>
+                                </div>
+                            </div>
+                            <div id="manage-online-pills-strip" class="manage-online-pills-strip">
+                                <div class="asset-empty-state" style="padding: 8px 14px;">Chargement des joueurs en ligne...</div>
+                            </div>
+                        </div>
+
+                        <!-- Live Target Dossier Bar + Quick Actions -->
+                        <div class="manage-dossier-bar">
+                            <div class="manage-dossier-identity">
+                                <div class="manage-dossier-avatar" id="manage-target-avatar">P</div>
+                                <div>
+                                    <div class="manage-dossier-name-row">
+                                        <span id="manage-target-name-display">Sélectionnez un joueur</span>
+                                        <span class="manage-id-pill" id="manage-target-id-badge">ID: #--</span>
+                                    </div>
+                                    <div class="manage-dossier-sub" id="manage-target-cid-display">CID: -- • Ping: --ms</div>
+                                </div>
+                            </div>
+
+                            <div class="manage-dossier-stats">
+                                <div class="dossier-stat-chip"><span>💵 Cash</span><b style="color: var(--accent-green);" id="manage-live-cash">$0</b></div>
+                                <div class="dossier-stat-chip"><span>🏦 Banque</span><b style="color: var(--accent-cyan);" id="manage-live-bank">$0</b></div>
+                                <div class="dossier-stat-chip"><span>💼 Métier</span><b style="color: #fff;" id="manage-live-job">Civilian</b></div>
+                                <div class="dossier-stat-chip"><span>🔥 Gang</span><b style="color: #f97316;" id="manage-live-gang">None</b></div>
+                            </div>
+
+                            <div class="manage-dossier-quickbtns">
+                                <button class="dossier-qbtn green" onclick="execPlayerDetailed('heal')" title="Heal & Revive">❤️ Revive</button>
+                                <button class="dossier-qbtn cyan" onclick="execPlayerDetailed('goto_target')" title="Se téléporter sur lui">📍 Goto</button>
+                                <button class="dossier-qbtn blue" onclick="execPlayerDetailed('bring_target')" title="Le téléporter sur moi">🧲 Bring</button>
+                                <button class="dossier-qbtn gold" onclick="execPlayerDetailed('open_inv')" title="Ouvrir son inventaire">🎒 Inventaire</button>
+                                <button class="dossier-qbtn purple" onclick="execPlayerDetailed('clothing_menu')" title="Ouvrir Menu Vêtements">👔 Vêtements</button>
+                                <button class="dossier-qbtn" style="background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.15);" onclick="openPlayerInfoModal(document.getElementById('manage-target-id').value)" title="Dossier complet">ℹ️ Dossier</button>
+                            </div>
+                        </div>
+
+                        <!-- Fast Section Navigation Tabs inside Manage Tab -->
+                        <div class="manage-subnav" id="manage-subnav">
+                            <button class="manage-subnav-btn active" data-section="all" onclick="switchManageSection('all')">⚡ Vue Globale (Tout)</button>
+                            <button class="manage-subnav-btn" data-section="sec-skins" onclick="switchManageSection('sec-skins')">🎭 7. Skins, Peds & Apparence</button>
+                            <button class="manage-subnav-btn" data-section="sec-assets" onclick="switchManageSection('sec-assets')">🏛️ 6B. Maisons & Voitures</button>
+                            <button class="manage-subnav-btn" data-section="sec-tp" onclick="switchManageSection('sec-tp')">🚀 1. Téléport & Amis</button>
+                            <button class="manage-subnav-btn" data-section="sec-econ" onclick="switchManageSection('sec-econ')">💰 2 & 3. Argent & Inventaire</button>
+                            <button class="manage-subnav-btn" data-section="sec-char" onclick="switchManageSection('sec-char')">❤️ 4, 5 & 6. Jobs, Santé & Véhicule</button>
+                            <button class="manage-subnav-btn" data-section="sec-trolls" onclick="switchManageSection('sec-trolls')">⚠️ 8. Trolls & Sanctions</button>
+                        </div>
+
+                        <!-- Manage Grid Container -->
+                        <div class="manage-sections-grid" id="manage-sections-grid">
+
+                            <!-- Category 1: Transfert & Téléportation (Nmofih 3nd sa7bo) -->
+                            <div class="perm-cat-group manage-sec-card" data-sec="sec-tp" style="border-color: rgba(0, 229, 255, 0.3);">
+                                <div class="perm-cat-header">🚀 1. TRANSFERT & TÉLÉPORTATION JOUEUR (NMOFIH 3ND SA7BO)</div>
+                                <div style="background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-color);">
+                                    <label style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); display: block; margin-bottom: 6px; text-transform: uppercase;">Sélectionner un ami / joueur connecté :</label>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <select id="manage-friend-select" class="search-input" style="flex: 1; min-width: 210px;">
+                                            <option value="">-- Choisir un joueur connecté pour le transfert --</option>
+                                        </select>
+                                        <button class="primary-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700;" onclick="execPlayerDetailed('send_to_friend')">🚀 Envoyer chez son ami</button>
+                                        <button class="secondary-btn" onclick="execPlayerDetailed('bring_friend_here')">🧲 Ramener cet ami ici</button>
+                                    </div>
+                                </div>
+                                <div class="quick-actions-grid">
+                                    <button class="action-btn" onclick="execPlayerDetailed('goto_target')"><span class="btn-icon">📍</span><span class="btn-text">Se TP sur lui (Goto)</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('bring_target')"><span class="btn-icon">🧲</span><span class="btn-text">Le TP sur moi (Bring)</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">Envoyer Hôpital</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">Envoyer Legion</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">JailBox Cage</span></button>
+                                </div>
+                            </div>
+
+                            <!-- Category 2 & 3 Combined Column: Argent & Inventaire -->
+                            <div class="perm-cat-group manage-sec-card" data-sec="sec-econ">
+                                <div class="perm-cat-header">💰 2. CONTRÔLE DE L'ARGENT & ÉCONOMIE</div>
+                                <div class="form-row" style="margin-bottom: 14px;">
+                                    <input type="number" id="manage-money-amount" class="search-input" placeholder="Montant (ex: 50000)" min="1">
+                                    <select id="manage-money-type" class="search-input" style="max-width: 125px;">
+                                        <option value="cash">💵 Cash</option>
+                                        <option value="bank">🏦 Banque</option>
+                                    </select>
+                                    <button class="primary-btn" onclick="execPlayerDetailed('money_give')">➕ Donner</button>
+                                    <button class="secondary-btn" onclick="execPlayerDetailed('money_remove')">➖ Retirer</button>
+                                    <button class="secondary-btn" style="border-color: #ffd700; color: #ffd700;" onclick="execPlayerDetailed('money_set')">✏️ Définir</button>
+                                </div>
+
+                                <div class="perm-cat-header" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">🎒 3. CONTRÔLE DE L'INVENTAIRE & STASHES</div>
+                                <div class="quick-actions-grid" style="margin-bottom: 10px;">
+                                    <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Ouvrir Inventaire</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Ouvrir Coffre</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Boîte à Gants</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Vider Inventaire</span></button>
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <input type="text" id="manage-item-name" class="search-input" placeholder="Nom de l'item (ex: radio, burger, weapon_pistol)...">
+                                    <input type="number" id="manage-item-count" class="search-input count-input" value="1" min="1" max="500">
+                                    <button class="primary-btn" onclick="execPlayerDetailed('give_item_direct')">➕ Donner Item</button>
+                                </div>
+                            </div>
+
+                            <!-- Category 4 & 5: Métiers, Gangs & Santé -->
+                            <div class="perm-cat-group manage-sec-card" data-sec="sec-char">
+                                <div class="perm-cat-header">💼 4. MÉTIERS (JOBS) & GANGS</div>
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <input type="text" id="manage-job-name" class="search-input" placeholder="Métier (police, ambulance, mechanic)...">
+                                        <input type="number" id="manage-job-grade" class="search-input count-input" value="0" placeholder="Grade">
+                                        <button class="secondary-btn" onclick="execPlayerDetailed('set_job')">Définir Job</button>
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <input type="text" id="manage-gang-name" class="search-input" placeholder="Gang (ballas, families, cartel)...">
+                                        <input type="number" id="manage-gang-grade" class="search-input count-input" value="0" placeholder="Grade">
+                                        <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">Définir Gang</button>
+                                    </div>
+                                </div>
+
+                                <div class="perm-cat-header" style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">❤️ 5. SANTÉ, ARMURE & VITALS</div>
+                                <div class="quick-actions-grid">
+                                    <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Gilet</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'feed' })"><span class="btn-icon">🍔</span><span class="btn-text">100% Faim & Soif</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Vider le Stress</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Toggle Godmode</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer le Joueur</span></button>
+                                </div>
+                            </div>
+
+                            <!-- Category 6: Véhicule Actuel du Joueur -->
+                            <div class="perm-cat-group manage-sec-card" data-sec="sec-char">
+                                <div class="perm-cat-header">🚗 6. CONTRÔLE DE SON VÉHICULE ACTUEL</div>
+                                <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 10px;">Actions immédiates sur le véhicule dans lequel le joueur se trouve actuellement :</p>
+                                <div class="quick-actions-grid">
+                                    <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Donner les Clés</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'repair' })"><span class="btn-icon">🔧</span><span class="btn-text">Réparer & Laver</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'max_tune' })"><span class="btn-icon">⚡</span><span class="btn-text">Bennys Max Tune</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'eject' })"><span class="btn-icon">🚪</span><span class="btn-text">Éjecter du Véhicule</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'damage' })"><span class="btn-icon">💥</span><span class="btn-text">Crever les Pneus</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'delete' })"><span class="btn-icon">🗑️</span><span class="btn-text">Supprimer Véhicule</span></button>
+                                </div>
+                            </div>
+
+                            <!-- Category 7: SKINS, PEDS & APPARENCE DU JOUEUR (FULL WIDTH & EXPANDED STUDIO) -->
+                            <div class="perm-cat-group manage-sec-card full-span skins-studio-panel" data-sec="sec-skins">
+                                <div class="skins-studio-header">
+                                    <div>
+                                        <div class="perm-cat-header" style="margin-bottom: 3px; font-size: 0.92rem; color: #d8b4fe;">
+                                            🎭 7. STUDIO SKINS, PEDS & APPARENCE DU JOUEUR (GALERIE VISUELLE)
+                                        </div>
+                                        <p style="font-size: 0.76rem; color: var(--text-muted);">
+                                            Cliquez directement sur la photo d'un Ped pour l'appliquer au joueur, ou ouvrez son menu Vêtements / Coiffeur complet.
+                                        </p>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <span id="manage-inline-ped-count" class="asset-count-badge" style="background: #a855f7; color: #fff;">1051+ Peds</span>
+                                        <button class="primary-btn" style="background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; font-weight: 700; padding: 7px 14px;" onclick="openPedPickerModal()">
+                                            🖼️ Ouvrir en Plein Écran
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 1-Click Appearance & Clothing Action Bar -->
+                                <div class="appearance-actions-bar">
+                                    <button class="app-studio-btn purple" onclick="execPlayerDetailed('clothing_menu')">
+                                        <span class="app-btn-icon">👔</span>
+                                        <div class="app-btn-txt">
+                                            <b>Menu Vêtements</b>
+                                            <span>Ouvrir Clothing Shop</span>
+                                        </div>
+                                    </button>
+                                    <button class="app-studio-btn pink" onclick="execPlayerDetailed('barber_menu')">
+                                        <span class="app-btn-icon">💈</span>
+                                        <div class="app-btn-txt">
+                                            <b>Coiffeur & Visage</b>
+                                            <span>Personnaliser Apparence</span>
+                                        </div>
+                                    </button>
+                                    <button class="app-studio-btn cyan" onclick="execPlayerDetailed('reload_skin')">
+                                        <span class="app-btn-icon">🔄</span>
+                                        <div class="app-btn-txt">
+                                            <b>Skin Original</b>
+                                            <span>Recharger depuis DB</span>
+                                        </div>
+                                    </button>
+                                    <button class="app-studio-btn blue" onclick="selectPedModel('mp_m_freemode_01', 'MP Homme')">
+                                        <span class="app-btn-icon">🧍</span>
+                                        <div class="app-btn-txt">
+                                            <b>MP Freemode Homme</b>
+                                            <span>mp_m_freemode_01</span>
+                                        </div>
+                                    </button>
+                                    <button class="app-studio-btn gold" onclick="selectPedModel('mp_f_freemode_01', 'MP Femme')">
+                                        <span class="app-btn-icon">🧍‍♀️</span>
+                                        <div class="app-btn-txt">
+                                            <b>MP Freemode Femme</b>
+                                            <span>mp_f_freemode_01</span>
+                                        </div>
+                                    </button>
+                                    <button class="app-studio-btn green" onclick="execPlayerDetailed('clean_ped')">
+                                        <span class="app-btn-icon">🧼</span>
+                                        <div class="app-btn-txt">
+                                            <b>Nettoyer Corps</b>
+                                            <span>Enlever Sang & Saleté</span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <!-- Search + Manual Model Input + Category Filter Tabs -->
+                                <div class="skins-studio-toolbar">
+                                    <div class="form-row" style="margin-bottom: 10px;">
+                                        <input type="text" id="manage-inline-ped-search" class="search-input" placeholder="🔍 Rechercher un Ped en direct (ex: police, swat, ballas, michael, chop, médecin)..." style="flex: 1.5; border-color: rgba(168, 85, 247, 0.4);">
+                                        <input type="text" id="manage-ped-model" class="search-input" placeholder="Ou code modèle exact (ex: s_m_y_cop_01)..." style="flex: 1;">
+                                        <button class="primary-btn" style="background: #a855f7; color: #fff; font-weight: 700;" onclick="execPlayerDetailed('apply_ped_target')">✨ Appliquer Modèle</button>
+                                    </div>
+
+                                    <div class="picker-filter-row" id="manage-inline-ped-filters">
+                                        <button class="picker-filter-btn active" data-filter="popular">⭐ Populaires & RP</button>
+                                        <button class="picker-filter-btn" data-filter="all">🌐 Tous les Peds</button>
+                                        <button class="picker-filter-btn" data-filter="vip">👑 Story & VIP</button>
+                                        <button class="picker-filter-btn" data-filter="emergency">🚓 Police, SWAT & EMS</button>
+                                        <button class="picker-filter-btn" data-filter="gang">🔥 Gangs & Cartels</button>
+                                        <button class="picker-filter-btn" data-filter="civilian">👔 Civils & Métiers</button>
+                                        <button class="picker-filter-btn" data-filter="animal">🐾 Animaux</button>
+                                        <button class="picker-filter-btn" data-filter="multiplayer">🎮 Multijoueur MP</button>
+                                    </div>
+                                </div>
+
+                                <!-- Large Embedded Visual Ped Cards Grid -->
+                                <div id="manage-inline-ped-grid" class="manage-inline-ped-grid"></div>
+                            </div>
+
+                            <!-- Category 6B: Patrimoine du Joueur (Véhicules & Propriétés) (FULL WIDTH) -->
+                            <div class="perm-cat-group manage-sec-card full-span asset-management-panel" data-sec="sec-assets">
+                                <div class="perm-cat-header" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>🏛️ 6B. PATRIMOINE DU JOUEUR (MAISONS & VÉHICULES OFFICIELS)</span>
+                                    <span class="asset-count-badge" id="manage-assets-count">0 Voitures • 0 Maisons</span>
+                                </div>
+
+                                <div class="patrimoine-two-cols">
+                                    <!-- Sub-section A: Véhicules Possédés -->
+                                    <div class="patrimoine-col">
+                                        <div class="asset-sub-header">
+                                            <span>🚗 Véhicules Possédés (player_vehicles)</span>
+                                            <span class="asset-sub-info">Cartes grises, coffres, clés & saisie</span>
+                                        </div>
+                                        <div id="manage-vehicles-container" class="assets-scroll-box">
+                                            <div class="asset-empty-state">Chargement des véhicules du joueur...</div>
+                                        </div>
+
+                                        <!-- Formulaire d'attribution de nouveau véhicule -->
+                                        <div class="asset-form-card" style="margin-top: 10px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                <div style="font-size: 0.76rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase;">
+                                                    🎁 Attribuer un Véhicule Officiel (+ Clés)
+                                                </div>
+                                                <button class="secondary-btn" style="padding: 5px 12px; font-size: 0.74rem; background: rgba(0, 229, 255, 0.12); border-color: rgba(0, 229, 255, 0.4); color: var(--accent-cyan); font-weight: 700;" onclick="openVehPickerModal()">🖼️ Choisir par Photo (Catalogue)</button>
+                                            </div>
+                                            <div id="manage-giveveh-preview-box" style="display: none; margin-bottom: 10px;" class="asset-selected-preview"></div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <input type="text" id="manage-giveveh-model" class="search-input" placeholder="Modèle (ex: sultan, adder)...">
+                                                <input type="text" id="manage-giveveh-plate" class="search-input" placeholder="Plaque (Optionnel)" maxlength="8" style="max-width: 135px; text-transform: uppercase;">
+                                                <input type="text" id="manage-giveveh-garage" class="search-input" placeholder="Garage" value="motel" style="max-width: 110px;">
+                                                <button class="primary-btn" style="white-space: nowrap; font-weight: 700;" onclick="execPlayerDetailed('give_owned_vehicle')">➕ Attribuer + Clés</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sub-section B: Maisons & Propriétés -->
+                                    <div class="patrimoine-col">
+                                        <div class="asset-sub-header">
+                                            <span>🏠 Maisons & Propriétés (qbx_properties)</span>
+                                            <span class="asset-sub-info">Coffre maison, téléportation, clés & saisie</span>
+                                        </div>
+                                        <div id="manage-properties-container" class="assets-scroll-box" style="max-height: 310px;">
+                                            <div class="asset-empty-state">Chargement des propriétés du joueur...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Category 8: Trolls & Sanctions (FULL WIDTH) -->
+                            <div class="perm-cat-group manage-sec-card full-span" data-sec="sec-trolls">
+                                <div class="perm-cat-header">🚀 8. TROLLS & SANCTIONS STAFF</div>
+                                <div class="quick-actions-grid" style="margin-bottom: 12px;">
+                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Faire Pisser</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Faire Caca</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <input type="text" id="manage-pm-msg" class="search-input" placeholder="Message PM Staff privé...">
+                                        <button class="primary-btn" onclick="execPlayerDetailed('message')">💬 Envoyer PM</button>
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement officiel...">
+                                        <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">⚠️ Avertir</button>
+                                        <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">🚪 Force Logout</button>
+                                    </div>
+                                </div>
+                                <div class="quick-actions-grid">
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Items</span></button>
+                                    <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.15);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total</span></button>
+                                </div>
+                            </div>
+
                         </div>
                     </section>
 
@@ -1161,231 +1507,6 @@
             </div>
         </div>
 
-        <!-- Master Player Manage Modal -->
-        <div id="player-manage-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-box modal-large" style="width: 960px; max-width: 95vw;">
-                <div class="modal-header">
-                    <div>
-                        <h3 id="manage-modal-title">⚡ CONTRÔLE INTÉGRAL DU JOUEUR (MASTER REMOTE)</h3>
-                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Prenez le contrôle total : transfert chez son ami, argent, inventaire, job, santé, voiture, skin et sanctions.</p>
-                    </div>
-                    <button class="modal-close" id="manage-modal-close">&times;</button>
-                </div>
-                <div class="modal-body" style="max-height: 78vh; overflow-y: auto; padding: 18px 24px;">
-                    <input type="hidden" id="manage-target-id">
-                    <input type="hidden" id="manage-target-name">
-
-                    <!-- Live Target Dossier Bar -->
-                    <div style="background: rgba(0, 229, 255, 0.06); border: 1px solid var(--accent-cyan); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(0, 229, 255, 0.15); border: 1px solid var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan);" id="manage-target-avatar">P</div>
-                            <div>
-                                <div style="font-size: 1.05rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
-                                    <span id="manage-target-name-display">Player</span>
-                                    <span style="font-size: 0.78rem; padding: 2px 8px; background: rgba(0, 255, 136, 0.15); color: var(--accent-green); border-radius: 10px; font-weight: 700;" id="manage-target-id-badge">ID: #--</span>
-                                </div>
-                                <div style="font-size: 0.74rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;" id="manage-target-cid-display">CID: -- • Ping: --ms</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 16px; font-size: 0.8rem; align-items: center;">
-                            <div>💵 Cash : <b style="color: var(--accent-green);" id="manage-live-cash">$0</b></div>
-                            <div>🏦 Banque : <b style="color: var(--accent-green);" id="manage-live-bank">$0</b></div>
-                            <div>💼 Job : <b style="color: var(--text-secondary);" id="manage-live-job">Civilian</b></div>
-                            <div>🔥 Gang : <b style="color: var(--text-secondary);" id="manage-live-gang">None</b></div>
-                        </div>
-                    </div>
-
-                    <!-- Category 1: Transfert & Téléportation (Nmofih 3nd sa7bo) -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px; border-color: rgba(0, 229, 255, 0.3);">
-                        <div class="perm-cat-header">🚀 1. TRANSFERT & TÉLÉPORTATION JOUEUR (NMOFIH 3ND SA7BO)</div>
-                        <div style="background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-color);">
-                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); display: block; margin-bottom: 6px; text-transform: uppercase;">Sélectionner un ami / joueur connecté :</label>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <select id="manage-friend-select" class="search-input" style="flex: 1; min-width: 250px;">
-                                    <option value="">-- Choisir un joueur connecté pour le transfert --</option>
-                                </select>
-                                <button class="primary-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700;" onclick="execPlayerDetailed('send_to_friend')">🚀 Envoyer ce joueur chez son ami</button>
-                                <button class="secondary-btn" onclick="execPlayerDetailed('bring_friend_here')">🧲 Ramener cet ami vers ce joueur</button>
-                            </div>
-                        </div>
-                        <div class="quick-actions-grid">
-                            <button class="action-btn" onclick="execPlayerDetailed('goto_target')"><span class="btn-icon">📍</span><span class="btn-text">Se TP sur lui (Goto)</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('bring_target')"><span class="btn-icon">🧲</span><span class="btn-text">Le TP sur moi (Bring)</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">Envoyer Hôpital</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">Envoyer Legion</span></button>
-                            <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">JailBox Cage</span></button>
-                        </div>
-                    </div>
-
-                    <!-- Category 2: Argent & Économie (Nt7km b flousso) -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">💰 2. CONTRÔLE DE L'ARGENT & ÉCONOMIE</div>
-                        <div class="form-row">
-                            <input type="number" id="manage-money-amount" class="search-input" placeholder="Montant (ex: 50000)" min="1">
-                            <select id="manage-money-type" class="search-input" style="max-width: 130px;">
-                                <option value="cash">💵 Cash</option>
-                                <option value="bank">🏦 Banque</option>
-                            </select>
-                            <button class="primary-btn" onclick="execPlayerDetailed('money_give')">➕ Donner</button>
-                            <button class="secondary-btn" onclick="execPlayerDetailed('money_remove')">➖ Retirer</button>
-                            <button class="secondary-btn" style="border-color: #ffd700; color: #ffd700;" onclick="execPlayerDetailed('money_set')">✏️ Définir Exact</button>
-                        </div>
-                    </div>
-
-                    <!-- Category 3: Inventaire ox_inventory & Objets -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">🎒 3. CONTRÔLE DE L'INVENTAIRE & STASHES</div>
-                        <div class="quick-actions-grid" style="margin-bottom: 12px;">
-                            <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Ouvrir son Inventaire</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Ouvrir son Coffre</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Ouvrir Boîte à Gants</span></button>
-                            <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Vider l'Inventaire</span></button>
-                        </div>
-                        <div class="form-row">
-                            <input type="text" id="manage-item-name" class="search-input" placeholder="Nom de l'item à lui donner (ex: burger, bandage, weapon_pistol)...">
-                            <input type="number" id="manage-item-count" class="search-input count-input" value="1" min="1" max="500">
-                            <button class="primary-btn" onclick="execPlayerDetailed('give_item_direct')">Donner l'Item</button>
-                        </div>
-                    </div>
-
-                    <!-- Category 4: Métiers & Gangs -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">💼 4. MÉTIERS (JOBS) & GANGS</div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div class="form-row" style="margin-bottom: 0;">
-                                <input type="text" id="manage-job-name" class="search-input" placeholder="Métier (police, ambulance, mechanic)...">
-                                <input type="number" id="manage-job-grade" class="search-input count-input" value="0" placeholder="Grade">
-                                <button class="secondary-btn" onclick="execPlayerDetailed('set_job')">Définir Job</button>
-                            </div>
-                            <div class="form-row" style="margin-bottom: 0;">
-                                <input type="text" id="manage-gang-name" class="search-input" placeholder="Gang (ballas, families, cartel)...">
-                                <input type="number" id="manage-gang-grade" class="search-input count-input" value="0" placeholder="Grade">
-                                <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">Définir Gang</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Category 5: Santé, Armure & Vitals -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">❤️ 5. SANTÉ, ARMURE & VITALS</div>
-                        <div class="quick-actions-grid">
-                            <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Gilet</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'feed' })"><span class="btn-icon">🍔</span><span class="btn-text">100% Faim & Soif</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Vider le Stress</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Toggle Godmode</span></button>
-                            <button class="action-btn danger" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer le Joueur</span></button>
-                        </div>
-                    </div>
-
-                    <!-- Category 6: Véhicule du Joueur -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">🚗 6. CONTRÔLE DE SON VÉHICULE ACTUEL</div>
-                        <div class="quick-actions-grid">
-                            <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Donner les Clés</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'repair' })"><span class="btn-icon">🔧</span><span class="btn-text">Réparer & Laver</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'max_tune' })"><span class="btn-icon">⚡</span><span class="btn-text">Bennys Max Tune</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'eject' })"><span class="btn-icon">🚪</span><span class="btn-text">Éjecter du Véhicule</span></button>
-                            <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'damage' })"><span class="btn-icon">💥</span><span class="btn-text">Crever les Pneus</span></button>
-                            <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'delete' })"><span class="btn-icon">🗑️</span><span class="btn-text">Supprimer Véhicule</span></button>
-                        </div>
-                    </div>
-
-                    <!-- Category 6B: Patrimoine du Joueur (Véhicules & Propriétés) -->
-                    <div class="perm-cat-group asset-management-panel" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center;">
-                            <span>🏛️ 6B. PATRIMOINE DU JOUEUR (MAISONS & VÉHICULES OFFICIELS)</span>
-                            <span class="asset-count-badge" id="manage-assets-count">0 Voitures • 0 Maisons</span>
-                        </div>
-
-                        <!-- Sub-section A: Véhicules Possédés -->
-                        <div style="margin-bottom: 16px;">
-                            <div class="asset-sub-header">
-                                <span>🚗 Véhicules Possédés (player_vehicles)</span>
-                                <span class="asset-sub-info">Gestion des cartes grises, clés & saisie</span>
-                            </div>
-                            <div id="manage-vehicles-container" class="assets-scroll-box">
-                                <div class="asset-empty-state">Chargement des véhicules du joueur...</div>
-                            </div>
-
-                            <!-- Formulaire d'attribution de nouveau véhicule -->
-                            <div class="asset-form-card" style="margin-top: 10px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <div style="font-size: 0.76rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase;">
-                                        🎁 Attribuer un Véhicule Officiel (Enregistré + Clés Offertes)
-                                    </div>
-                                    <button class="secondary-btn" style="padding: 4px 12px; font-size: 0.74rem; background: rgba(0, 229, 255, 0.1); border-color: rgba(0, 229, 255, 0.35); color: var(--accent-cyan); font-weight: 700;" onclick="openVehPickerModal()">🖼️ Catalogue Visuel</button>
-                                </div>
-                                <div id="manage-giveveh-preview-box" style="display: none; margin-bottom: 10px;" class="asset-selected-preview"></div>
-                                <div class="form-row" style="margin-bottom: 0;">
-                                    <input type="text" id="manage-giveveh-model" class="search-input" placeholder="Modèle spawn (ex: sultan, adder, schafter2)...">
-                                    <input type="text" id="manage-giveveh-plate" class="search-input" placeholder="Plaque (Optionnel max 8 char)" maxlength="8" style="max-width: 150px; text-transform: uppercase;">
-                                    <input type="text" id="manage-giveveh-garage" class="search-input" placeholder="Garage (ex: motel, pillbox)" value="motel" style="max-width: 140px;">
-                                    <button class="primary-btn" style="white-space: nowrap; font-weight: 700;" onclick="execPlayerDetailed('give_owned_vehicle')">➕ Attribuer + Clés</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sub-section B: Maisons & Propriétés -->
-                        <div>
-                            <div class="asset-sub-header">
-                                <span>🏠 Maisons & Propriétés (qbx_properties)</span>
-                                <span class="asset-sub-info">Biens immobiliers enregistrés au citizenid</span>
-                            </div>
-                            <div id="manage-properties-container" class="assets-scroll-box">
-                                <div class="asset-empty-state">Chargement des propriétés du joueur...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Category 7: Skins & Apparence -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>🎭 7. SKINS, PEDS & APPARENCE DU JOUEUR</span>
-                            <button class="secondary-btn" style="padding: 4px 12px; font-size: 0.74rem; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #c084fc; font-weight: 700;" onclick="openPedPickerModal()">🖼️ Galerie Visuelle des Peds</button>
-                        </div>
-                        <div class="form-row" style="margin-bottom: 10px;">
-                            <input type="text" id="manage-ped-model" class="search-input" placeholder="Modèle de Ped ou addon (ex: s_m_y_cop_01, player_zero, a_c_chop)...">
-                            <button class="primary-btn" onclick="execPlayerDetailed('apply_ped_target')">Appliquer Ped</button>
-                            <button class="secondary-btn" onclick="execPlayerDetailed('clothing_menu')">👔 Clothing Menu</button>
-                            <button class="secondary-btn" onclick="execPlayerDetailed('clean_ped')">🧼 Nettoyer Sang</button>
-                        </div>
-                        <div id="manage-ped-quickstrip" class="ped-quick-strip"></div>
-                    </div>
-
-                    <!-- Category 8: Trolls & Sanctions -->
-                    <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">🚀 8. TROLLS & SANCTIONS STAFF</div>
-                        <div class="quick-actions-grid" style="margin-bottom: 12px;">
-                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Faire Pisser</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Faire Caca</span></button>
-                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
-                        </div>
-                        <div class="form-row" style="margin-bottom: 10px;">
-                            <input type="text" id="manage-pm-msg" class="search-input" placeholder="Message PM Staff privé...">
-                            <button class="primary-btn" onclick="execPlayerDetailed('message')">Envoyer PM</button>
-                        </div>
-                        <div class="form-row" style="margin-bottom: 10px;">
-                            <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement officiel...">
-                            <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">Avertir</button>
-                            <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">Force Logout</button>
-                        </div>
-                        <div class="quick-actions-grid">
-                            <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent</span></button>
-                            <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Items</span></button>
-                            <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.15);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total</span></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 14px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
-                    <button class="secondary-btn" id="manage-modal-close-btn" style="padding: 8px 24px;">Fermer</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Player Details Dossier Modal -->
         <div id="player-info-modal" class="modal-overlay" style="display: none;">
             <div class="modal-box" style="max-width: 550px;">
@@ -1600,29 +1721,29 @@
 
         <!-- Visual Ped Picker Modal -->
         <div id="ped-picker-modal" class="modal-overlay" style="display: none; z-index: 9999;">
-            <div class="modal-box modal-large" style="max-width: 950px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-box modal-large" style="width: 1360px; max-width: 95vw; max-height: 92vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <div>
-                        <h3>🎭 SÉLECTEUR VISUEL DE PEDS & SKINS</h3>
-                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Cliquez sur n'importe quel personnage pour l'appliquer immédiatement sur le joueur sélectionné.</p>
+                        <h3>🎭 GALERIE PLEIN ÉCRAN DES PEDS & SKINS (1,050+ MODÈLES)</h3>
+                        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">Cliquez sur n'importe quelle carte de personnage pour l'appliquer immédiatement sur le joueur sélectionné.</p>
                     </div>
                     <button class="modal-close" id="ped-picker-close">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="padding: 18px 24px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; flex: 1;">
                     <div style="display: flex; gap: 12px; align-items: center;">
-                        <input type="text" id="ped-picker-search" class="search-input" placeholder="🔍 Rechercher un ped (nom, modèle, police, gangster, chien)..." style="flex: 1;">
-                        <span id="ped-picker-count" class="asset-count-badge">0 Peds</span>
+                        <input type="text" id="ped-picker-search" class="search-input" placeholder="🔍 Rechercher un ped par nom, catégorie ou code (ex: cop, swat, ballas, michael, chop)..." style="flex: 1;">
+                        <span id="ped-picker-count" class="asset-count-badge" style="background: #a855f7; color: #fff;">0 Peds</span>
                     </div>
                     <div class="picker-filter-row" id="ped-picker-filters">
-                        <button class="picker-filter-btn active" data-filter="all">Tous</button>
-                        <button class="picker-filter-btn" data-filter="vip">Story & VIP</button>
-                        <button class="picker-filter-btn" data-filter="emergency">Police & Secours</button>
-                        <button class="picker-filter-btn" data-filter="gang">Gangs & Cartels</button>
-                        <button class="picker-filter-btn" data-filter="civilian">Civils & Métiers</button>
-                        <button class="picker-filter-btn" data-filter="animal">Animaux</button>
-                        <button class="picker-filter-btn" data-filter="multiplayer">Multijoueur MP</button>
+                        <button class="picker-filter-btn active" data-filter="all">🌐 Tous</button>
+                        <button class="picker-filter-btn" data-filter="vip">👑 Story & VIP</button>
+                        <button class="picker-filter-btn" data-filter="emergency">🚓 Police & Secours</button>
+                        <button class="picker-filter-btn" data-filter="gang">🔥 Gangs & Cartels</button>
+                        <button class="picker-filter-btn" data-filter="civilian">👔 Civils & Métiers</button>
+                        <button class="picker-filter-btn" data-filter="animal">🐾 Animaux</button>
+                        <button class="picker-filter-btn" data-filter="multiplayer">🎮 Multijoueur MP</button>
                     </div>
-                    <div id="ped-picker-grid" class="visual-picker-grid" style="overflow-y: auto; flex: 1; max-height: 520px;"></div>
+                    <div id="ped-picker-grid" class="visual-picker-grid large-picker-grid" style="overflow-y: auto; flex: 1; max-height: 68vh;"></div>
                 </div>
                 <div class="modal-footer" style="padding: 12px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
                     <button class="secondary-btn" id="ped-picker-close-btn">Fermer</button>
@@ -1632,30 +1753,30 @@
 
         <!-- Visual Vehicle Picker Modal -->
         <div id="veh-picker-modal" class="modal-overlay" style="display: none; z-index: 9999;">
-            <div class="modal-box modal-large" style="max-width: 980px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-box modal-large" style="width: 1360px; max-width: 95vw; max-height: 92vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <div>
-                        <h3>🚗 CATALOGUE VISUEL DES VÉHICULES</h3>
-                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Sélectionnez visuellement la voiture à attribuer avec carte grise et clés offertes.</p>
+                        <h3>🚗 CATALOGUE VISUEL DES VÉHICULES (AVEC PHOTOS)</h3>
+                        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">Sélectionnez visuellement la voiture à attribuer au joueur avec carte grise et clés offertes.</p>
                     </div>
                     <button class="modal-close" id="veh-picker-close">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; flex: 1;">
+                <div class="modal-body" style="padding: 18px 24px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; flex: 1;">
                     <div style="display: flex; gap: 12px; align-items: center;">
-                        <input type="text" id="veh-picker-search" class="search-input" placeholder="🔍 Rechercher par marque, nom (ex: adder, lamborghini, sultan, bmw)..." style="flex: 1;">
+                        <input type="text" id="veh-picker-search" class="search-input" placeholder="🔍 Rechercher par marque, nom ou code (ex: adder, lamborghini, sultan, bmw)..." style="flex: 1;">
                         <span id="veh-picker-count" class="asset-count-badge">0 Véhicules</span>
                     </div>
                     <div class="picker-filter-row" id="veh-picker-filters">
-                        <button class="picker-filter-btn active" data-filter="all">Tous</button>
-                        <button class="picker-filter-btn" data-filter="super">Super & Hyper</button>
-                        <button class="picker-filter-btn" data-filter="sports">Sports</button>
-                        <button class="picker-filter-btn" data-filter="sedans">Berlines (Sedans)</button>
-                        <button class="picker-filter-btn" data-filter="suvs">SUV & 4x4</button>
-                        <button class="picker-filter-btn" data-filter="muscle">Muscle Cars</button>
-                        <button class="picker-filter-btn" data-filter="emergency">Police / EMS</button>
-                        <button class="picker-filter-btn" data-filter="motorcycles">Motos</button>
+                        <button class="picker-filter-btn active" data-filter="all">🌐 Tous</button>
+                        <button class="picker-filter-btn" data-filter="super">🏎️ Super & Hyper</button>
+                        <button class="picker-filter-btn" data-filter="sports">🏁 Sports</button>
+                        <button class="picker-filter-btn" data-filter="sedans">🚘 Berlines (Sedans)</button>
+                        <button class="picker-filter-btn" data-filter="suvs">🚙 SUV & 4x4</button>
+                        <button class="picker-filter-btn" data-filter="muscle">💪 Muscle Cars</button>
+                        <button class="picker-filter-btn" data-filter="emergency">🚓 Police / EMS</button>
+                        <button class="picker-filter-btn" data-filter="motorcycles">🏍️ Motos</button>
                     </div>
-                    <div id="veh-picker-grid" class="visual-picker-grid" style="overflow-y: auto; flex: 1; max-height: 520px;"></div>
+                    <div id="veh-picker-grid" class="visual-picker-grid large-picker-grid" style="overflow-y: auto; flex: 1; max-height: 68vh;"></div>
                 </div>
                 <div class="modal-footer" style="padding: 12px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
                     <button class="secondary-btn" id="veh-picker-close-btn">Fermer</button>
