@@ -75,35 +75,60 @@ end
 
 local function openEmploymentMenu()
     local jobOptions = {}
+    
+    -- Resign button prominently at the top
+    jobOptions[#jobOptions + 1] = {
+        title = '🛑 Quitter mon travail / Resign (Chômage)',
+        description = 'Démissionner de votre travail actuel et devenir sans emploi',
+        icon = 'ban',
+        onSelect = function()
+            local applied = lib.callback.await('qbx_cityhall:server:applyJob', false, 'unemployed')
+            if not config.useTarget and inRangeCityhall then
+                lib.showTextUI(locale('info.open_cityhall'))
+            end
+            if applied then
+                lib.notify({
+                    title = 'Job Center',
+                    description = 'Vous avez quitté votre travail (Unemployed).',
+                    type = 'inform',
+                    duration = 6000
+                })
+            end
+        end
+    }
+
     for job, label in pairsInOrder(sharedConfig.employment.jobs) do
-        jobOptions[#jobOptions + 1] = {
-            title = label,
-            onSelect = function()
-                local applied = lib.callback.await('qbx_cityhall:server:applyJob', false, job)
-                if not config.useTarget and inRangeCityhall then
-                    lib.showTextUI(locale('info.open_cityhall'))
-                end
-                if applied then
-                    if job == 'unemployed' then
-                        lib.notify({
-                            title = 'Job Center',
-                            description = 'You resigned and are now unemployed.',
-                            type = 'inform',
-                            duration = 6000
-                        })
-                    elseif sharedConfig.employment.jobLocations and sharedConfig.employment.jobLocations[job] then
-                        local loc = sharedConfig.employment.jobLocations[job]
-                        SetNewWaypoint(loc.coords.x, loc.coords.y)
-                        lib.notify({
-                            title = loc.label or label,
-                            description = 'You were hired! Workplace waypoint set on GPS.',
-                            type = 'success',
-                            duration = 8000
-                        })
+        if job ~= 'unemployed' then
+            jobOptions[#jobOptions + 1] = {
+                title = label,
+                icon = 'briefcase',
+                onSelect = function()
+                    local applied = lib.callback.await('qbx_cityhall:server:applyJob', false, job)
+                    if not config.useTarget and inRangeCityhall then
+                        lib.showTextUI(locale('info.open_cityhall'))
+                    end
+                    if applied then
+                        if sharedConfig.employment.jobLocations and sharedConfig.employment.jobLocations[job] then
+                            local loc = sharedConfig.employment.jobLocations[job]
+                            SetNewWaypoint(loc.coords.x, loc.coords.y)
+                            lib.notify({
+                                title = loc.label or label,
+                                description = 'Félicitations! Point GPS vers votre lieu de travail activé.',
+                                type = 'success',
+                                duration = 8000
+                            })
+                        else
+                            lib.notify({
+                                title = label,
+                                description = 'Vous avez pris le travail: ' .. label,
+                                type = 'success',
+                                duration = 6000
+                            })
+                        end
                     end
                 end
-            end
-        }
+            }
+        end
     end
     lib.registerContext({
         id = 'cityhall_employment_menu',

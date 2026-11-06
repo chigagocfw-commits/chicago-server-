@@ -66,6 +66,8 @@ AddEventHandler('onResourceStart', function(resourceName)
 
         if success then
             lib.print.info(("^2%s — Database tables verified.^0"):format(SharedConfig.PanelName))
+            -- Initialize Staff DB & Cache
+            Permissions.InitDB()
         else
             lib.print.error(("^1%s — Database initialization error: %s^0"):format(SharedConfig.PanelName, tostring(err)))
         end
@@ -97,7 +99,8 @@ lib.callback.register('souh4il_dev:server:getSecurityStatus', function(source)
 
     local role = Permissions.GetStaffRole(source)
     local isOwner = Permissions.IsOwner(source)
-    local hasAccess = Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS)
+    local hasAccess = Permissions.CanOpenPanel(source)
+    local perms = Permissions.GetPermissions(source)
 
     -- Log the status check
     Logger.Write("SECURITY_STATUS_QUERY", source, nil, { role = role, isOwner = isOwner }, "SUCCESS")
@@ -107,6 +110,7 @@ lib.callback.register('souh4il_dev:server:getSecurityStatus', function(source)
         role = role,
         isOwner = isOwner,
         hasAccess = hasAccess or isOwner,
+        permissions = perms,
     }
 end)
 
@@ -646,11 +650,91 @@ lib.callback.register('souh4il_dev:server:getAllGameVehicles', function(source)
                 type = v.type or 'automobile'
             })
         end
+
+        -- Backup file parser to ensure all 970+ vehicles are loaded even if export returned partial
+        if #list < 100 then
+            local fileRaw = LoadResourceFile('qbx_core', 'shared/vehicles.lua')
+            if fileRaw then
+                local seen = {}
+                for _, existing in ipairs(list) do seen[existing.model] = true end
+                for model, body in fileRaw:gmatch("(%w+)%s*=%s*{(.-)%s*hash%s*=") do
+                    local m = model:lower()
+                    if not seen[m] and m ~= 'return' and m ~= 'vehicle' then
+                        seen[m] = true
+                        local name = body:match("name%s*=%s*['\"]([^'\"]+)['\"]") or m
+                        local brand = body:match("brand%s*=%s*['\"]([^'\"]+)['\"]") or ''
+                        local cat = body:match("category%s*=%s*['\"]([^'\"]+)['\"]") or 'sports'
+                        table.insert(list, {
+                            model = m,
+                            name = name,
+                            brand = brand,
+                            category = cat,
+                            type = 'automobile'
+                        })
+                    end
+                end
+            end
+        end
+
         table.sort(list, function(a, b) return tostring(a.name) < tostring(b.name) end)
         cachedGameVehicles = list
     end
 
     return { success = true, vehicles = cachedGameVehicles }
+end)
+
+---Callback: Get All Registered Characters / Peds (illenium-appearance Dynamic Catalog)
+local cachedGameCharacters = nil
+lib.callback.register('souh4il_dev:server:getAllGameCharacters', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not cachedGameCharacters then
+        local list = {}
+        local raw = LoadResourceFile('illenium-appearance', 'shared/peds.lua')
+        if raw then
+            local seen = {}
+            for pedModel in raw:gmatch('"([%w_%-]+)"') do
+                local m = pedModel:lower()
+                if not seen[m] and not m:find('config') and not m:find('ped') and #m > 2 then
+                    seen[m] = true
+                    local cat = 'story'
+                    if m:sub(1, 4) == 'a_c_' then
+                        cat = 'animals'
+                    elseif m:sub(1, 2) == 'g_' then
+                        cat = 'gangs'
+                    elseif m:sub(1, 2) == 's_' or m:find('cop') or m:find('sheriff') or m:find('paramedic') or m:find('fire') or m:find('fib') or m:find('securo') then
+                        cat = 'emergency'
+                    elseif m:sub(1, 3) == 'mp_' then
+                        cat = 'multiplayer'
+                    elseif m:sub(1, 4) == 'a_f_' or m:sub(1, 4) == 'u_f_' then
+                        cat = 'female'
+                    elseif m:sub(1, 4) == 'a_m_' or m:sub(1, 4) == 'u_m_' then
+                        cat = 'male'
+                    elseif m:sub(1, 3) == 'ig_' or m:sub(1, 3) == 'cs_' or m:sub(1, 4) == 'csb_' or m:find('player_') then
+                        cat = 'story'
+                    end
+
+                    local cleanLabel = m:gsub('^a_c_', ''):gsub('^a_f_[moy]_', ''):gsub('^a_m_[moy]_', ''):gsub('^s_[fm]_[my]_', ''):gsub('^g_[fm]_[my]_', ''):gsub('^ig_', ''):gsub('^cs_', ''):gsub('^csb_', ''):gsub('^u_[fm]_[my]_', ''):gsub('_', ' ')
+                    cleanLabel = cleanLabel:gsub("(%a)([%w_']*)", function(first, rest) return first:upper() .. rest:lower() end)
+
+                    table.insert(list, {
+                        model = m,
+                        label = cleanLabel,
+                        category = cat
+                    })
+                end
+            end
+        end
+        table.sort(list, function(a, b) return tostring(a.label) < tostring(b.label) end)
+        cachedGameCharacters = list
+    end
+
+    return { success = true, characters = cachedGameCharacters }
 end)
 
 ---Callback 21: Get All Registered Jobs (Qbox Dynamic Jobs Catalog)
@@ -1221,6 +1305,233 @@ lib.callback.register('souh4il_dev:server:removeStress', function(source, target
         TriggerClientEvent('hud:client:UpdateStress', tId, 0)
     end
     return { success = true }
+end)
+
+---Callback: Get Staff Data and Online Players for Permissions Management
+lib.callback.register('souh4il_dev:server:getStaffData', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_staff')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    -- Online Players lookup (ga3 member f server)
+    local onlinePlayers = {}
+    local onlineLicenses = {}
+    local canonicalLic = PermissionsConfig.CanonicalOwnerLicense
+
+    for _, srcStr in ipairs(GetPlayers()) do
+        local src = tonumber(srcStr)
+        if src then
+            local lic = Identifiers.GetLicense(src)
+            local pName = GetPlayerName(src)
+            local qbxPlayer = exports.qbx_core:GetPlayer(src)
+            local cid = qbxPlayer and qbxPlayer.PlayerData.citizenid or 'N/A'
+            if lic then
+                onlineLicenses[lic] = src
+            end
+
+            local isOwner = (lic == canonicalLic)
+            local isStaff = isOwner or (lic and Permissions.StaffCache[lic] ~= nil)
+            local role = isOwner and "OWNER" or (isStaff and Permissions.StaffCache[lic].role or "MEMBER")
+            local perms = isOwner and Permissions.DEFAULT_ROLE_PERMS.owner or (isStaff and Permissions.StaffCache[lic].permissions or {})
+
+            onlinePlayers[#onlinePlayers + 1] = {
+                source = src,
+                name = pName,
+                citizenid = cid,
+                license = lic or 'N/A',
+                job = qbxPlayer and qbxPlayer.PlayerData.job and qbxPlayer.PlayerData.job.label or 'Unemployed',
+                gang = qbxPlayer and qbxPlayer.PlayerData.gang and qbxPlayer.PlayerData.gang.label or 'None',
+                hasAccess = isStaff,
+                role = role,
+                permissions = perms,
+                isOwner = isOwner,
+            }
+        end
+    end
+
+    -- Registered Staff from DB / Cache
+    local staffList = {}
+
+    -- First, canonical owner
+    staffList[#staffList + 1] = {
+        license = canonicalLic,
+        name = "SOUH4IL (Owner)",
+        role = "OWNER",
+        permissions = Permissions.DEFAULT_ROLE_PERMS.owner,
+        isOwner = true,
+        online = onlineLicenses[canonicalLic] ~= nil,
+        source = onlineLicenses[canonicalLic],
+        granted_by = "System",
+    }
+
+    for lic, data in pairs(Permissions.StaffCache) do
+        if lic ~= canonicalLic then
+            staffList[#staffList + 1] = {
+                license = lic,
+                name = data.name,
+                role = data.role,
+                permissions = data.permissions or {},
+                isOwner = false,
+                online = onlineLicenses[lic] ~= nil,
+                source = onlineLicenses[lic],
+                granted_by = data.granted_by or "Owner",
+            }
+        end
+    end
+
+    return {
+        success = true,
+        staff = staffList,
+        onlinePlayers = onlinePlayers,
+        defaultPerms = Permissions.DEFAULT_ROLE_PERMS,
+    }
+end)
+
+---Callback: Save / Update Staff Member
+lib.callback.register('souh4il_dev:server:saveStaffMember', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'staff_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not data or not data.license or data.license == "" then
+        return { success = false, error = "INVALID_LICENSE" }
+    end
+
+    local granterName = GetPlayerName(source) or "Owner"
+    local ok, err = Permissions.SaveStaff(data.license, data.name or "Staff", data.role or "moderator", data.permissions or {}, granterName)
+    if not ok then
+        return { success = false, error = err }
+    end
+
+    Logger.Write("SAVE_STAFF_PERMISSIONS", source, nil, { targetLicense = data.license, name = data.name, role = data.role, perms = data.permissions }, "SUCCESS")
+
+    -- Notify target player if online
+    for _, srcStr in ipairs(GetPlayers()) do
+        local src = tonumber(srcStr)
+        if src and Identifiers.GetLicense(src) == data.license then
+            exports.qbx_core:Notify(src, ("Votre rang SOUH4IL-DEV a été mis à jour: %s"):format(string.upper(data.role or "Staff")), "success", 7000)
+            TriggerClientEvent('souh4il_dev:client:refreshPermissions', src)
+            break
+        end
+    end
+
+    return { success = true }
+end)
+
+---Callback: Remove Staff Member
+lib.callback.register('souh4il_dev:server:removeStaffMember', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'staff_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not data or not data.license then
+        return { success = false, error = "INVALID_LICENSE" }
+    end
+
+    if data.license == PermissionsConfig.CanonicalOwnerLicense then
+        return { success = false, error = "CANNOT_REMOVE_OWNER" }
+    end
+
+    local ok, err = Permissions.RemoveStaff(data.license)
+    if not ok then
+        return { success = false, error = err }
+    end
+
+    Logger.Write("REMOVE_STAFF_PERMISSIONS", source, nil, { targetLicense = data.license }, "SUCCESS")
+
+    -- If target player is online, close their panel and notify them
+    for _, srcStr in ipairs(GetPlayers()) do
+        local src = tonumber(srcStr)
+        if src and Identifiers.GetLicense(src) == data.license then
+            exports.qbx_core:Notify(src, "Vos accès SOUH4IL-DEV ont été révoqués par l'administration.", "error", 7000)
+            TriggerClientEvent('souh4il_dev:client:forceClosePanel', src)
+            break
+        end
+    end
+
+    return { success = true }
+end)
+
+-- Event Manager State
+local ActiveEvent = nil
+
+---Callback: Start Event
+lib.callback.register('souh4il_dev:server:startEvent', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'event_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'events') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local ped = GetPlayerPed(source)
+    local pCoords = GetEntityCoords(ped)
+    local targetCoords = data.coords or { x = pCoords.x, y = pCoords.y, z = pCoords.z }
+
+    ActiveEvent = {
+        id = os.time(),
+        type = data.eventType or 'custom',
+        title = data.title or 'Community Event',
+        message = data.message or 'Un grand événement a commencé dans Chicago Roleplay !',
+        coords = targetCoords,
+        radius = tonumber(data.radius) or 100.0,
+        blipColor = tonumber(data.blipColor) or 1,
+        blipSprite = tonumber(data.blipSprite) or 38,
+        weather = data.weather,
+        time = data.time,
+        startedBy = GetPlayerName(source),
+        startedAt = os.date('%X'),
+    }
+
+    -- Weather & Time override if specified
+    if ActiveEvent.weather and ActiveEvent.weather ~= '' then
+        GlobalState.weather = ActiveEvent.weather
+        TriggerClientEvent('qb-weathersync:client:setWeather', -1, ActiveEvent.weather)
+    end
+    if ActiveEvent.time and ActiveEvent.time.hour then
+        TriggerClientEvent('qb-weathersync:client:setTime', -1, tonumber(ActiveEvent.time.hour) or 12, tonumber(ActiveEvent.time.minute) or 0)
+    end
+
+    -- Broadcast to all players
+    exports.qbx_core:Notify(-1, ("📢 ÉVÉNEMENT : %s — %s"):format(ActiveEvent.title, ActiveEvent.message), "inform", 12000)
+    TriggerClientEvent('souh4il_dev:client:syncEvent', -1, ActiveEvent)
+
+    Logger.Write("START_EVENT", source, nil, ActiveEvent, "SUCCESS")
+    return { success = true, event = ActiveEvent }
+end)
+
+---Callback: Stop Event
+lib.callback.register('souh4il_dev:server:stopEvent', function(source)
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'events') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not ActiveEvent then
+        return { success = false, error = "NO_ACTIVE_EVENT" }
+    end
+
+    local oldTitle = ActiveEvent.title
+    ActiveEvent = nil
+
+    TriggerClientEvent('souh4il_dev:client:syncEvent', -1, nil)
+    exports.qbx_core:Notify(-1, ("📢 L'événement '%s' est maintenant terminé !"):format(oldTitle), "inform", 8000)
+
+    Logger.Write("STOP_EVENT", source, nil, { title = oldTitle }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Get Event State
+lib.callback.register('souh4il_dev:server:getEventState', function(source)
+    return { success = true, activeEvent = ActiveEvent }
 end)
 
 -- Clean shutdown handler

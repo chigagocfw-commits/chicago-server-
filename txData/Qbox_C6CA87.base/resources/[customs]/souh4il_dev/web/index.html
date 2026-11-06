@@ -44,6 +44,7 @@
 
                 <!-- Navigation Menu -->
                 <nav class="nav-menu">
+                    <div class="nav-section-label">CORE & MASTER</div>
                     <button class="nav-item active" data-tab="dashboard">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         <span>Dashboard</span>
@@ -52,10 +53,16 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                         <span>God Powers</span>
                     </button>
+                    <button class="nav-item" data-tab="players">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>Players</span>
+                    </button>
                     <button class="nav-item" data-tab="teleport">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
                         <span>Teleport</span>
                     </button>
+
+                    <div class="nav-section-label">GAMEPLAY & ECONOMY</div>
                     <button class="nav-item" data-tab="items">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                         <span>Items & Weapons</span>
@@ -76,21 +83,27 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
                         <span>Owner Arsenal</span>
                     </button>
-                    <button class="nav-item" data-tab="players">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        <span>Players</span>
+
+                    <div class="nav-section-label">WORLD & MANAGEMENT</div>
+                    <button class="nav-item" data-tab="world">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        <span>World & Weather</span>
                     </button>
                     <button class="nav-item" data-tab="devtools">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                         <span>Dev Tools</span>
                     </button>
-                    <button class="nav-item" data-tab="world">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                        <span>World & Weather</span>
+                    <button class="nav-item" data-tab="events">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span>Event Manager</span>
                     </button>
                     <button class="nav-item" data-tab="logs">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         <span>Security Logs</span>
+                    </button>
+                    <button class="nav-item" data-tab="staff">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span>Staff & Perms</span>
                     </button>
                 </nav>
 
@@ -250,6 +263,42 @@
                                     <div class="toggle-info"><span class="toggle-title">Infinite Ammo Clip</span><span class="toggle-desc">Continuous 999 ammo clip refill without reloading</span></div>
                                     <label class="switch"><input type="checkbox" id="toggle-infammo"><span class="slider"></span></label>
                                 </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Anti-Ragdoll (Unknockable)</span><span class="toggle-desc">Immune to falling, collision ragdolls, and vehicle runovers</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-antiragdoll"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Infinite Oxygen (Scuba Diver)</span><span class="toggle-desc">Breathe endlessly underwater without ever drowning</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-infoxygen"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Infinite Stamina (Never Tired)</span><span class="toggle-desc">Sprint and run forever with zero stamina depletion</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-infstamina"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Explosive Melee / Super Punch</span><span class="toggle-desc">Any punch creates a devastating cinematic blast</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-exppunch"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Explosive Bullets</span><span class="toggle-desc">All fired rounds detonate like mini-grenades upon impact</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-expammo"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Vehicle Bunny Hop (Jump)</span><span class="toggle-desc">Press Spacebar inside vehicle to jump 8 meters high</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-vehjump"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Vehicle Drift Physics</span><span class="toggle-desc">Reduced tire friction for smooth high-speed drift lines</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-vehdrift"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Vehicle Auto-Right (Anti-Flip)</span><span class="toggle-desc">Automatically levels vehicle upright if flipped on its roof</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-autoflip"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Fast Swim (Dolphin Speed)</span><span class="toggle-desc">Maximum swimming velocity in ocean and pools</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-fastswim"><span class="slider"></span></label>
+                                </div>
                             </div>
                         </div>
 
@@ -262,6 +311,9 @@
                                 <button class="action-btn" id="btn-clothes-menu"><span class="btn-icon">👕</span><span class="btn-text">Clothes Menu</span></button>
                                 <button class="action-btn" id="btn-bennys-tune"><span class="btn-icon">🏎️</span><span class="btn-text">Bennys Max Mod</span></button>
                                 <button class="action-btn" id="btn-refuel-tank"><span class="btn-icon">⛽</span><span class="btn-text">Refuel Tank (100%)</span></button>
+                                <button class="action-btn" id="btn-clean-ped"><span class="btn-icon">🩸</span><span class="btn-text">Clean Blood & Dirt</span></button>
+                                <button class="action-btn" id="btn-flip-car"><span class="btn-icon">🔄</span><span class="btn-text">Flip Car Upright</span></button>
+                                <button class="action-btn" id="btn-fix-wash-car"><span class="btn-icon">✨</span><span class="btn-text">Repair & Wash</span></button>
                                 <button class="action-btn" id="btn-toggle-duty"><span class="btn-icon">🛡️</span><span class="btn-text">Toggle Duty</span></button>
                                 <button class="action-btn" id="btn-remove-stress"><span class="btn-icon">🧘</span><span class="btn-text">Remove Stress</span></button>
                                 <button class="action-btn" id="btn-revive-radius"><span class="btn-icon">💫</span><span class="btn-text">Revive In Radius (50m)</span></button>
@@ -760,6 +812,165 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- Tab: Event Manager -->
+                    <section class="tab-pane" id="pane-events">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <div>
+                                    <h4>EVENT & COMMUNITY MANAGER</h4>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Créer, gérer et lancer des tournois, courses, purges et largages pour toute la ville.</p>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="secondary-btn" id="btn-refresh-event">Check Status</button>
+                                    <button class="primary-btn danger-btn" id="btn-stop-active-event" style="display: none;">⏹️ Stopper l'Événement</button>
+                                </div>
+                            </div>
+
+                            <!-- Live Event Banner -->
+                            <div id="event-live-banner" style="background: rgba(0, 229, 255, 0.08); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span class="status-dot offline" id="event-status-dot" style="width: 12px; height: 12px;"></span>
+                                    <div>
+                                        <div style="font-size: 0.95rem; font-weight: 700;" id="event-status-title">AUCUN ÉVÉNEMENT EN COURS</div>
+                                        <div style="font-size: 0.78rem; color: var(--text-muted);" id="event-status-subtitle">Sélectionnez un événement ci-dessous pour le démarrer.</div>
+                                    </div>
+                                </div>
+                                <span class="role-badge role-custom" id="event-badge">IDLE</span>
+                            </div>
+
+                            <!-- Quick Launch Event Presets -->
+                            <div class="control-group-title">ÉVÉNEMENTS PRÉDÉFINIS (1-CLICK LAUNCH)</div>
+                            <div class="quick-actions-grid" style="margin-bottom: 20px;">
+                                <button class="action-btn" onclick="launchPresetEvent('fight')">
+                                    <span class="btn-icon">🥊</span>
+                                    <span class="btn-text">Fight Night (Legion)</span>
+                                </button>
+                                <button class="action-btn" onclick="launchPresetEvent('race')">
+                                    <span class="btn-icon">🏎️</span>
+                                    <span class="btn-text">Street Drag Race (Airport)</span>
+                                </button>
+                                <button class="action-btn" onclick="launchPresetEvent('purge')">
+                                    <span class="btn-icon">💀</span>
+                                    <span class="btn-text">Purge Night (Blackout)</span>
+                                </button>
+                                <button class="action-btn" onclick="launchPresetEvent('airdrop')">
+                                    <span class="btn-icon">🎁</span>
+                                    <span class="btn-text">Mystery Airdrop Crate</span>
+                                </button>
+                                <button class="action-btn" onclick="launchPresetEvent('derby')">
+                                    <span class="btn-icon">💥</span>
+                                    <span class="btn-text">Demolition Derby (Sandy)</span>
+                                </button>
+                            </div>
+
+                            <!-- Custom Event Builder -->
+                            <div class="control-group-title">CRÉATEUR D'ÉVÉNEMENT PERSONNALISÉ</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div class="form-group">
+                                    <label>Titre de l'événement :</label>
+                                    <input type="text" id="custom-event-title" class="search-input" placeholder="Ex: Course Poursuite VIP, Tournoi de Boxe...">
+                                </div>
+                                <div class="form-group">
+                                    <label>Type d'événement :</label>
+                                    <select id="custom-event-type" class="search-input">
+                                        <option value="fight">Tournoi / Combat</option>
+                                        <option value="race">Course Automobile</option>
+                                        <option value="purge">Purge / Battle Royale</option>
+                                        <option value="airdrop">Largage / Chasse au Trésor</option>
+                                        <option value="custom">Autre / Événement Libre</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>Message d'annonce aux joueurs :</label>
+                                <input type="text" id="custom-event-msg" class="search-input" placeholder="Message diffusé sur l'écran de tous les joueurs...">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label>Emplacement :</label>
+                                    <select id="custom-event-loc" class="search-input">
+                                        <option value="my_coords">📍 Ma Position Actuelle</option>
+                                        <option value="legion">🏛️ Legion Square</option>
+                                        <option value="airport">✈️ Aéroport Los Santos</option>
+                                        <option value="sandy">🏜️ Sandy Shores Airfield</option>
+                                        <option value="mazebank">🏢 Toit Maze Bank</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Rayon de la zone (Mètres) :</label>
+                                    <select id="custom-event-radius" class="search-input">
+                                        <option value="50">50 Mètres (Petite Arène)</option>
+                                        <option value="120" selected>120 Mètres (Standard)</option>
+                                        <option value="250">250 Mètres (Grand Quartier)</option>
+                                        <option value="500">500 Mètres (Zone Massive)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Couleur du Blip GPS :</label>
+                                    <select id="custom-event-color" class="search-input">
+                                        <option value="1">Rouge (Alerte / Combat)</option>
+                                        <option value="5">Jaune (Course / Défi)</option>
+                                        <option value="2">Vert (Rassemblement)</option>
+                                        <option value="3">Cyan (Tech / Police)</option>
+                                        <option value="27">Violet (VIP)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                <button class="primary-btn" id="btn-launch-custom-event" style="padding: 10px 24px;">🚀 Lancer l'Événement</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Staff & Permissions Management -->
+                    <section class="tab-pane" id="pane-staff">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <div>
+                                    <h4>STAFF ACCESS & GRANULAR PERMISSIONS</h4>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Gérer qui a accès à SOUH4IL-DEV et choisir exactement quels pouvoirs et fonctionnalités sont autorisés.</p>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="secondary-btn" id="btn-refresh-staff">Refresh List</button>
+                                    <button class="primary-btn" id="btn-open-add-staff">+ Grant Staff Access</button>
+                                </div>
+                            </div>
+
+                            <div class="metrics-grid" style="margin-bottom: 16px;">
+                                <div class="metric-card">
+                                    <span class="metric-label">TOTAL PLAYERS ONLINE</span>
+                                    <span class="metric-value text-cyan" id="metric-total-members">--</span>
+                                </div>
+                                <div class="metric-card">
+                                    <span class="metric-label">STAFF WITH ACCESS</span>
+                                    <span class="metric-value text-green" id="metric-total-staff">--</span>
+                                </div>
+                                <div class="metric-card">
+                                    <span class="metric-label">YOUR ACTIVE ROLE</span>
+                                    <span class="metric-value" style="color: #ffd700;" id="metric-your-role">OWNER</span>
+                                </div>
+                            </div>
+
+                            <!-- Dual View Mode: All Members vs Staff Only -->
+                            <div style="display: flex; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                                <button class="secondary-btn" id="btn-view-members" style="background: rgba(0, 229, 255, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">👥 TOUS LES MEMBRES CONNECTÉS (GA3 LES JOUEURS)</button>
+                                <button class="secondary-btn" id="btn-view-staff" style="font-weight: 600;">🛡️ STAFF ENREGISTRÉS SEULEMENT</button>
+                            </div>
+
+                            <div class="staff-header-actions">
+                                <input type="text" id="staff-search-input" class="search-input" placeholder="🔍 Rechercher un joueur/staff par nom, license, ID..." style="max-width: 340px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);" id="staff-view-hint">💡 Cliquez sur un joueur pour lui attribuer ou modifier ses permissions dans SOUH4IL-DEV.</span>
+                            </div>
+
+                            <div id="staff-list-container" class="staff-grid">
+                                <div class="table-empty">Chargement de la liste des joueurs...</div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </main>
         </div>
@@ -940,6 +1151,112 @@
                 </div>
                 <div class="modal-footer">
                     <button class="secondary-btn" id="info-modal-close-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff & Granular Permissions Modal -->
+        <div id="staff-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-box" style="max-width: 680px;">
+                <div class="modal-header">
+                    <h3 id="staff-modal-title">🛡️ Grant / Edit Staff Permissions</h3>
+                    <button class="modal-close" id="staff-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Quick Select from Online Players -->
+                    <div class="form-group">
+                        <label>Select from Online Players (or enter manual License):</label>
+                        <select id="staff-select-player" class="search-input">
+                            <option value="">-- Choose an online player or enter manually below --</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Player / Staff Name:</label>
+                            <input type="text" id="staff-input-name" class="search-input" placeholder="Staff display name">
+                        </div>
+                        <div class="form-group">
+                            <label>Role Preset:</label>
+                            <select id="staff-select-role" class="search-input">
+                                <option value="moderator">MODERATOR (Basic Moderation)</option>
+                                <option value="admin">ADMIN (Full Admin & Punishments)</option>
+                                <option value="developer">DEVELOPER (Dev & World Tools)</option>
+                                <option value="owner">OWNER (Full Master Powers)</option>
+                                <option value="custom">CUSTOM (Manual Selection)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rockstar License Identifier:</label>
+                        <input type="text" id="staff-input-license" class="search-input" placeholder="license:385f488fdcdc30a24c28b7a333ba9cbbffed5044" style="font-family: var(--font-mono); font-size: 0.8rem;">
+                    </div>
+
+                    <!-- Granular Feature Checkboxes (nkhtar bach i9dr ikhdm) -->
+                    <div class="control-group-title" style="margin-top: 10px;">GRANULAR FEATURE PERMISSIONS (BACH I9DR IKHDM)</div>
+                    <div class="perm-checkbox-grid">
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-players" checked>
+                            <label for="perm-players">👥 <b>Players Suite</b> (Spectate, Goto, Bring, Freeze, Heal, Revive)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-teleport" checked>
+                            <label for="perm-teleport">📍 <b>Teleportation</b> (Waypoints, Saved Locations, Coords)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-vehicles" checked>
+                            <label for="perm-vehicles">🚗 <b>Vehicle Controls</b> (Spawn, Max Bennys, Repair, Delete)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-punishments">
+                            <label for="perm-punishments">🔨 <b>Punishments</b> (Warn, Kick, Ban, Offline Ban, Wipe)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-items">
+                            <label for="perm-items">📦 <b>Items & Weapons</b> (Give Items, Weapons, Money)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-characters">
+                            <label for="perm-characters">👤 <b>Characters</b> (Dossiers, Skins, Ped Models)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-jobs">
+                            <label for="perm-jobs">💼 <b>Jobs & Gangs</b> (Change Jobs, Ranks, Societies)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-world">
+                            <label for="perm-world">🌍 <b>World & Weather</b> (Weather, Time, Blackout, Clear)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-devtools">
+                            <label for="perm-devtools">🛠️ <b>Dev Tools</b> (Prop Spawner, Stashes, Inspector)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-arsenal">
+                            <label for="perm-arsenal">🔫 <b>Owner Arsenal</b> (Exclusive Custom Loadouts)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-god">
+                            <label for="perm-god">⚡ <b>God Powers</b> (Godmode, Noclip, Invis, Ammo, Trolls)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-logs">
+                            <label for="perm-logs">📜 <b>Audit Logs</b> (View Tamper-Evident Security Logs)</label>
+                        </div>
+                        <div class="perm-check-item">
+                            <input type="checkbox" id="perm-events">
+                            <label for="perm-events">🎉 <b>Event Manager</b> (Launch races, fights, purges, airdrops)</label>
+                        </div>
+                        <div class="perm-check-item" style="grid-column: span 2;">
+                            <input type="checkbox" id="perm-staff">
+                            <label for="perm-staff">🛡️ <b>Staff Management</b> (Can add/edit/revoke other staff)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn" id="btn-cancel-staff">Cancel</button>
+                    <button class="primary-btn" id="btn-save-staff">💾 Enregistrer les permissions</button>
                 </div>
             </div>
         </div>

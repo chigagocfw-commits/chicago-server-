@@ -31,6 +31,9 @@ Config.RateLimits = {
     ['get_catalog'] = { capacity = 10.0, fillRatePerSec = 2.0 },
     ['set_traffic'] = { capacity = 5.0, fillRatePerSec = 1.0 },
     ['arsenal'] = { capacity = 5.0, fillRatePerSec = 1.0 },
+    ['staff_action'] = { capacity = 5.0, fillRatePerSec = 1.0 },
+    ['get_staff'] = { capacity = 10.0, fillRatePerSec = 2.0 },
+    ['event_action'] = { capacity = 5.0, fillRatePerSec = 1.0 },
 }
 
 -- Return config

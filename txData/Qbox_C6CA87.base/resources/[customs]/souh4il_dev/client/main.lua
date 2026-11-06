@@ -20,6 +20,17 @@ local isVehGodmode = false
 local isVehBoost = false
 local isFrozen = false
 
+-- New Advanced Super Powers State
+local isAntiRagdoll = false
+local isInfOxygen = false
+local isInfStamina = false
+local isExpPunch = false
+local isExpAmmo = false
+local isVehJump = false
+local isVehDrift = false
+local isVehAutoFlip = false
+local isFastSwim = false
+
 -- Dev Tools State
 local isInspectorActive = false
 local isCinematicHUD = false
@@ -91,6 +102,15 @@ local function TogglePanel()
                 jump = isSuperJump,
                 vehgod = isVehGodmode,
                 vehboost = isVehBoost,
+                antiragdoll = isAntiRagdoll,
+                infoxygen = isInfOxygen,
+                infstamina = isInfStamina,
+                exppunch = isExpPunch,
+                expammo = isExpAmmo,
+                vehjump = isVehJump,
+                vehdrift = isVehDrift,
+                autoflip = isVehAutoFlip,
+                fastswim = isFastSwim,
                 inspector = isInspectorActive,
                 hidehud = isCinematicHUD,
                 blackout = GlobalState.blackout == true
@@ -193,11 +213,49 @@ CreateThread(function()
             SetDispatchCopsForPlayer(player, false)
         end
 
+        -- Anti-Ragdoll
+        if isAntiRagdoll then
+            SetPedCanRagdoll(ped, false)
+            SetPedCanRagdollFromPlayerPed(ped, false)
+            SetPedRagdollOnCollision(ped, false)
+        end
+
+        -- Infinite Oxygen
+        if isInfOxygen then
+            SetPedDiesInWater(ped, false)
+            SetPedMaxTimeUnderwater(ped, 999999.0)
+            SetPedDiesInSinkingVehicle(ped, false)
+        end
+
+        -- Infinite Stamina
+        if isInfStamina then
+            RestorePlayerStamina(player, 1.0)
+            ResetPlayerStamina(player)
+        end
+
+        -- Explosive Melee
+        if isExpPunch then
+            sleep = 0
+            SetExplosiveMeleeThisFrame(player)
+        end
+
+        -- Explosive Bullets
+        if isExpAmmo then
+            sleep = 0
+            SetExplosiveAmmoThisFrame(player)
+        end
+
+        -- Fast Swim
+        if isFastSwim then
+            sleep = 0
+            SetSwimMultiplierForPlayer(player, 1.49)
+        end
+
         Wait(sleep)
     end
 end)
 
--- Vehicle Powers Engine (God Mode & Shift Rocket Boost)
+-- Vehicle Powers Engine (God Mode, Rocket Boost, Jump, Drift, Auto-Flip)
 CreateThread(function()
     while true do
         local ped = PlayerPedId()
@@ -216,6 +274,22 @@ CreateThread(function()
                 SetVehicleForwardSpeed(veh, curSpeed + 20.0)
                 StartScreenEffect("RaceTurbo", 400, false)
             end
+
+            if isVehJump and IsControlJustPressed(0, 22) then -- Spacebar (Bunny Hop)
+                ApplyForceToEntity(veh, 1, 0.0, 0.0, 8.5, 0.0, 0.0, 0.0, 0, false, true, true, false, true)
+            end
+
+            if isVehDrift then
+                SetVehicleReduceGrip(veh, true)
+            end
+
+            if isVehAutoFlip then
+                local roll = GetEntityRoll(veh)
+                if roll > 65.0 or roll < -65.0 then
+                    SetVehicleOnGroundProperly(veh)
+                end
+            end
+
             Wait(0)
         else
             Wait(1000)
@@ -479,6 +553,32 @@ RegisterNUICallback('quickAction', function(data, cb)
             else
                 lib.notify({ title = SharedConfig.PanelName, description = "Must be inside a vehicle.", type = 'error' })
             end
+        elseif action == 'clean_ped' then
+            ClearPedBloodDamage(ped)
+            ClearPedWetness(ped)
+            ClearPedEnvDirt(ped)
+            ResetPedVisibleDamage(ped)
+            ClearPedLastDamageBone(ped)
+            lib.notify({ title = SharedConfig.PanelName, description = "Corps et vêtements nettoyés (Blood & Dirt Cleared).", type = 'success' })
+        elseif action == 'flip_car' then
+            local veh = GetVehiclePedIsIn(ped, false)
+            if veh ~= 0 then
+                SetVehicleOnGroundProperly(veh)
+                lib.notify({ title = SharedConfig.PanelName, description = "Véhicule remis sur ses roues.", type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Vous devez être dans un véhicule.", type = 'error' })
+            end
+        elseif action == 'fix_wash_car' then
+            local veh = GetVehiclePedIsIn(ped, false)
+            if veh ~= 0 then
+                SetVehicleFixed(veh)
+                SetVehicleDirtLevel(veh, 0.0)
+                SetVehicleDeformationFixed(veh)
+                SetVehicleEngineHealth(veh, 1000.0)
+                lib.notify({ title = SharedConfig.PanelName, description = "Véhicule réparé et nettoyé à neuf.", type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Vous devez être dans un véhicule.", type = 'error' })
+            end
         end
     end, action)
 
@@ -578,6 +678,49 @@ RegisterNUICallback('togglePower', function(data, cb)
         lib.notify({ title = SharedConfig.PanelName, description = "Cinematic HUD " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
     elseif power == 'blackout' then
         lib.callback('souh4il_dev:server:setBlackout', false, function() end, state)
+    elseif power == 'antiragdoll' then
+        isAntiRagdoll = state
+        if not state then
+            SetPedCanRagdoll(ped, true)
+            SetPedCanRagdollFromPlayerPed(ped, true)
+            SetPedRagdollOnCollision(ped, true)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Anti-Ragdoll " .. (state and "ENABLED (Unknockable)" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'infoxygen' then
+        isInfOxygen = state
+        if not state then
+            SetPedDiesInWater(ped, true)
+            SetPedMaxTimeUnderwater(ped, 15.0)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Infinite Oxygen " .. (state and "ENABLED (Scuba Diver)" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'infstamina' then
+        isInfStamina = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Infinite Stamina " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'exppunch' then
+        isExpPunch = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Explosive Punch " .. (state and "ENABLED (Super Blast)" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'expammo' then
+        isExpAmmo = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Explosive Bullets " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'vehjump' then
+        isVehJump = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Vehicle Bunny Hop " .. (state and "ENABLED (Press Spacebar in car)" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'vehdrift' then
+        isVehDrift = state
+        local currentVeh = GetVehiclePedIsIn(ped, false)
+        if not state and currentVeh ~= 0 then
+            SetVehicleReduceGrip(currentVeh, false)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Vehicle Drift Mode " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'autoflip' then
+        isVehAutoFlip = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Auto-Right (Anti-Flip) " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'fastswim' then
+        isFastSwim = state
+        if not state then
+            SetSwimMultiplierForPlayer(player, 1.0)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Fast Swim " .. (state and "ENABLED (Dolphin Speed)" or "DISABLED"), type = state and 'success' or 'inform' })
     end
 
     cb('ok')
@@ -972,6 +1115,16 @@ RegisterNUICallback('fetchAllVehicles', function(_, cb)
     lib.callback('souh4il_dev:server:getAllGameVehicles', false, function(response)
         if response and response.success then
             SendNUIMessage({ action = "updateAllVehicles", vehicles = response.vehicles })
+        end
+    end)
+    cb('ok')
+end)
+
+-- Fetch All Server Characters / Peds (illenium-appearance Dynamic Catalog)
+RegisterNUICallback('fetchAllCharacters', function(_, cb)
+    lib.callback('souh4il_dev:server:getAllGameCharacters', false, function(response)
+        if response and response.success then
+            SendNUIMessage({ action = "updateAllCharacters", characters = response.characters })
         end
     end)
     cb('ok')
@@ -1455,6 +1608,112 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
         end, tId)
     end
     cb('ok')
+end)
+
+-- Staff & Permissions Management NUI Callbacks
+RegisterNUICallback('getStaffData', function(_, cb)
+    lib.callback('souh4il_dev:server:getStaffData', false, function(res)
+        cb(res or { success = false })
+    end)
+end)
+
+RegisterNUICallback('saveStaffMember', function(data, cb)
+    lib.callback('souh4il_dev:server:saveStaffMember', false, function(res)
+        cb(res or { success = false })
+    end, data)
+end)
+
+RegisterNUICallback('removeStaffMember', function(data, cb)
+    lib.callback('souh4il_dev:server:removeStaffMember', false, function(res)
+        cb(res or { success = false })
+    end, data)
+end)
+
+-- Network Events for Staff Management
+RegisterNetEvent('souh4il_dev:client:refreshPermissions', function()
+    if isPanelOpen then
+        lib.callback('souh4il_dev:server:getSecurityStatus', false, function(response)
+            if response and response.success then
+                SendNUIMessage({
+                    action = "updatePermissions",
+                    status = response,
+                })
+            end
+        end)
+    end
+end)
+
+RegisterNetEvent('souh4il_dev:client:forceClosePanel', function()
+    if isPanelOpen then
+        isPanelOpen = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
+    end
+end)
+
+-- Event Manager Client Blips & Waypoint
+local currentEventBlip = nil
+local currentEventRadiusBlip = nil
+
+RegisterNetEvent('souh4il_dev:client:syncEvent', function(eventData)
+    if currentEventBlip and DoesBlipExist(currentEventBlip) then
+        RemoveBlip(currentEventBlip)
+        currentEventBlip = nil
+    end
+    if currentEventRadiusBlip and DoesBlipExist(currentEventRadiusBlip) then
+        RemoveBlip(currentEventRadiusBlip)
+        currentEventRadiusBlip = nil
+    end
+
+    if not eventData or not eventData.coords then
+        return
+    end
+
+    local cx = tonumber(eventData.coords.x) or 0.0
+    local cy = tonumber(eventData.coords.y) or 0.0
+    local cz = tonumber(eventData.coords.z) or 0.0
+
+    currentEventBlip = AddBlipForCoord(cx, cy, cz)
+    SetBlipSprite(currentEventBlip, tonumber(eventData.blipSprite) or 38)
+    SetBlipDisplay(currentEventBlip, 4)
+    SetBlipScale(currentEventBlip, 1.2)
+    SetBlipColour(currentEventBlip, tonumber(eventData.blipColor) or 1)
+    SetBlipAsShortRange(currentEventBlip, false)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString("EVENT: " .. (eventData.title or "Chicago Event"))
+    EndTextCommandSetBlipName(currentEventBlip)
+
+    if eventData.radius and tonumber(eventData.radius) > 0 then
+        currentEventRadiusBlip = AddBlipForRadius(cx, cy, cz, tonumber(eventData.radius) * 1.0)
+        SetBlipColour(currentEventRadiusBlip, tonumber(eventData.blipColor) or 1)
+        SetBlipAlpha(currentEventRadiusBlip, 90)
+    end
+
+    SetNewWaypoint(cx, cy)
+end)
+
+-- Event Manager NUI Callbacks
+RegisterNUICallback('startEvent', function(data, cb)
+    if not data.coords then
+        local ped = PlayerPedId()
+        local c = GetEntityCoords(ped)
+        data.coords = { x = c.x, y = c.y, z = c.z }
+    end
+    lib.callback('souh4il_dev:server:startEvent', false, function(res)
+        cb(res or { success = false })
+    end, data)
+end)
+
+RegisterNUICallback('stopEvent', function(_, cb)
+    lib.callback('souh4il_dev:server:stopEvent', false, function(res)
+        cb(res or { success = false })
+    end)
+end)
+
+RegisterNUICallback('getEventState', function(_, cb)
+    lib.callback('souh4il_dev:server:getEventState', false, function(res)
+        cb(res or { success = false })
+    end)
 end)
 
 -- Clean Cleanup on Stop

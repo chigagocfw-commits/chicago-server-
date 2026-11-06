@@ -278,7 +278,7 @@ window.addEventListener('message', (event) => {
         } else {
             app.style.display = 'none';
         }
-    } else if (data.action === 'updateStatus') {
+    } else if (data.action === 'updateStatus' || data.action === 'updatePermissions') {
         updateSecurityStatus(data.status);
     } else if (data.action === 'updateLogs') {
         renderAuditLogs(data.logs);
@@ -351,6 +351,15 @@ function syncToggles(t) {
     setCheck('toggle-jump', t.jump);
     setCheck('toggle-vehgod', t.vehgod);
     setCheck('toggle-vehboost', t.vehboost);
+    setCheck('toggle-antiragdoll', t.antiragdoll);
+    setCheck('toggle-infoxygen', t.infoxygen);
+    setCheck('toggle-infstamina', t.infstamina);
+    setCheck('toggle-exppunch', t.exppunch);
+    setCheck('toggle-expammo', t.expammo);
+    setCheck('toggle-vehjump', t.vehjump);
+    setCheck('toggle-vehdrift', t.vehdrift);
+    setCheck('toggle-autoflip', t.autoflip);
+    setCheck('toggle-fastswim', t.fastswim);
     setCheck('toggle-inspector', t.inspector);
     setCheck('toggle-hidehud', t.hidehud);
     setCheck('toggle-blackout', t.blackout);
@@ -382,6 +391,39 @@ function updateSecurityStatus(status) {
             badge.className = 'profile-badge admin';
             badge.innerText = status.role || 'STAFF';
         }
+    }
+
+    // Dynamic Role-Based / Granular Permissions Tab Filtering ("nkhtar chkon user les iban lih ou nkhtar bach i9dr ikhdm")
+    const perms = status.permissions || {};
+    let activeTabVisible = false;
+
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        const tab = btn.getAttribute('data-tab');
+        if (!tab) return;
+        if (tab === 'dashboard') {
+            btn.style.display = '';
+            if (currentTab === 'dashboard') activeTabVisible = true;
+            return;
+        }
+
+        if (status.isOwner) {
+            btn.style.display = '';
+            if (currentTab === tab) activeTabVisible = true;
+            return;
+        }
+
+        // Check if user has permission for this module
+        const hasPerm = perms[tab] === true;
+        btn.style.display = hasPerm ? '' : 'none';
+        if (currentTab === tab && hasPerm) {
+            activeTabVisible = true;
+        }
+    });
+
+    // If current active tab was hidden due to lack of permission, fallback to dashboard
+    if (!activeTabVisible) {
+        const dashBtn = document.querySelector('.nav-item[data-tab="dashboard"]');
+        if (dashBtn) dashBtn.click();
     }
 }
 
@@ -421,6 +463,10 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             renderVisualJobs(query);
         } else if (tab === 'devtools') {
             postNUI('requestCoordsDisplay');
+        } else if (tab === 'events') {
+            checkEventState();
+        } else if (tab === 'staff') {
+            fetchStaffData();
         }
     });
 });
@@ -433,6 +479,8 @@ function closePanel() {
     if (modal) modal.style.display = 'none';
     const jobModal = document.getElementById('job-modal');
     if (jobModal) jobModal.style.display = 'none';
+    const staffModal = document.getElementById('staff-modal');
+    if (staffModal) staffModal.style.display = 'none';
     postNUI('close');
 }
 
@@ -446,10 +494,13 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         const modal = document.getElementById('ban-modal');
         const jobModal = document.getElementById('job-modal');
+        const staffModal = document.getElementById('staff-modal');
         if (modal && modal.style.display !== 'none') {
             modal.style.display = 'none';
         } else if (jobModal && jobModal.style.display !== 'none') {
             jobModal.style.display = 'none';
+        } else if (staffModal && staffModal.style.display !== 'none') {
+            staffModal.style.display = 'none';
         } else {
             closePanel();
         }
@@ -488,6 +539,15 @@ registerToggle('toggle-vehboost', 'vehboost');
 registerToggle('toggle-inspector', 'inspector');
 registerToggle('toggle-hidehud', 'hidehud');
 registerToggle('toggle-blackout', 'blackout');
+registerToggle('toggle-antiragdoll', 'antiragdoll');
+registerToggle('toggle-infoxygen', 'infoxygen');
+registerToggle('toggle-infstamina', 'infstamina');
+registerToggle('toggle-exppunch', 'exppunch');
+registerToggle('toggle-expammo', 'expammo');
+registerToggle('toggle-vehjump', 'vehjump');
+registerToggle('toggle-vehdrift', 'vehdrift');
+registerToggle('toggle-autoflip', 'autoflip');
+registerToggle('toggle-fastswim', 'fastswim');
 
 // Extended Owner Toggles
 const registerExtendedToggle = (id, power) => {
@@ -514,6 +574,9 @@ const bindClientAction = (id, action) => {
 bindClientAction('btn-clothes-menu', 'clothes');
 bindClientAction('btn-bennys-tune', 'bennys');
 bindClientAction('btn-refuel-tank', 'refuel');
+bindClientAction('btn-clean-ped', 'clean_ped');
+bindClientAction('btn-flip-car', 'flip_car');
+bindClientAction('btn-fix-wash-car', 'fix_wash_car');
 bindClientAction('btn-toggle-duty', 'duty');
 bindClientAction('btn-remove-stress', 'stress');
 bindClientAction('btn-revive-radius', 'revive_radius');
@@ -1318,3 +1381,593 @@ function postNUI(endpoint, payload = {}) {
         console.warn('NUI callback error:', err);
     });
 }
+
+// Staff & Granular Permissions Suite
+let cachedStaffList = [];
+let cachedOnlinePlayers = [];
+let staffViewMode = 'members'; // 'members' = ga3 les joueurs, 'staff' = only staff
+
+let rolePresetPerms = {
+    owner: { god: true, teleport: true, items: true, vehicles: true, characters: true, jobs: true, arsenal: true, players: true, punishments: true, devtools: true, world: true, logs: true, events: true, staff: true },
+    developer: { god: false, teleport: true, items: false, vehicles: true, characters: true, jobs: false, arsenal: false, players: true, punishments: false, devtools: true, world: true, logs: true, events: true, staff: false },
+    admin: { god: false, teleport: true, items: true, vehicles: true, characters: true, jobs: true, arsenal: false, players: true, punishments: true, devtools: false, world: true, logs: true, events: true, staff: false },
+    moderator: { god: false, teleport: true, items: false, vehicles: true, characters: false, jobs: false, arsenal: false, players: true, punishments: false, devtools: false, world: false, logs: false, events: false, staff: false },
+    custom: { god: false, teleport: true, items: false, vehicles: false, characters: false, jobs: false, arsenal: false, players: true, punishments: false, devtools: false, world: false, logs: false, events: false, staff: false }
+};
+
+const ALL_PERM_KEYS = ['players', 'teleport', 'vehicles', 'punishments', 'items', 'characters', 'jobs', 'world', 'devtools', 'arsenal', 'god', 'logs', 'events', 'staff'];
+
+async function fetchNUI(endpoint, payload = {}) {
+    const resourceName = window.GetParentResourceName ? window.GetParentResourceName() : 'souh4il_dev';
+    try {
+        const resp = await fetch(`https://${resourceName}/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return await resp.json();
+    } catch (err) {
+        console.warn(`NUI error on ${endpoint}:`, err);
+        return null;
+    }
+}
+
+async function fetchStaffData() {
+    const container = document.getElementById('staff-list-container');
+    if (container) container.innerHTML = '<div class="table-empty">Chargement de la liste des membres...</div>';
+
+    const res = await fetchNUI('getStaffData');
+    if (!res || !res.success) {
+        if (container) container.innerHTML = `<div class="table-empty" style="color: var(--accent-red);">${res && res.error === 'ACCESS_DENIED' ? 'Accès refusé : Seul le Propriétaire ou les Administrateurs autorisés peuvent gérer le staff.' : 'Erreur lors du chargement des staffs.'}</div>`;
+        return;
+    }
+
+    cachedStaffList = res.staff || [];
+    cachedOnlinePlayers = res.onlinePlayers || [];
+    if (res.defaultPerms) {
+        rolePresetPerms = { ...rolePresetPerms, ...res.defaultPerms };
+    }
+
+    // Update metrics
+    const totalMembersElem = document.getElementById('metric-total-members');
+    const totalStaffElem = document.getElementById('metric-total-staff');
+    if (totalMembersElem) totalMembersElem.innerText = cachedOnlinePlayers.length;
+    if (totalStaffElem) totalStaffElem.innerText = cachedStaffList.length;
+
+    // Populate online players dropdown in modal
+    const playerSelect = document.getElementById('staff-select-player');
+    if (playerSelect) {
+        playerSelect.innerHTML = '<option value="">-- Choisir un joueur connecté (ou entrer la License ci-dessous) --</option>';
+        cachedOnlinePlayers.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.license;
+            opt.dataset.name = p.name;
+            opt.dataset.cid = p.citizenid;
+            opt.innerText = `[ID: ${p.source}] ${p.name} (CID: ${p.citizenid}) - ${p.hasAccess ? p.role : 'Member'}`;
+            playerSelect.appendChild(opt);
+        });
+    }
+
+    renderStaffView();
+}
+
+function renderStaffView() {
+    const query = document.getElementById('staff-search-input')?.value.trim() || '';
+    if (staffViewMode === 'members') {
+        renderMembersList(cachedOnlinePlayers, query);
+    } else {
+        renderStaffList(cachedStaffList, query);
+    }
+}
+
+function renderMembersList(list, filter = '') {
+    const container = document.getElementById('staff-list-container');
+    if (!container) return;
+
+    const filtered = list.filter(p => {
+        if (!filter) return true;
+        const q = filter.toLowerCase();
+        return (p.name && p.name.toLowerCase().includes(q)) ||
+               (p.license && p.license.toLowerCase().includes(q)) ||
+               (p.citizenid && p.citizenid.toLowerCase().includes(q)) ||
+               (p.source && p.source.toString().includes(q)) ||
+               (p.job && p.job.toLowerCase().includes(q)) ||
+               (p.gang && p.gang.toLowerCase().includes(q));
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="table-empty">Aucun joueur connecté trouvé dans le serveur.</div>';
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(p => {
+        const initials = (p.name || 'PL').substring(0, 2).toUpperCase();
+        const roleLower = (p.role || 'member').toLowerCase();
+        const roleClass = `role-${roleLower}`;
+        const hasAccess = !!p.hasAccess;
+
+        // Build active perms tags
+        const perms = p.permissions || {};
+        let permsTagsHtml = '';
+        if (hasAccess) {
+            ALL_PERM_KEYS.forEach(k => {
+                if (perms[k] === true) {
+                    const label = k.charAt(0).toUpperCase() + k.slice(1);
+                    permsTagsHtml += `<span class="perm-tag active">${label}</span>`;
+                }
+            });
+        }
+        if (!permsTagsHtml) {
+            permsTagsHtml = '<span class="perm-tag" style="color: var(--text-muted);">Membre Standard (Aucun Accès Panel)</span>';
+        }
+
+        const safeLicense = escapeHtml(p.license || '');
+        const displayLic = safeLicense.length > 25 ? `${safeLicense.substring(0, 16)}...${safeLicense.substring(safeLicense.length - 6)}` : safeLicense;
+
+        html += `
+        <div class="staff-card ${p.isOwner ? 'owner-card' : ''}" style="${!hasAccess ? 'border-style: dashed; opacity: 0.9;' : ''}">
+            <div class="staff-top">
+                <div class="staff-identity">
+                    <div class="staff-avatar" style="${hasAccess ? 'border-color: var(--accent-cyan);' : 'background: rgba(255,255,255,0.05);'}">${initials}</div>
+                    <div>
+                        <div class="staff-name">
+                            <span class="status-dot online" title="En ligne"></span>
+                            <span>${escapeHtml(p.name || 'Player')}</span>
+                            <span style="font-size: 0.72rem; color: var(--accent-green); font-weight: 700;">[ID: ${p.source}]</span>
+                        </div>
+                        <div class="staff-license" title="${safeLicense}">
+                            ${displayLic} • CID: ${escapeHtml(p.citizenid || 'N/A')}
+                        </div>
+                    </div>
+                </div>
+                <span class="role-badge ${hasAccess ? roleClass : 'role-custom'}" style="${!hasAccess ? 'background: rgba(255,255,255,0.05); color: var(--text-muted); border-color: rgba(255,255,255,0.1);' : ''}">
+                    ${hasAccess ? escapeHtml(p.role) : 'MEMBER'}
+                </span>
+            </div>
+
+            <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; gap: 14px;">
+                <span>💼 Job : <b style="color: var(--text-secondary);">${escapeHtml(p.job || 'Civilian')}</b></span>
+                <span>🔥 Gang : <b style="color: var(--text-secondary);">${escapeHtml(p.gang || 'None')}</b></span>
+            </div>
+
+            <div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.04em;">Accès SOUH4IL-DEV :</div>
+                <div class="perm-tags-container">
+                    ${permsTagsHtml}
+                </div>
+            </div>
+
+            <div class="staff-actions">
+                ${p.isOwner ? `
+                    <span style="font-size: 0.75rem; color: #ffd700; font-weight: 700; padding: 6px;">👑 PROPRIÉTAIRE CANONIQUE</span>
+                ` : hasAccess ? `
+                    <button class="secondary-btn" onclick="openEditStaff('${safeLicense}')">✏️ Modifier Perms</button>
+                    <button class="primary-btn danger-btn" onclick="removeStaffMember('${safeLicense}', '${escapeHtml(p.name)}')">🗑️ Révoquer</button>
+                ` : `
+                    <button class="primary-btn" style="background: rgba(0, 229, 255, 0.2); border-color: var(--accent-cyan); color: var(--accent-cyan);" onclick="openGrantMemberModal('${safeLicense}', '${escapeHtml(p.name)}')">➕ Configurer les accès (Grant Access)</button>
+                `}
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function renderStaffList(list, filter = '') {
+    const container = document.getElementById('staff-list-container');
+    if (!container) return;
+
+    const filtered = list.filter(s => {
+        if (!filter) return true;
+        const q = filter.toLowerCase();
+        return (s.name && s.name.toLowerCase().includes(q)) ||
+               (s.license && s.license.toLowerCase().includes(q)) ||
+               (s.role && s.role.toLowerCase().includes(q));
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="table-empty">Aucun membre du staff trouvé.</div>';
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(s => {
+        const isOnline = !!s.online;
+        const roleLower = (s.role || 'moderator').toLowerCase();
+        const roleClass = `role-${roleLower}`;
+        const initials = (s.name || 'ST').substring(0, 2).toUpperCase();
+
+        // Build active perms tags
+        const perms = s.permissions || {};
+        let permsTagsHtml = '';
+        ALL_PERM_KEYS.forEach(k => {
+            if (perms[k] === true) {
+                const label = k.charAt(0).toUpperCase() + k.slice(1);
+                permsTagsHtml += `<span class="perm-tag active">${label}</span>`;
+            }
+        });
+        if (!permsTagsHtml) {
+            permsTagsHtml = '<span class="perm-tag">Aucune permission active</span>';
+        }
+
+        const safeLicense = escapeHtml(s.license || '');
+        const displayLic = safeLicense.length > 25 ? `${safeLicense.substring(0, 16)}...${safeLicense.substring(safeLicense.length - 6)}` : safeLicense;
+
+        html += `
+        <div class="staff-card ${s.isOwner ? 'owner-card' : ''}">
+            <div class="staff-top">
+                <div class="staff-identity">
+                    <div class="staff-avatar">${initials}</div>
+                    <div>
+                        <div class="staff-name">
+                            <span class="status-dot ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'En ligne (ID: ' + s.source + ')' : 'Hors ligne'}"></span>
+                            <span>${escapeHtml(s.name || 'Staff')}</span>
+                            ${isOnline ? `<span style="font-size: 0.7rem; color: var(--accent-green); font-weight: 600;">[ID: ${s.source}]</span>` : ''}
+                        </div>
+                        <div class="staff-license" title="${safeLicense}">
+                            ${displayLic}
+                        </div>
+                    </div>
+                </div>
+                <span class="role-badge ${roleClass}">${escapeHtml(s.role || 'STAFF')}</span>
+            </div>
+
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+                Attribué par : <b style="color: var(--text-secondary);">${escapeHtml(s.granted_by || 'Owner')}</b>
+            </div>
+
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.04em;">Pouvoirs autorisés :</div>
+                <div class="perm-tags-container">
+                    ${permsTagsHtml}
+                </div>
+            </div>
+
+            <div class="staff-actions">
+                ${s.isOwner ? `
+                    <span style="font-size: 0.75rem; color: #ffd700; font-weight: 700; padding: 6px;">👑 PROPRIÉTAIRE CANONIQUE</span>
+                ` : `
+                    <button class="secondary-btn" onclick="openEditStaff('${safeLicense}')">✏️ Modifier Perms</button>
+                    <button class="primary-btn danger-btn" onclick="removeStaffMember('${safeLicense}', '${escapeHtml(s.name || 'Staff')}')">🗑️ Révoquer</button>
+                `}
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function openGrantMemberModal(license, name) {
+    const modal = document.getElementById('staff-modal');
+    if (!modal) return;
+
+    document.getElementById('staff-modal-title').innerText = `🛡️ Configurer les accès pour : ${name}`;
+    document.getElementById('staff-select-player').value = license;
+    document.getElementById('staff-input-name').value = name;
+    document.getElementById('staff-input-license').value = license;
+    document.getElementById('staff-input-license').readOnly = true;
+    document.getElementById('staff-select-role').value = 'moderator';
+
+    applyRolePresetToCheckboxes('moderator');
+    modal.style.display = 'flex';
+}
+
+function openAddStaffModal() {
+    const modal = document.getElementById('staff-modal');
+    if (!modal) return;
+
+    document.getElementById('staff-modal-title').innerText = '🛡️ Grant New Staff Access';
+    document.getElementById('staff-select-player').value = '';
+    document.getElementById('staff-input-name').value = '';
+    document.getElementById('staff-input-license').value = '';
+    document.getElementById('staff-input-license').readOnly = false;
+    document.getElementById('staff-select-role').value = 'moderator';
+
+    applyRolePresetToCheckboxes('moderator');
+    modal.style.display = 'flex';
+}
+
+function openEditStaff(license) {
+    const staff = cachedStaffList.find(s => s.license === license) || cachedOnlinePlayers.find(p => p.license === license);
+    if (!staff) return;
+
+    const modal = document.getElementById('staff-modal');
+    if (!modal) return;
+
+    document.getElementById('staff-modal-title').innerText = `✏️ Modifier les permissions : ${staff.name}`;
+    document.getElementById('staff-select-player').value = staff.license;
+    document.getElementById('staff-input-name').value = staff.name || '';
+    document.getElementById('staff-input-license').value = staff.license || '';
+    document.getElementById('staff-input-license').readOnly = true;
+
+    const roleLower = (staff.role || 'moderator').toLowerCase();
+    document.getElementById('staff-select-role').value = rolePresetPerms[roleLower] ? roleLower : 'custom';
+
+    const perms = staff.permissions || {};
+    ALL_PERM_KEYS.forEach(k => {
+        const chk = document.getElementById(`perm-${k}`);
+        if (chk) chk.checked = !!perms[k];
+    });
+
+    modal.style.display = 'flex';
+}
+
+function applyRolePresetToCheckboxes(role) {
+    const preset = rolePresetPerms[role] || rolePresetPerms.moderator;
+    ALL_PERM_KEYS.forEach(k => {
+        const chk = document.getElementById(`perm-${k}`);
+        if (chk) chk.checked = !!preset[k];
+    });
+}
+
+function closeStaffModal() {
+    const modal = document.getElementById('staff-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveStaff() {
+    const license = document.getElementById('staff-input-license')?.value.trim();
+    const name = document.getElementById('staff-input-name')?.value.trim() || 'Staff';
+    const role = document.getElementById('staff-select-role')?.value || 'moderator';
+
+    if (!license) {
+        alert('Veuillez sélectionner un joueur ou renseigner une Rockstar License valide !');
+        return;
+    }
+
+    const permissions = {};
+    ALL_PERM_KEYS.forEach(k => {
+        const chk = document.getElementById(`perm-${k}`);
+        permissions[k] = chk ? chk.checked : false;
+    });
+
+    const res = await fetchNUI('saveStaffMember', {
+        license: license,
+        name: name,
+        role: role,
+        permissions: permissions
+    });
+
+    if (res && res.success) {
+        closeStaffModal();
+        fetchStaffData();
+    } else {
+        alert('Erreur lors de la sauvegarde : ' + (res && res.error ? res.error : 'Serveur inaccessible'));
+    }
+}
+
+async function removeStaffMember(license, name) {
+    if (!confirm(`Êtes-vous sûr de vouloir révoquer tous les accès SOUH4IL-DEV pour ${name} ?`)) {
+        return;
+    }
+
+    const res = await fetchNUI('removeStaffMember', { license: license });
+    if (res && res.success) {
+        fetchStaffData();
+    } else {
+        alert('Erreur lors de la révocation : ' + (res && res.error ? res.error : 'Erreur inconnue'));
+    }
+}
+
+// Event Manager Presets & Functions
+const EVENT_PRESETS = {
+    fight: {
+        eventType: 'fight',
+        title: '🥊 FIGHT NIGHT TOURNAMENT',
+        message: 'Rejoignez le ring à Legion Square ! Matchs de boxe et cash prizes pour le vainqueur !',
+        coords: { x: 215.76, y: -910.0, z: 30.69 },
+        radius: 60,
+        blipColor: 1,
+        blipSprite: 38
+    },
+    race: {
+        eventType: 'race',
+        title: '🏎️ UNDERGROUND DRAG RACE',
+        message: 'Course de vitesse illégale à l\'aéroport ! Véhicules sur la ligne de départ !',
+        coords: { x: -1037.0, y: -2982.0, z: 13.95 },
+        radius: 250,
+        blipColor: 5,
+        blipSprite: 227
+    },
+    purge: {
+        eventType: 'purge',
+        title: '💀 THE PURGE NIGHT (15 MINUTES)',
+        message: 'L\'alarme retentit ! Tous les crimes sont autorisés pendant 15 minutes !',
+        coords: { x: 215.76, y: -910.0, z: 30.69 },
+        radius: 500,
+        blipColor: 1,
+        blipSprite: 84,
+        weather: 'HALLOWEEN',
+        time: { hour: 0, minute: 0 }
+    },
+    airdrop: {
+        eventType: 'airdrop',
+        title: '🎁 MYSTERY AIRDROP SUPPLY DROP',
+        message: 'Une caisse de ravitaillement VIP a été larguée à Sandy Shores ! Sécurisez le loot !',
+        coords: { x: 1734.55, y: 3710.98, z: 34.14 },
+        radius: 100,
+        blipColor: 2,
+        blipSprite: 501
+    },
+    derby: {
+        eventType: 'derby',
+        title: '💥 DEMOLITION DERBY ARENA',
+        message: 'Arène de destruction totale ouverte à Sandy Shores ! Que le plus solide gagne !',
+        coords: { x: 1734.55, y: 3710.98, z: 34.14 },
+        radius: 120,
+        blipColor: 27,
+        blipSprite: 38
+    }
+};
+
+async function launchPresetEvent(presetKey) {
+    const preset = EVENT_PRESETS[presetKey];
+    if (!preset) return;
+
+    if (!confirm(`Confirmer le lancement de l'événement : ${preset.title} ?`)) {
+        return;
+    }
+
+    const res = await fetchNUI('startEvent', preset);
+    if (res && res.success) {
+        checkEventState();
+    } else {
+        alert('Erreur lors du lancement : ' + (res && res.error ? res.error : 'Serveur inaccessible'));
+    }
+}
+
+async function launchCustomEvent() {
+    const title = document.getElementById('custom-event-title')?.value.trim() || 'Événement Spécial';
+    const type = document.getElementById('custom-event-type')?.value || 'custom';
+    const msg = document.getElementById('custom-event-msg')?.value.trim() || 'Un nouvel événement a commencé !';
+    const locKey = document.getElementById('custom-event-loc')?.value || 'legion';
+    const radius = parseInt(document.getElementById('custom-event-radius')?.value) || 120;
+    const color = parseInt(document.getElementById('custom-event-color')?.value) || 1;
+
+    let coords = null;
+    const PRESET_COORDS = {
+        legion: { x: 215.76, y: -910.0, z: 30.69 },
+        airport: { x: -1037.0, y: -2982.0, z: 13.95 },
+        sandy: { x: 1734.55, y: 3710.98, z: 34.14 },
+        mazebank: { x: -75.0, y: -818.0, z: 326.0 }
+    };
+    if (locKey !== 'my_coords') {
+        coords = PRESET_COORDS[locKey];
+    }
+
+    const res = await fetchNUI('startEvent', {
+        eventType: type,
+        title: title,
+        message: msg,
+        coords: coords,
+        radius: radius,
+        blipColor: color
+    });
+
+    if (res && res.success) {
+        checkEventState();
+    } else {
+        alert('Erreur lors du lancement : ' + (res && res.error ? res.error : 'Serveur inaccessible'));
+    }
+}
+
+async function stopActiveEvent() {
+    if (!confirm('Êtes-vous sûr de vouloir stopper l\'événement en cours ?')) return;
+
+    const res = await fetchNUI('stopEvent');
+    if (res && res.success) {
+        checkEventState();
+    } else {
+        alert('Erreur : ' + (res && res.error ? res.error : 'Erreur inconnue'));
+    }
+}
+
+async function checkEventState() {
+    const res = await fetchNUI('getEventState');
+    const dot = document.getElementById('event-status-dot');
+    const title = document.getElementById('event-status-title');
+    const sub = document.getElementById('event-status-subtitle');
+    const badge = document.getElementById('event-badge');
+    const stopBtn = document.getElementById('btn-stop-active-event');
+
+    if (res && res.activeEvent) {
+        const ev = res.activeEvent;
+        if (dot) { dot.className = 'status-dot online'; }
+        if (title) { title.innerText = `ÉVÉNEMENT EN COURS : ${ev.title}`; }
+        if (sub) { sub.innerText = `Lancé à ${ev.startedAt} par ${ev.startedBy} • Rayon: ${ev.radius}m`; }
+        if (badge) {
+            badge.innerText = 'EN DIRECT (LIVE)';
+            badge.className = 'role-badge role-admin';
+        }
+        if (stopBtn) { stopBtn.style.display = 'block'; }
+    } else {
+        if (dot) { dot.className = 'status-dot offline'; }
+        if (title) { title.innerText = 'AUCUN ÉVÉNEMENT EN COURS'; }
+        if (sub) { sub.innerText = 'Sélectionnez un événement ci-dessous pour le démarrer.'; }
+        if (badge) {
+            badge.innerText = 'IDLE';
+            badge.className = 'role-badge role-custom';
+        }
+        if (stopBtn) { stopBtn.style.display = 'none'; }
+    }
+}
+
+// Staff & View Mode Event Listeners
+document.getElementById('btn-open-add-staff')?.addEventListener('click', openAddStaffModal);
+document.getElementById('btn-refresh-staff')?.addEventListener('click', fetchStaffData);
+document.getElementById('staff-modal-close')?.addEventListener('click', closeStaffModal);
+document.getElementById('btn-cancel-staff')?.addEventListener('click', closeStaffModal);
+document.getElementById('btn-save-staff')?.addEventListener('click', saveStaff);
+
+document.getElementById('btn-view-members')?.addEventListener('click', () => {
+    staffViewMode = 'members';
+    const btnM = document.getElementById('btn-view-members');
+    const btnS = document.getElementById('btn-view-staff');
+    if (btnM) {
+        btnM.style.background = 'rgba(0, 229, 255, 0.15)';
+        btnM.style.borderColor = 'var(--accent-cyan)';
+        btnM.style.color = 'var(--accent-cyan)';
+    }
+    if (btnS) {
+        btnS.style.background = '';
+        btnS.style.borderColor = '';
+        btnS.style.color = '';
+    }
+    const hint = document.getElementById('staff-view-hint');
+    if (hint) hint.innerText = '💡 Tous les membres connectés au serveur. Cliquez sur un joueur pour configurer ou modifier ses accès.';
+    renderStaffView();
+});
+
+document.getElementById('btn-view-staff')?.addEventListener('click', () => {
+    staffViewMode = 'staff';
+    const btnM = document.getElementById('btn-view-members');
+    const btnS = document.getElementById('btn-view-staff');
+    if (btnS) {
+        btnS.style.background = 'rgba(0, 229, 255, 0.15)';
+        btnS.style.borderColor = 'var(--accent-cyan)';
+        btnS.style.color = 'var(--accent-cyan)';
+    }
+    if (btnM) {
+        btnM.style.background = '';
+        btnM.style.borderColor = '';
+        btnM.style.color = '';
+    }
+    const hint = document.getElementById('staff-view-hint');
+    if (hint) hint.innerText = '💡 Liste restreinte des staffs et administrateurs ayant des permissions dans SOUH4IL-DEV.';
+    renderStaffView();
+});
+
+document.getElementById('staff-select-player')?.addEventListener('change', (e) => {
+    const sel = e.target;
+    const selectedOpt = sel.options[sel.selectedIndex];
+    if (selectedOpt && selectedOpt.value) {
+        document.getElementById('staff-input-license').value = selectedOpt.value;
+        document.getElementById('staff-input-name').value = selectedOpt.dataset.name || '';
+    }
+});
+
+document.getElementById('staff-select-role')?.addEventListener('change', (e) => {
+    const role = e.target.value;
+    if (role !== 'custom') {
+        applyRolePresetToCheckboxes(role);
+    }
+});
+
+ALL_PERM_KEYS.forEach(k => {
+    document.getElementById(`perm-${k}`)?.addEventListener('change', () => {
+        const roleSel = document.getElementById('staff-select-role');
+        if (roleSel) roleSel.value = 'custom';
+    });
+});
+
+document.getElementById('staff-search-input')?.addEventListener('input', () => {
+    renderStaffView();
+});
+
+// Event Manager Button Listeners
+document.getElementById('btn-refresh-event')?.addEventListener('click', checkEventState);
+document.getElementById('btn-stop-active-event')?.addEventListener('click', stopActiveEvent);
+document.getElementById('btn-launch-custom-event')?.addEventListener('click', launchCustomEvent);

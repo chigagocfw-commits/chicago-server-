@@ -17,6 +17,23 @@ RegisterNetEvent("cu_multijob:server:setJob", function(name)
     end
 end)
 
+RegisterNetEvent("cu_multijob:server:removeJob", function(name)
+    local src = source
+    local key = tostring(src)
+    local jobs = Jobs[key]
+    if not jobs or not jobs[name] then return end
+
+    local currentJob = FW:GetJob(src)
+    jobs[name] = nil
+    Jobs[key] = jobs
+    Query:saveJobs(src)
+
+    if currentJob and currentJob.name == name then
+        FW:SetJob(src, config.defaultJob.name or "unemployed", config.defaultJob.grade or 0)
+    end
+    TriggerClientEvent("cu_multijob:client:jobRemoved", src)
+end)
+
 AddEventHandler("cu_multijob:server:onJobChange", function(source, job, lastJob)
     local key = tostring(source)
     local jobs = Jobs[key] or {}
