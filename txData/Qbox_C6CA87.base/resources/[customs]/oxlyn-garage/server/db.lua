@@ -58,88 +58,124 @@ end
 ---------------------------------------------------------------------
 
 local contractIndexes = {
-    "plate_status_created",
-    "status_expires",
-    "seller_refund",
+    { "plate_status_created", "`plate`, `status`, `created_at`" },
+    { "status_expires",       "`status`, `expires_at`" },
+    { "seller_refund",        "`seller`, `refund_pending`" },
 }
 
-local requiredGarageSchema = {
-    oxlyn_garages = { "id", "data", "updated_at" },
-    oxlyn_garage_vehicles = { "plate", "nickname", "vtype", "stored_at", "stored_by", "last_garage", "impound_reason", "impound_fee", "impound_at", "impound_by", "impound_lot", "contract_id", "data" },
-    oxlyn_garage_settings = { "id", "data", "updated_at" },
-    oxlyn_garage_parked = { "plate", "plate_raw", "owner", "model", "vtype", "x", "y", "z", "w", "props", "parked_at" },
-    oxlyn_garage_contracts = { "id", "plate", "seller", "seller_name", "buyer", "buyer_name", "price", "model", "label", "status", "created_at", "expires_at", "resolved_at", "refund_pending", "data" },
-}
-
-local function verifyGarageSchema()
-    local missing = {}
-
-    local cols = MySQL.query.await([[
-        SELECT TABLE_NAME, COLUMN_NAME
-        FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'oxlyn_garage%'
-    ]])
-
-    local existingCols = {}
-    for _, row in ipairs(cols or {}) do
-        local tbl = row.TABLE_NAME
-        local col = row.COLUMN_NAME
-        if not existingCols[tbl] then existingCols[tbl] = {} end
-        existingCols[tbl][col] = true
-    end
-
-    for tbl, reqCols in pairs(requiredGarageSchema) do
-        if not existingCols[tbl] then
-            table.insert(missing, ("Missing table: %s"):format(tbl))
-        else
-            for _, col in ipairs(reqCols) do
-                if not existingCols[tbl][col] then
-                    table.insert(missing, ("Missing column: %s.%s"):format(tbl, col))
-                end
-            end
-        end
-    end
-
-    local idxRows = MySQL.query.await([[
+local function ensureContractIndexes()
+    local rows = MySQL.query.await([[
         SELECT DISTINCT INDEX_NAME AS name
         FROM information_schema.STATISTICS
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'oxlyn_garage_contracts'
-    ]])
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'oxlyn_garage_contracts']])
 
-    local existingIdx = {}
-    for _, row in ipairs(idxRows or {}) do
-        existingIdx[row.name] = true
-    end
-
-    for _, idx in ipairs(contractIndexes) do
-        if not existingIdx[idx] then
-            table.insert(missing, ("Missing index: oxlyn_garage_contracts.%s"):format(idx))
+    local existing = {}
+    for _, row in ipairs(rows or {}) do
+        local idxName = row.name or row.NAME or row.INDEX_NAME or row.index_name
+        if idxName then
+            existing[idxName] = true
         end
     end
 
-    return #missing == 0, missing
+    local alters = {}
+    for _, idx in ipairs(contractIndexes) do
+        if not existing[idx[1]] then
+            alters[#alters + 1] = ("ADD INDEX `%s` (%s)"):format(idx[1], idx[2])
+        end
+    end
+
+    if #alters > 0 then
+        MySQL.query.await("ALTER TABLE `oxlyn_garage_contracts` " .. table.concat(alters, ", "))
+    end
 end
 
 function DB.Init()
-    local ok, valid, missing = pcall(verifyGarageSchema)
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `oxlyn_garages` (
+            `id`         VARCHAR(48) NOT NULL,
+            `data`       LONGTEXT    NOT NULL,
+            `updated_at` INT         NOT NULL DEFAULT 0,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
 
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `oxlyn_garage_vehicles` (
+            `plate`          VARCHAR(16)  NOT NULL,
+            `nickname`       VARCHAR(32)  NULL,
+            `vtype`          VARCHAR(16)  NULL,
+            `stored_at`      INT          NULL,
+            `stored_by`      VARCHAR(64)  NULL,
+            `last_garage`    VARCHAR(48)  NULL,
+            `impound_reason` VARCHAR(128) NULL,
+            `impound_fee`    INT          NULL,
+            `impound_at`     INT          NULL,
+            `impound_by`     VARCHAR(64)  NULL,
+            `impound_lot`    VARCHAR(48)  NULL,
+            `contract_id`    VARCHAR(40)  NULL,
+            `data`           LONGTEXT     NULL,
+            PRIMARY KEY (`plate`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `oxlyn_garage_settings` (
+            `id`         VARCHAR(32) NOT NULL,
+            `data`       LONGTEXT    NOT NULL,
+            `updated_at` INT         NOT NULL DEFAULT 0,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `oxlyn_garage_parked` (
+            `plate`      VARCHAR(16)  NOT NULL,
+            `plate_raw`  VARCHAR(16)  NOT NULL,
+            `owner`      VARCHAR(64)  NOT NULL,
+            `model`      BIGINT       NOT NULL DEFAULT 0,
+            `vtype`      VARCHAR(24)  NOT NULL DEFAULT 'automobile',
+            `x`          FLOAT        NOT NULL DEFAULT 0,
+            `y`          FLOAT        NOT NULL DEFAULT 0,
+            `z`          FLOAT        NOT NULL DEFAULT 0,
+            `w`          FLOAT        NOT NULL DEFAULT 0,
+            `props`      LONGTEXT     NULL,
+            `parked_at`  INT          NOT NULL DEFAULT 0,
+            PRIMARY KEY (`plate`),
+            KEY `owner` (`owner`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `oxlyn_garage_contracts` (
+            `id`             VARCHAR(40) NOT NULL,
+            `plate`          VARCHAR(16) NOT NULL,
+            `seller`         VARCHAR(64) NOT NULL,
+            `seller_name`    VARCHAR(64) NULL,
+            `buyer`          VARCHAR(64) NOT NULL,
+            `buyer_name`     VARCHAR(64) NULL,
+            `price`          INT         NOT NULL DEFAULT 0,
+            `model`          VARCHAR(64) NULL,
+            `label`          VARCHAR(64) NULL,
+            `status`         VARCHAR(16) NOT NULL DEFAULT 'pending',
+            `created_at`     INT         NULL,
+            `expires_at`     INT         NULL,
+            `resolved_at`    INT         NULL,
+            `refund_pending` TINYINT     NOT NULL DEFAULT 0,
+            `data`           LONGTEXT    NULL,
+            PRIMARY KEY (`id`),
+            KEY `seller` (`seller`),
+            KEY `buyer` (`buyer`),
+            KEY `status` (`status`),
+            KEY `plate_status_created` (`plate`, `status`, `created_at`),
+            KEY `status_expires` (`status`, `expires_at`),
+            KEY `seller_refund` (`seller`, `refund_pending`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+
+    local ok, err = pcall(ensureContractIndexes)
     if not ok then
-        log(("^1[ERROR] Failed to query schema verification: %s^7"):format(tostring(valid)))
-        DB.Ready = false
-        return
+        log(("^3contract indexes could not be updated: %s^7"):format(tostring(err)))
     end
-
-    if not valid or #missing > 0 then
-        log("^1[ERROR] oxlyn-garage schema verification failed! Missing elements:^7")
-        for _, item in ipairs(missing) do
-            log(("  - %s"):format(item))
-        end
-        log("^3Please import sql/install.sql under DBA credentials. oxlyn-garage initialization halted safely.^7")
-        DB.Ready = false
-        return
-    end
-
-    debugLog("oxlyn-garage schema verified (5 tables, columns and contract indexes present).")
 
     -- Determine which vehicle schema we are running on
     if Framework.Name == "esx" then
@@ -157,10 +193,12 @@ function DB.Init()
             log("^1owned_vehicles table not found - vehicle ownership is unavailable.^7")
         else
             if not columnExists("owned_vehicles", "parking") then
-                log("^1[ERROR] owned_vehicles.parking column missing! Please add it via DBA migration.^7")
+                MySQL.query.await("ALTER TABLE `owned_vehicles` ADD `parking` VARCHAR(60) NULL")
+                log("added owned_vehicles.parking")
             end
             if not columnExists("owned_vehicles", "pound") then
-                log("^1[ERROR] owned_vehicles.pound column missing! Please add it via DBA migration.^7")
+                MySQL.query.await("ALTER TABLE `owned_vehicles` ADD `pound` VARCHAR(60) NULL")
+                log("added owned_vehicles.pound")
             end
         end
         DB.EsxAccountsJson = columnExists("users", "accounts")

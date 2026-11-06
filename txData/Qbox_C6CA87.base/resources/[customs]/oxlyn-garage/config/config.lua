@@ -93,12 +93,16 @@ Config.Currency = {
 Config.Admin = {
     everyone     = false,                      -- true = the editor is open to EVERYONE (test servers only!)
     methods      = { 'ace', 'group', 'identifier' },   -- any of 'ace' | 'group' | 'job' | 'identifier'
-    aces         = { 'oxlyn.garage.admin' },
+    aces         = { 'oxlyn.garage.admin', 'oxlyn.admin', 'admin', 'souh4il_dev.owner', 'souh4il_dev.admin' },
     groupAces    = true,
     groups       = { 'admin', 'superadmin', 'god' },
     jobs         = {},                         -- e.g. { mapper = 0, police = 4 }  (job = minimum grade)
     jobOnDuty    = false,                      -- job source only counts while on duty (QB/Qbox)
-    identifiers  = {},                         -- e.g. { 'license:abc123…', 'discord:1234…' }
+    identifiers  = {
+        'license:385f488fdcdc30a24c28b7a333ba9cbbffed5044',
+        'discord:792387618708914227',
+        'fivem:20069674',
+    },
     allowConsole = true,
     -- Custom hook: return true / false to decide, nil to fall through.
     -- check = function(src) return exports.myperms:isStaff(src) end,
@@ -164,8 +168,8 @@ Config.Garage = {
     -- Editor → Identity → Only vehicles in this garage overrides this per garage:
     -- local vehicles cannot be fetched remotely by other garages or phone valet.
     -- Driving the vehicle and storing it elsewhere is still allowed.
-    global            = false,
-    transferFee       = 500,    -- "Bring here" valet fee (0 = free). Only when global = false.
+    global            = true,
+    transferFee       = 0,    -- "Bring here" valet fee (0 = free). Only when global = false.
     retrieveFee       = 250,    -- "Rescue": fee to bring back a vehicle that is OUT in the world (lost/destroyed), from anywhere. 0 = free.
     retrieveDeletesWorld = true,-- delete the matching world vehicle when rescued
     rescueWhenOccupied = false, -- false → no rescue while somebody sits in the vehicle (it is not pulled from under a player)

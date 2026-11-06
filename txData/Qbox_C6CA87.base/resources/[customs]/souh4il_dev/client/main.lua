@@ -1200,34 +1200,232 @@ RegisterNUICallback('equipLoadout', function(data, cb)
     cb('ok')
 end)
 
--- World Density Multiplier
+-- =========================================================================
+-- WORLD NPC, TRAFFIC & SMART POLICE NPC ENFORCEMENT (CLIENT)
+-- =========================================================================
 local currentWorldDensity = 1.0
+local currentNpcConfig = {
+    policeNpcEnabled = false,
+    autoMode = true,
+    minCopsThreshold = 1,
+    wantedStarsEnabled = false,
+    emsNpcEnabled = false,
+    pedDensity = 1.0,
+    trafficDensity = 1.0,
+    parkedDensity = 1.0,
+    realCopsOnDuty = 0,
+}
+
+local POLICE_DISPATCH_SERVICES = { 1, 2, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15 }
+local COP_PED_MODELS = {
+    [joaat('s_m_y_cop_01')] = true,
+    [joaat('s_f_y_cop_01')] = true,
+    [joaat('s_m_y_sheriff_01')] = true,
+    [joaat('s_f_y_sheriff_01')] = true,
+    [joaat('s_m_y_swat_01')] = true,
+    [joaat('s_m_y_hwaycop_01')] = true,
+    [joaat('s_m_m_fiboffice_01')] = true,
+    [joaat('s_m_m_prisguard_01')] = true,
+}
+local COP_VEH_MODELS = {
+    [joaat('police')] = true,
+    [joaat('police2')] = true,
+    [joaat('police3')] = true,
+    [joaat('police4')] = true,
+    [joaat('policeb')] = true,
+    [joaat('polmav')] = true,
+    [joaat('sheriff')] = true,
+    [joaat('sheriff2')] = true,
+    [joaat('riot')] = true,
+    [joaat('fbi')] = true,
+    [joaat('fbi2')] = true,
+    [joaat('pranger')] = true,
+}
+
+local function ApplyDispatchAndCopSettings()
+    local copsOn = (currentNpcConfig.policeNpcEnabled == true)
+    local emsOn = (currentNpcConfig.emsNpcEnabled == true)
+    local starsOn = (currentNpcConfig.wantedStarsEnabled == true) and copsOn
+
+    for _, serviceId in ipairs(POLICE_DISPATCH_SERVICES) do
+        EnableDispatchService(serviceId, copsOn)
+    end
+    EnableDispatchService(3, emsOn) -- Fire Department
+    EnableDispatchService(5, emsOn) -- Ambulance Department
+
+    SetCreateRandomCops(copsOn)
+    SetCreateRandomCopsNotOnScenarios(copsOn)
+    SetCreateRandomCopsOnScenarios(copsOn)
+    SetDispatchCopsForPlayer(PlayerId(), copsOn)
+    DistantCopCarSirens(copsOn)
+
+    if not starsOn then
+        SetMaxWantedLevel(0)
+        ClearPlayerWantedLevel(PlayerId())
+        CancelCurrentPoliceReport()
+    else
+        SetMaxWantedLevel(5)
+    end
+end
+
+local function CleanLocalNpcCops()
+    ClearPlayerWantedLevel(PlayerId())
+    CancelCurrentPoliceReport()
+
+    -- Remove NPC Cop Peds
+    local peds = GetGamePool('CPed')
+    for i = 1, #peds do
+        local ped = peds[i]
+        if DoesEntityExist(ped) and not IsPedAPlayer(ped) then
+            local pType = GetPedType(ped)
+            local model = GetEntityModel(ped)
+            if pType == 6 or pType == 27 or COP_PED_MODELS[model] then
+                SetEntityAsMissionEntity(ped, true, true)
+                DeleteEntity(ped)
+            end
+        end
+    end
+
+    -- Remove NPC Police Vehicles (only if no real player is inside and not player-owned)
+    local vehs = GetGamePool('CVehicle')
+    for i = 1, #vehs do
+        local veh = vehs[i]
+        if DoesEntityExist(veh) then
+            local model = GetEntityModel(veh)
+            if COP_VEH_MODELS[model] and not Entity(veh).state.owner then
+                local hasPlayer = false
+                for seat = -1, 6 do
+                    local occ = GetPedInVehicleSeat(veh, seat)
+                    if occ ~= 0 and IsPedAPlayer(occ) then
+                        hasPlayer = true
+                        break
+                    end
+                end
+                if not hasPlayer then
+                    SetEntityAsMissionEntity(veh, true, true)
+                    DeleteEntity(veh)
+                end
+            end
+        end
+    end
+end
+
+CreateThread(function()
+    Wait(1000)
+    if GlobalState.souh4ilNpcConfig then
+        currentNpcConfig = GlobalState.souh4ilNpcConfig
+    end
+    ApplyDispatchAndCopSettings()
+end)
+
+RegisterNetEvent('souh4il_dev:client:syncNpcConfig', function(cfg)
+    if type(cfg) == 'table' then
+        currentNpcConfig = cfg
+        currentWorldDensity = tonumber(cfg.trafficDensity) or 1.0
+        ApplyDispatchAndCopSettings()
+        SendNUIMessage({ action = "syncNpcConfig", config = currentNpcConfig })
+    end
+end)
+
+RegisterNetEvent('souh4il_dev:client:cleanNpcCops', function()
+    CleanLocalNpcCops()
+end)
+
+RegisterNUICallback('getNpcConfig', function(_, cb)
+    lib.callback('souh4il_dev:server:getNpcConfig', false, function(res)
+        if res and res.success and res.config then
+            currentNpcConfig = res.config
+            SendNUIMessage({ action = "syncNpcConfig", config = currentNpcConfig })
+        end
+    end)
+    cb('ok')
+end)
+
+RegisterNUICallback('updateNpcConfig', function(data, cb)
+    lib.callback('souh4il_dev:server:updateNpcConfig', false, function(res)
+        if res and res.success and res.config then
+            currentNpcConfig = res.config
+            ApplyDispatchAndCopSettings()
+            SendNUIMessage({ action = "syncNpcConfig", config = currentNpcConfig })
+            lib.notify({
+                title = SharedConfig.PanelName,
+                description = "Paramètres PNJ & Police NPC mis à jour avec succès.",
+                type = 'success'
+            })
+        else
+            lib.notify({
+                title = SharedConfig.PanelName,
+                description = (res and res.error) or "Erreur lors de la mise à jour PNJ.",
+                type = 'error'
+            })
+        end
+    end, data)
+    cb('ok')
+end)
+
+RegisterNUICallback('cleanNpcCopsNow', function(_, cb)
+    lib.callback('souh4il_dev:server:cleanNpcCopsNow', false, function(res)
+        if res and res.success then
+            CleanLocalNpcCops()
+            lib.notify({
+                title = SharedConfig.PanelName,
+                description = "Tous les policiers & véhicules PNJ ont été purgés de la carte !",
+                type = 'success'
+            })
+        end
+    end)
+    cb('ok')
+end)
+
 RegisterNUICallback('setTrafficDensity', function(data, cb)
     local density = tonumber(data.density) or 1.0
     lib.callback('souh4il_dev:server:setTrafficDensity', false, function(res)
         if res and res.success then
             currentWorldDensity = density
-            lib.notify({ title = SharedConfig.PanelName, description = ("Traffic & Ped Density set to %.0f%%"):format(density * 100), type = 'success' })
+            if res.config then
+                currentNpcConfig = res.config
+                SendNUIMessage({ action = "syncNpcConfig", config = currentNpcConfig })
+            end
+            lib.notify({ title = SharedConfig.PanelName, description = ("Densité globale PNJ & Trafic réglée à %.0f%%"):format(density * 100), type = 'success' })
         end
     end, density)
     cb('ok')
 end)
 
 RegisterNetEvent('souh4il_dev:client:syncDensity', function(val)
-    currentWorldDensity = tonumber(val) or 1.0
+    local d = tonumber(val) or 1.0
+    currentWorldDensity = d
+    currentNpcConfig.pedDensity = d
+    currentNpcConfig.trafficDensity = d
+    currentNpcConfig.parkedDensity = d
 end)
 
 CreateThread(function()
     while true do
-        if currentWorldDensity ~= 1.0 then
-            SetVehicleDensityMultiplierThisFrame(currentWorldDensity)
-            SetPedDensityMultiplierThisFrame(currentWorldDensity)
-            SetRandomVehicleDensityMultiplierThisFrame(currentWorldDensity)
-            SetParkedVehicleDensityMultiplierThisFrame(currentWorldDensity)
-            SetScenarioPedDensityMultiplierThisFrame(currentWorldDensity, currentWorldDensity)
+        local pedD = tonumber(currentNpcConfig.pedDensity) or 1.0
+        local trafD = tonumber(currentNpcConfig.trafficDensity) or 1.0
+        local parkD = tonumber(currentNpcConfig.parkedDensity) or 1.0
+        local copsOn = (currentNpcConfig.policeNpcEnabled == true)
+        local starsOn = (currentNpcConfig.wantedStarsEnabled == true) and copsOn
+
+        if pedD ~= 1.0 or trafD ~= 1.0 or parkD ~= 1.0 or not copsOn or not starsOn then
+            SetVehicleDensityMultiplierThisFrame(trafD)
+            SetRandomVehicleDensityMultiplierThisFrame(trafD)
+            SetParkedVehicleDensityMultiplierThisFrame(parkD)
+            SetPedDensityMultiplierThisFrame(pedD)
+            SetScenarioPedDensityMultiplierThisFrame(pedD, pedD)
+
+            if not starsOn then
+                if GetPlayerWantedLevel(PlayerId()) > 0 then
+                    ClearPlayerWantedLevel(PlayerId())
+                end
+            end
+            if not copsOn then
+                CancelCurrentPoliceReport()
+            end
             Wait(0)
         else
-            Wait(1000)
+            Wait(500)
         end
     end
 end)

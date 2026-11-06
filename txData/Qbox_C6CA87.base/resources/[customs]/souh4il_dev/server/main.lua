@@ -697,10 +697,10 @@ lib.callback.register('souh4il_dev:server:getAllGameCharacters', function(source
         local list = {}
         local raw = LoadResourceFile('illenium-appearance', 'shared/peds.lua')
         if raw then
-            local seen = {}
+            local seen = { ['admin'] = true, ['group.admin'] = true, ['souh4il'] = true }
             for pedModel in raw:gmatch('"([%w_%-]+)"') do
                 local m = pedModel:lower()
-                if not seen[m] and not m:find('config') and not m:find('ped') and #m > 2 then
+                if not seen[m] and not m:find('config') and not m:find('ped') and not m:find('group') and #m > 2 then
                     seen[m] = true
                     local cat = 'story'
                     if m:sub(1, 4) == 'a_c_' then
@@ -898,20 +898,201 @@ lib.callback.register('souh4il_dev:server:giveArsenalLoadout', function(source, 
     return { success = true, loadout = loadoutKey }
 end)
 
----Callback 24: World Traffic & NPC Density Control
+-- =========================================================================
+-- WORLD NPC, TRAFFIC & SMART POLICE NPC CONTROLLER
+-- =========================================================================
+local WorldNpcConfig = {
+    policeNpcEnabled = false,       -- Master state: whether NPC Police are active
+    autoMode = true,                -- Auto-disable NPC police when real cops >= minCopsThreshold
+    minCopsThreshold = 1,           -- Real cops on duty needed to disable NPC police
+    wantedStarsEnabled = false,     -- GTA V Wanted stars
+    emsNpcEnabled = false,          -- Ambulance & Fire Dept AI dispatch
+    pedDensity = 1.0,               -- Pedestrians / Civilians multiplier (0.0 to 1.5)
+    trafficDensity = 1.0,           -- Driving vehicles multiplier (0.0 to 1.5)
+    parkedDensity = 1.0,            -- Parked vehicles multiplier (0.0 to 1.5)
+    realCopsOnDuty = 0,             -- Live counter of real on-duty police players
+}
+
+-- Load persisted NPC config if saved previously
+CreateThread(function()
+    Wait(500)
+    local savedRaw = GetResourceKvpString('souh4il_npc_config')
+    if savedRaw and #savedRaw > 0 then
+        local ok, decoded = pcall(json.decode, savedRaw)
+        if ok and type(decoded) == 'table' then
+            if decoded.policeNpcEnabled ~= nil then WorldNpcConfig.policeNpcEnabled = decoded.policeNpcEnabled end
+            if decoded.autoMode ~= nil then WorldNpcConfig.autoMode = decoded.autoMode end
+            if decoded.minCopsThreshold ~= nil then WorldNpcConfig.minCopsThreshold = tonumber(decoded.minCopsThreshold) or 1 end
+            if decoded.wantedStarsEnabled ~= nil then WorldNpcConfig.wantedStarsEnabled = decoded.wantedStarsEnabled end
+            if decoded.emsNpcEnabled ~= nil then WorldNpcConfig.emsNpcEnabled = decoded.emsNpcEnabled end
+            if decoded.pedDensity ~= nil then WorldNpcConfig.pedDensity = tonumber(decoded.pedDensity) or 1.0 end
+            if decoded.trafficDensity ~= nil then WorldNpcConfig.trafficDensity = tonumber(decoded.trafficDensity) or 1.0 end
+            if decoded.parkedDensity ~= nil then WorldNpcConfig.parkedDensity = tonumber(decoded.parkedDensity) or 1.0 end
+        end
+    end
+    GlobalState.souh4ilNpcConfig = WorldNpcConfig
+    GlobalState.trafficDensity = WorldNpcConfig.trafficDensity
+end)
+
+local function CountRealCopsOnDuty()
+    local count = 0
+    local ok, players = pcall(function() return exports.qbx_core:GetQBPlayers() end)
+    if ok and players then
+        for _, p in pairs(players) do
+            if p and p.PlayerData and p.PlayerData.job then
+                local jName = tostring(p.PlayerData.job.name or ''):lower()
+                local onDuty = p.PlayerData.job.onduty
+                if onDuty and (jName == 'police' or jName == 'sheriff' or jName == 'lspd' or jName == 'bcso' or jName == 'sasp' or jName == 'trooper') then
+                    count = count + 1
+                end
+            end
+        end
+    else
+        for _, srcStr in ipairs(GetPlayers()) do
+            local s = tonumber(srcStr)
+            if s then
+                local okP, player = pcall(function() return exports.qbx_core:GetPlayer(s) end)
+                if okP and player and player.PlayerData and player.PlayerData.job then
+                    local jName = tostring(player.PlayerData.job.name or ''):lower()
+                    if player.PlayerData.job.onduty and (jName == 'police' or jName == 'sheriff' or jName == 'lspd' or jName == 'bcso' or jName == 'sasp') then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+    end
+    return count
+end
+
+local function SaveAndBroadcastNpcConfig(cleanCopsIfDisabled)
+    pcall(function()
+        SetResourceKvp('souh4il_npc_config', json.encode(WorldNpcConfig))
+    end)
+    GlobalState.souh4ilNpcConfig = WorldNpcConfig
+    GlobalState.trafficDensity = WorldNpcConfig.trafficDensity
+    TriggerClientEvent('souh4il_dev:client:syncNpcConfig', -1, WorldNpcConfig)
+    if cleanCopsIfDisabled and not WorldNpcConfig.policeNpcEnabled then
+        TriggerClientEvent('souh4il_dev:client:cleanNpcCops', -1)
+    end
+end
+
+-- Background Monitor for Smart RP Police Threshold
+CreateThread(function()
+    while true do
+        Wait(8000)
+        local cops = CountRealCopsOnDuty()
+        local changed = (WorldNpcConfig.realCopsOnDuty ~= cops)
+        WorldNpcConfig.realCopsOnDuty = cops
+
+        if WorldNpcConfig.autoMode then
+            local shouldEnableNpcPolice = (cops < WorldNpcConfig.minCopsThreshold)
+            if WorldNpcConfig.policeNpcEnabled ~= shouldEnableNpcPolice then
+                WorldNpcConfig.policeNpcEnabled = shouldEnableNpcPolice
+                SaveAndBroadcastNpcConfig(true)
+                changed = false
+            end
+        end
+
+        if changed then
+            GlobalState.souh4ilNpcConfig = WorldNpcConfig
+            TriggerClientEvent('souh4il_dev:client:syncNpcConfig', -1, WorldNpcConfig)
+        end
+    end
+end)
+
+---Callback: Get Full World NPC & Police Config
+lib.callback.register('souh4il_dev:server:getNpcConfig', function(source)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+    WorldNpcConfig.realCopsOnDuty = CountRealCopsOnDuty()
+    return { success = true, config = WorldNpcConfig }
+end)
+
+---Callback: Update World NPC & Police Config
+lib.callback.register('souh4il_dev:server:updateNpcConfig', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if type(data) ~= 'table' then return { success = false, error = "INVALID_DATA" } end
+
+    WorldNpcConfig.realCopsOnDuty = CountRealCopsOnDuty()
+
+    if data.minCopsThreshold ~= nil then
+        WorldNpcConfig.minCopsThreshold = math.max(1, math.min(50, math.floor(tonumber(data.minCopsThreshold) or 1)))
+    end
+
+    if data.autoMode ~= nil then
+        WorldNpcConfig.autoMode = (data.autoMode == true)
+    end
+
+    if data.policeNpcEnabled ~= nil then
+        WorldNpcConfig.policeNpcEnabled = (data.policeNpcEnabled == true)
+        -- If admin explicitly toggles manual ON/OFF, disable autoMode unless autoMode was explicitly sent in same payload
+        if data.autoMode == nil then
+            WorldNpcConfig.autoMode = false
+        end
+    end
+
+    if WorldNpcConfig.autoMode then
+        WorldNpcConfig.policeNpcEnabled = (WorldNpcConfig.realCopsOnDuty < WorldNpcConfig.minCopsThreshold)
+    end
+
+    if data.wantedStarsEnabled ~= nil then
+        WorldNpcConfig.wantedStarsEnabled = (data.wantedStarsEnabled == true)
+    end
+
+    if data.emsNpcEnabled ~= nil then
+        WorldNpcConfig.emsNpcEnabled = (data.emsNpcEnabled == true)
+    end
+
+    if data.pedDensity ~= nil then
+        WorldNpcConfig.pedDensity = math.max(0.0, math.min(2.0, tonumber(data.pedDensity) or 1.0))
+    end
+
+    if data.trafficDensity ~= nil then
+        WorldNpcConfig.trafficDensity = math.max(0.0, math.min(2.0, tonumber(data.trafficDensity) or 1.0))
+    end
+
+    if data.parkedDensity ~= nil then
+        WorldNpcConfig.parkedDensity = math.max(0.0, math.min(2.0, tonumber(data.parkedDensity) or 1.0))
+    end
+
+    SaveAndBroadcastNpcConfig(true)
+    Logger.Write("UPDATE_NPC_CONFIG", source, nil, WorldNpcConfig, "SUCCESS")
+
+    return { success = true, config = WorldNpcConfig }
+end)
+
+---Callback: Clean / Purge All Active NPC Cops & Police Vehicles Now
+lib.callback.register('souh4il_dev:server:cleanNpcCopsNow', function(source)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    TriggerClientEvent('souh4il_dev:client:cleanNpcCops', -1)
+    Logger.Write("CLEAN_NPC_COPS", source, nil, {}, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback 24: World Traffic & NPC Density Control (Quick Preset Compatibility)
 lib.callback.register('souh4il_dev:server:setTrafficDensity', function(source, densityVal)
     local allowed, reason = Security.CheckRateLimit(source, 'set_traffic')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
         return { success = false, error = "ACCESS_DENIED" }
     end
 
     local d = math.max(0.0, math.min(2.0, tonumber(densityVal) or 1.0))
-    GlobalState.trafficDensity = d
+    WorldNpcConfig.pedDensity = d
+    WorldNpcConfig.trafficDensity = d
+    WorldNpcConfig.parkedDensity = d
+    SaveAndBroadcastNpcConfig(false)
     TriggerClientEvent('souh4il_dev:client:syncDensity', -1, d)
     Logger.Write("SET_WORLD_DENSITY", source, nil, { density = d }, "SUCCESS")
-    return { success = true, density = d }
+    return { success = true, density = d, config = WorldNpcConfig }
 end)
 
 ---Command: Reload Bank, Housing & Police Services (Owner Only)
@@ -1394,7 +1575,7 @@ lib.callback.register('souh4il_dev:server:controlPlayerAppearance', function(sou
     if aType == 'set_ped' then
         TriggerClientEvent('souh4il_dev:client:receiveSetPed', tId, data.model)
     elseif aType == 'clothing_menu' then
-        TriggerClientEvent('illenium-appearance:client:openClothingMenu', tId, true)
+        TriggerClientEvent('illenium-appearance:client:openClothingShopMenu', tId, true)
     elseif aType == 'clean_ped' then
         TriggerClientEvent('souh4il_dev:client:receiveCleanPed', tId)
     end

@@ -293,11 +293,36 @@ local function setupJobMenu()
         return nil
     end
 
-    if not job.onduty then
-        return nil
+    local isEmergency = (job.type == 'leo' or job.type == 'ems' or job.name == 'police' or job.name == 'bcso' or job.name == 'sasp' or job.name == 'ambulance')
+
+    -- If an emergency officer is off-duty, show a quick Toggle Duty button
+    if isEmergency and job.onduty == false then
+        return {
+            id = job.name,
+            label = job.label or 'Emergency Services',
+            icon = 'shield-halved',
+            items = {
+                {
+                    id = 'toggleduty',
+                    label = 'Go On Duty',
+                    icon = 'toggle-on',
+                    event = 'QBCore:ToggleDuty',
+                    type = 'server',
+                    shouldClose = true
+                }
+            }
+        }
     end
 
-    local jobMenu = JobInteractions[job.name]
+    -- Match job key or fallback to type
+    local jobKey = job.name
+    if job.type == 'leo' or job.name == 'bcso' or job.name == 'sasp' then
+        jobKey = 'police'
+    elseif job.type == 'ems' then
+        jobKey = 'ambulance'
+    end
+
+    local jobMenu = JobInteractions[job.name] or JobInteractions[jobKey]
     if not jobMenu then
         return nil
     end
@@ -312,11 +337,9 @@ local function setupJobMenu()
     end
 
     if copied.items then
-
         copied.label = copied.label or copied.title or _L('game.menu.job_actions')
         return copied
     else
-
         return {
             id = job.name,
             label = job.label or job.name:gsub("^%l", string.upper),

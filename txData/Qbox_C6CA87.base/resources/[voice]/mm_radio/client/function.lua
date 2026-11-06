@@ -127,16 +127,29 @@ function Radio:doRadioCheck(_)
         return exports.ox_inventory:Search('slots', Shared.RadioItem)
     end)
     if not ok or type(playerItems) ~= 'table' then return end
-    for _, v in pairs(playerItems) do
-        if lib.table.contains(Shared.RadioItem, v.name) then
-            self.hasRadio = true
-            if v.metadata?.radioId or v.info?.radioId then
-                self.batteryData[#self.batteryData+1] = v['metadata'].radioId
+    local function checkSlotList(list)
+        for _, v in pairs(list) do
+            if type(v) == 'table' then
+                if v.name and lib.table.contains(Shared.RadioItem, v.name) and (v.count == nil or v.count > 0) then
+                    self.hasRadio = true
+                    local rId = (v.metadata and v.metadata.radioId) or (v.info and v.info.radioId)
+                    if rId then
+                        self.batteryData[#self.batteryData+1] = rId
+                    end
+                elseif not v.name then
+                    checkSlotList(v)
+                end
             end
         end
     end
-    if not self.hasRadio and self.onRadio then
-        Radio:leaveradio()
+    checkSlotList(playerItems)
+    if not self.hasRadio then
+        if self.usingRadio then
+            TriggerEvent('mm_radio:client:remove')
+        end
+        if self.onRadio then
+            Radio:leaveradio()
+        end
     end
 end
 
@@ -466,8 +479,11 @@ lib.addKeybind({
     defaultKey = 'EQUALS',
     onPressed = function()
         if not Radio.usingRadio then
+            Radio:doRadioCheck()
             if Radio.hasRadio then
                 TriggerEvent('mm_radio:client:use')
+            else
+                lib.notify({ description = 'ما عندكش راديو فجيبك (You do not have a radio)', type = 'error' })
             end
         end
     end

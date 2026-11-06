@@ -390,6 +390,19 @@ AddEventHandler("codem-taxijob:OpenMenu", function()
   SetNuiFocus(true, true)
   CreateCamera()
 end)
+
+RegisterNetEvent("codem-taxijob:ToggleMeter", function()
+  if not IsPedInAnyVehicle(PlayerPedId(), false) then
+    return Config.Notify(locales and locales.not_in_veh or "You must be in a vehicle!")
+  end
+  if taxiMeterOpen then
+    taxiMeterOpen = false
+    NuiMessage("closeTaxiMeter")
+  else
+    taxiMeterOpen = true
+    NuiMessage("openTaxiMeter")
+  end
+end)
 -- Menu Close NUI Callback
 RegisterNUICallback("close", function()
   -- Remove NUI focus

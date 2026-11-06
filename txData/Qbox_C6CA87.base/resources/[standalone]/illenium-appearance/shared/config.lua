@@ -29,9 +29,9 @@ Config.OutfitCodeLength = 10
 Config.UseRadialMenu = false
 Config.UseOxRadial = false -- Set to true to use ox_lib radial menu, both this and UseRadialMenu must be true 
 
-Config.EnablePedsForShops = false
-Config.EnablePedsForClothingRooms = false
-Config.EnablePedsForPlayerOutfitRooms = false
+Config.EnablePedsForShops = true
+Config.EnablePedsForClothingRooms = true
+Config.EnablePedsForPlayerOutfitRooms = true
 
 Config.EnablePedMenu = true
 Config.PedMenuGroup = "group.admin"

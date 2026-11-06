@@ -40,6 +40,7 @@ local function addToBlacklist(item, drawable, drawableId, blacklistSettings)
 end
 
 local function listContains(items, item)
+    if not items or not item then return false end
     for i = 1, #items do
         if items[i] == item then
             return true
@@ -49,6 +50,7 @@ local function listContains(items, item)
 end
 
 local function listContainsAny(items, containedItems)
+    if not items or not containedItems then return false end
     for i = 1, #items do
         if listContains(containedItems, items[i]) then
             return true
@@ -58,18 +60,27 @@ local function listContainsAny(items, containedItems)
 end
 
 local function allowedForPlayer(item, allowedAces)
-    return (item.jobs and listContains(item.jobs, client.job.name)) or (item.gangs and listContains(item.gangs, client.gang.name)) or (item.aces and listContainsAny(item.aces, allowedAces) or (item.citizenids and listContains(item.citizenids, client.citizenid)))
+    return (item.jobs and client.job and listContains(item.jobs, client.job.name))
+        or (item.gangs and client.gang and listContains(item.gangs, client.gang.name))
+        or (item.aces and allowedAces and listContainsAny(item.aces, allowedAces))
+        or (item.citizenids and client.citizenid and listContains(item.citizenids, client.citizenid))
 end
 
 local function filterPedModelsForPlayer(pedConfigs)
     local playerPeds = {}
-    local allowedAces = lib.callback.await("illenium-appearance:server:GetPlayerAces", false)
+    local seen = {}
+    if not pedConfigs then return { "mp_m_freemode_01", "mp_f_freemode_01" } end
+    local allowedAces = lib.callback.await("illenium-appearance:server:GetPlayerAces", false) or {}
 
     for i = 1, #pedConfigs do
         local config = pedConfigs[i]
         if (not config.jobs and not config.gangs and not config.aces and not config.citizenids) or allowedForPlayer(config, allowedAces) then
             for j = 1, #config.peds do
-                playerPeds[#playerPeds + 1] = config.peds[j]
+                local pedModel = config.peds[j]
+                if pedModel and not seen[pedModel] then
+                    seen[pedModel] = true
+                    playerPeds[#playerPeds + 1] = pedModel
+                end
             end
         end
     end

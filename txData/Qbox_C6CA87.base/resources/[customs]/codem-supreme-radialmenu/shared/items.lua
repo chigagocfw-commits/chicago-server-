@@ -258,18 +258,18 @@ JobInteractions = {
         icon = 'shield-halved',
         items = {
             {
+                id = 'toggleduty',
+                label = 'Toggle Duty',
+                icon = 'toggle-on',
+                event = 'QBCore:ToggleDuty',
+                type = 'server',
+                shouldClose = true
+            },
+            {
                 id = 'emergencybutton',
                 label = _L('game.menu.emergencybutton'),
                 icon = 'bell',
                 event = 'police:client:SendPoliceEmergencyAlert',
-                type = 'client',
-                shouldClose = true
-            },
-            {
-                id = 'checkstatus',
-                label = _L('game.menu.checkstatus'),
-                icon = 'heart-pulse',
-                event = 'police:client:CheckStatus',
                 type = 'client',
                 shouldClose = true
             },
@@ -293,8 +293,32 @@ JobInteractions = {
                 id = 'search',
                 label = _L('game.menu.search_player'),
                 icon = 'magnifying-glass',
-                event = 'police:server:SearchPlayer',
-                type = 'server',
+                event = 'police:client:SearchPlayer',
+                type = 'client',
+                shouldClose = true
+            },
+            {
+                id = 'putinvehicle',
+                label = _L('game.menu.putinvehicle'),
+                icon = 'car-side',
+                event = 'police:client:PutPlayerInVehicle',
+                type = 'client',
+                shouldClose = true
+            },
+            {
+                id = 'setoutvehicle',
+                label = 'Take Out Vehicle',
+                icon = 'arrow-right-from-bracket',
+                event = 'police:client:SetPlayerOutVehicle',
+                type = 'client',
+                shouldClose = true
+            },
+            {
+                id = 'checkstatus',
+                label = _L('game.menu.checkstatus'),
+                icon = 'heart-pulse',
+                event = 'police:client:CheckStatus',
+                type = 'client',
                 shouldClose = true
             },
             {
@@ -306,10 +330,10 @@ JobInteractions = {
                 shouldClose = true
             },
             {
-                id = 'takedriverlicense',
-                label = _L('game.menu.revoke_license'),
-                icon = 'id-card',
-                event = 'police:client:SeizeDriverLicense',
+                id = 'bill',
+                label = 'Fine Player',
+                icon = 'file-invoice-dollar',
+                event = 'police:client:BillPlayer',
                 type = 'client',
                 shouldClose = true
             }
@@ -320,6 +344,14 @@ JobInteractions = {
         label = _L('game.menu.ems_actions'),
         icon = 'truck-medical',
         items = {
+            {
+                id = 'toggleduty',
+                label = 'Toggle Duty',
+                icon = 'toggle-on',
+                event = 'QBCore:ToggleDuty',
+                type = 'server',
+                shouldClose = true
+            },
             {
                 id = 'checkstatus',
                 label = _L('game.menu.checkstatus'),
@@ -345,18 +377,18 @@ JobInteractions = {
                 shouldClose = true
             },
             {
-                id = 'emergencybutton',
-                label = _L('game.menu.emergencybutton'),
-                icon = 'bell',
-                event = 'police:client:SendPoliceEmergencyAlert',
-                type = 'client',
-                shouldClose = true
-            },
-            {
                 id = 'escort',
                 label = _L('game.menu.escort'),
                 icon = 'user-friends',
                 event = 'police:client:EscortPlayer',
+                type = 'client',
+                shouldClose = true
+            },
+            {
+                id = 'emergencybutton',
+                label = _L('game.menu.emergencybutton'),
+                icon = 'bell',
+                event = 'police:client:SendPoliceEmergencyAlert',
                 type = 'client',
                 shouldClose = true
             },
@@ -415,28 +447,20 @@ JobInteractions = {
         icon = 'taxi',
         items = {
             {
+                id = 'taximenu',
+                label = 'Taxi Panel',
+                icon = 'tablet-screen-button',
+                event = 'codem-taxijob:OpenMenu',
+                type = 'client',
+                shouldClose = true
+            },
+            {
                 id = 'togglemeter',
                 label = _L('game.menu.togglemeter'),
-                icon = 'eye-slash',
-                event = 'qb-taxi:client:toggleMeter',
+                icon = 'gauge-high',
+                event = 'codem-taxijob:ToggleMeter',
                 type = 'client',
                 shouldClose = false
-            },
-            {
-                id = 'togglemouse',
-                label = _L('game.menu.togglemousemeter'),
-                icon = 'hourglass-start',
-                event = 'qb-taxi:client:enableMeter',
-                type = 'client',
-                shouldClose = true
-            },
-            {
-                id = 'npc_mission',
-                label = _L('game.menu.npc_mission'),
-                icon = 'taxi',
-                event = 'qb-taxi:client:DoTaxiNpc',
-                type = 'client',
-                shouldClose = true
             }
         }
     },
@@ -446,18 +470,78 @@ JobInteractions = {
         icon = 'truck-pickup',
         items = {
             {
+                id = 'towtruck',
+                label = _L('game.menu.towvehicle'),
+                icon = 'truck-pickup',
+                event = 'qb-tow:client:TowVehicle',
+                type = 'client',
+                shouldClose = true
+            },
+            {
                 id = 'togglenpc',
                 label = _L('game.menu.togglenpc'),
                 icon = 'toggle-on',
                 event = 'jobs:client:ToggleNpc',
                 type = 'client',
                 shouldClose = true
-            },
+            }
+        }
+    },
+    ['trucker'] = {
+        id = 'trucker',
+        label = 'Trucker Actions',
+        icon = 'truck',
+        items = {
             {
-                id = 'towtruck',
-                label = _L('game.menu.towvehicle'),
-                icon = 'truck-pickup',
-                event = 'qb-tow:client:TowVehicle',
+                id = 'truckermenu',
+                label = 'Trucker Panel',
+                icon = 'clipboard-list',
+                event = 'codem-truckerjob:OpenMenu',
+                type = 'client',
+                shouldClose = true
+            }
+        }
+    },
+    ['garbage'] = {
+        id = 'garbage',
+        label = 'Garbage Actions',
+        icon = 'dumpster',
+        items = {
+            {
+                id = 'garbagemenu',
+                label = 'Garbage Panel',
+                icon = 'trash-can',
+                event = 'codem-garbage:openMenu',
+                type = 'client',
+                shouldClose = true
+            }
+        }
+    },
+    ['miner'] = {
+        id = 'miner',
+        label = 'Mining Actions',
+        icon = 'gem',
+        items = {
+            {
+                id = 'minermenu',
+                label = 'Mining Panel',
+                icon = 'screwdriver-wrench',
+                event = 'codem-minerjob:OpenMinerMenu',
+                type = 'client',
+                shouldClose = true
+            }
+        }
+    },
+    ['bus'] = {
+        id = 'bus',
+        label = 'Bus Actions',
+        icon = 'bus',
+        items = {
+            {
+                id = 'busmission',
+                label = 'Start Bus Route',
+                icon = 'route',
+                event = 'qbx_busjob:client:DoBusNpc',
                 type = 'client',
                 shouldClose = true
             }

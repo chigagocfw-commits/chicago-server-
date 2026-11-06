@@ -25,6 +25,11 @@ end)
 RegisterNetEvent('mm_radio:client:use', function(slot, itemSlot)
     if itemSlot and itemSlot.slot then slot = itemSlot end
     if Radio.PlayerDead or IsPedFatallyInjured(cache.ped) then return end
+    Radio:doRadioCheck()
+    if not Radio.hasRadio then
+        lib.notify({ description = 'ما عندكش راديو فجيبك (You do not have a radio)', type = 'error' })
+        return
+    end
     Radio.usingRadio = true
     SetNuiFocus(true, true)
     Radio:toggleRadioAnimation(true)
@@ -58,15 +63,18 @@ exports('useRadio', function(data, slot)
     TriggerEvent('mm_radio:client:use', slot)
 end)
 
-RegisterCommand('radio', function()
-    if not Radio.usingRadio then
-        if Radio.hasRadio then
-            TriggerEvent('mm_radio:client:use')
-        else
-            lib.notify({ description = 'You do not have a radio', type = 'error' })
+if not Shared.UseCommand then
+    RegisterCommand('radio', function()
+        if not Radio.usingRadio then
+            Radio:doRadioCheck()
+            if Radio.hasRadio then
+                TriggerEvent('mm_radio:client:use')
+            else
+                lib.notify({ description = 'ما عندكش راديو فجيبك (You do not have a radio)', type = 'error' })
+            end
         end
-    end
-end, false)
+    end, false)
+end
 
 RegisterNetEvent('mm_radio:client:usejammer', function()
     if not Shared.Jammer.permission or not (lib.table.contains(Shared.Jammer.permission, Radio.PlayerJob) or lib.table.contains(Shared.Jammer.permission, Radio.PlayerGang)) then

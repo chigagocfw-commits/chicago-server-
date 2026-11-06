@@ -724,18 +724,117 @@
                             </div>
                         </div>
 
+                        <!-- Smart Police NPC & AI Dispatch Controller -->
+                        <div class="section-card npc-master-card">
+                            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <h4>🚔 GESTION DE LA POLICE NPC & DISPATCH IA (MODE RP)</h4>
+                                    <span>Contrôlez l'activité de la police PNJ ou désactivez-la automatiquement quand les joueurs RP sont en service</span>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <span id="npc-real-cops-badge" class="npc-status-pill info">👮 Policiers RP en service: 0</span>
+                                    <span id="npc-police-status-badge" class="npc-status-pill off">🔴 Police NPC: DÉSACTIVÉE</span>
+                                </div>
+                            </div>
+
+                            <!-- Toggles Grid for Police NPC, Auto-Threshold, Stars, EMS -->
+                            <div class="toggles-grid" style="margin-bottom: 14px;">
+                                <div class="toggle-card" style="border-color: rgba(0, 229, 255, 0.25);">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">🚔 Activer la Police NPC (Patrouilles, SWAT, Hélicos)</span>
+                                        <span class="toggle-desc">Si désactivé: aucun policier PNJ n'attaquera ou ne poursuivra les joueurs</span>
+                                    </div>
+                                    <label class="switch"><input type="checkbox" id="toggle-npc-police"><span class="slider"></span></label>
+                                </div>
+
+                                <div class="toggle-card" style="border-color: rgba(168, 85, 247, 0.3);">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">🤖 Mode Auto-RP (Couper Police NPC dès X Policiers Joueurs)</span>
+                                        <span class="toggle-desc">Désactive automatiquement la Police NPC dès que les joueurs policiers prennent leur service</span>
+                                    </div>
+                                    <label class="switch"><input type="checkbox" id="toggle-npc-auto-mode" checked><span class="slider"></span></label>
+                                </div>
+
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">⭐ Étoiles de Recherche GTA V (Wanted Level)</span>
+                                        <span class="toggle-desc">Autoriser ou bloquer totalement les étoiles de recherche GTA V</span>
+                                    </div>
+                                    <label class="switch"><input type="checkbox" id="toggle-npc-stars"><span class="slider"></span></label>
+                                </div>
+
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">🚑 Ambulances & Pompiers NPC (Secours IA)</span>
+                                        <span class="toggle-desc">Activer ou désactiver l'intervention des pompiers et ambulances PNJ</span>
+                                    </div>
+                                    <label class="switch"><input type="checkbox" id="toggle-npc-ems"><span class="slider"></span></label>
+                                </div>
+                            </div>
+
+                            <!-- Threshold Configuration & Purge Row -->
+                            <div class="npc-threshold-box">
+                                <div style="display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 220px;">
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">🔢 Seuil de Policiers Joueurs requis (Auto-Disable Police NPC) :</span>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Dès que ce nombre de policiers réels est en service (On Duty), la police NPC se coupe automatiquement.</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <div class="npc-preset-pills">
+                                        <button class="npc-pill-btn" onclick="setQuickCopsThreshold(1)">1 Policier</button>
+                                        <button class="npc-pill-btn" onclick="setQuickCopsThreshold(2)">2 Policiers</button>
+                                        <button class="npc-pill-btn" onclick="setQuickCopsThreshold(3)">3 Policiers</button>
+                                        <button class="npc-pill-btn" onclick="setQuickCopsThreshold(5)">5 Policiers</button>
+                                    </div>
+                                    <input type="number" id="npc-min-cops-input" class="search-input count-input" value="1" min="1" max="50" style="width: 75px; text-align: center; font-weight: 700;">
+                                    <button class="primary-btn" id="btn-save-cops-threshold" style="white-space: nowrap;">💾 Enregistrer Seuil</button>
+                                    <button class="primary-btn danger-btn" id="btn-clean-npc-cops" style="white-space: nowrap;" title="Supprime immédiatement tous les policiers PNJ et voitures de police PNJ présents sur la carte">🧹 Purger Police NPC Actuelle</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Global City NPC & Traffic Density Controller -->
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>TRAFFIC & NPC POPULATION DENSITY</h4>
-                                <span>Real-time city density controller</span>
+                                <h4>👥 CONTRÔLE GLOBAL DES PNJ & DENSITÉ DU TRAFIC (TOUTE LA VILLE)</h4>
+                                <span>Ajustez en temps réel le nombre de citoyens, voitures en circulation et véhicules garés</span>
                             </div>
-                            <div class="quick-vehicles-row" style="margin-bottom: 8px;">
-                                <span>City Traffic Density:</span>
-                                <button class="density-btn" data-density="0.0">0% (Ghost Town)</button>
-                                <button class="density-btn" data-density="0.25">25% (Low)</button>
-                                <button class="density-btn" data-density="0.5">50% (Medium)</button>
+                            <div class="quick-vehicles-row" style="margin-bottom: 14px;">
+                                <span>Préréglages Rapides :</span>
+                                <button class="density-btn" data-density="0.0">0% (Ville Fantôme / Aucun PNJ)</button>
+                                <button class="density-btn" data-density="0.25">25% (Faible / Opti FPS)</button>
+                                <button class="density-btn" data-density="0.5">50% (Moyen / RP)</button>
                                 <button class="density-btn active" data-density="1.0">100% (Normal)</button>
-                                <button class="density-btn" data-density="1.5">150% (Rush Hour)</button>
+                                <button class="density-btn" data-density="1.5">150% (Heure de Pointe)</button>
+                            </div>
+
+                            <div class="npc-sliders-grid">
+                                <div class="npc-slider-card">
+                                    <div class="npc-slider-header">
+                                        <span>🚶 Citoyens & Piétons (Peds)</span>
+                                        <strong id="lbl-ped-density" style="color: var(--accent-cyan);">100%</strong>
+                                    </div>
+                                    <input type="range" id="slider-ped-density" class="npc-range-slider" min="0" max="150" step="5" value="100">
+                                </div>
+
+                                <div class="npc-slider-card">
+                                    <div class="npc-slider-header">
+                                        <span>🚗 Trafic Routier (Circulation)</span>
+                                        <strong id="lbl-traffic-density" style="color: var(--accent-cyan);">100%</strong>
+                                    </div>
+                                    <input type="range" id="slider-traffic-density" class="npc-range-slider" min="0" max="150" step="5" value="100">
+                                </div>
+
+                                <div class="npc-slider-card">
+                                    <div class="npc-slider-header">
+                                        <span>🅿️ Véhicules Garés (Parked)</span>
+                                        <strong id="lbl-parked-density" style="color: var(--accent-cyan);">100%</strong>
+                                    </div>
+                                    <input type="range" id="slider-parked-density" class="npc-range-slider" min="0" max="150" step="5" value="100">
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                                <button class="primary-btn" id="btn-apply-npc-sliders" style="font-weight: 700;">✅ Appliquer les Densités PNJ sur le Serveur</button>
                             </div>
                         </div>
 

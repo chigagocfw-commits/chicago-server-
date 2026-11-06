@@ -373,6 +373,10 @@ window.addEventListener('message', (event) => {
         const bankEl = document.getElementById('manage-live-bank');
         if (cashEl && data.cash !== undefined) cashEl.innerText = `$${Number(data.cash).toLocaleString()}`;
         if (bankEl && data.bank !== undefined) bankEl.innerText = `$${Number(data.bank).toLocaleString()}`;
+    } else if (data.action === 'syncNpcConfig') {
+        if (data.config) {
+            syncNpcConfigUI(data.config);
+        }
     }
 });
 
@@ -505,6 +509,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         } else if (tab === 'jobs') {
             const query = document.getElementById('job-search-input')?.value.toLowerCase().trim() || '';
             renderVisualJobs(query);
+        } else if (tab === 'world') {
+            postNUI('getNpcConfig');
         } else if (tab === 'devtools') {
             postNUI('requestCoordsDisplay');
         } else if (tab === 'events') {
@@ -1295,7 +1301,124 @@ document.getElementById('btn-give-quick-bank')?.addEventListener('click', () => 
     postNUI('giveMoney', { amount: amt, moneyType: 'bank' });
 });
 
-// Traffic & NPC Population Density
+// ==========================================================================
+// Smart Police NPC & Global Population Controller (JS)
+// ==========================================================================
+function syncNpcConfigUI(cfg) {
+    if (!cfg) return;
+
+    const copsBadge = document.getElementById('npc-real-cops-badge');
+    if (copsBadge) {
+        copsBadge.innerText = `👮 Policiers RP en service: ${cfg.realCopsOnDuty || 0}`;
+    }
+
+    const statusBadge = document.getElementById('npc-police-status-badge');
+    if (statusBadge) {
+        if (cfg.policeNpcEnabled) {
+            statusBadge.className = 'npc-status-pill on';
+            statusBadge.innerText = cfg.autoMode ? '🟢 Police NPC: ACTIVE (Auto)' : '🟢 Police NPC: ACTIVE (Manuel)';
+        } else {
+            statusBadge.className = 'npc-status-pill off';
+            statusBadge.innerText = cfg.autoMode ? '🔴 Police NPC: COUPÉE (RP Actif)' : '🔴 Police NPC: DÉSACTIVÉE';
+        }
+    }
+
+    const tPolice = document.getElementById('toggle-npc-police');
+    if (tPolice) tPolice.checked = !!cfg.policeNpcEnabled;
+
+    const tAuto = document.getElementById('toggle-npc-auto-mode');
+    if (tAuto) tAuto.checked = !!cfg.autoMode;
+
+    const tStars = document.getElementById('toggle-npc-stars');
+    if (tStars) tStars.checked = !!cfg.wantedStarsEnabled;
+
+    const tEms = document.getElementById('toggle-npc-ems');
+    if (tEms) tEms.checked = !!cfg.emsNpcEnabled;
+
+    const minCopsInput = document.getElementById('npc-min-cops-input');
+    if (minCopsInput && cfg.minCopsThreshold !== undefined) {
+        minCopsInput.value = cfg.minCopsThreshold;
+    }
+
+    if (cfg.pedDensity !== undefined) {
+        const pPct = Math.round(cfg.pedDensity * 100);
+        const sPed = document.getElementById('slider-ped-density');
+        const lPed = document.getElementById('lbl-ped-density');
+        if (sPed) sPed.value = pPct;
+        if (lPed) lPed.innerText = `${pPct}%`;
+    }
+
+    if (cfg.trafficDensity !== undefined) {
+        const tPct = Math.round(cfg.trafficDensity * 100);
+        const sTraf = document.getElementById('slider-traffic-density');
+        const lTraf = document.getElementById('lbl-traffic-density');
+        if (sTraf) sTraf.value = tPct;
+        if (lTraf) lTraf.innerText = `${tPct}%`;
+    }
+
+    if (cfg.parkedDensity !== undefined) {
+        const pkPct = Math.round(cfg.parkedDensity * 100);
+        const sPark = document.getElementById('slider-parked-density');
+        const lPark = document.getElementById('lbl-parked-density');
+        if (sPark) sPark.value = pkPct;
+        if (lPark) lPark.innerText = `${pkPct}%`;
+    }
+}
+
+document.getElementById('toggle-npc-police')?.addEventListener('change', (e) => {
+    postNUI('updateNpcConfig', { policeNpcEnabled: e.target.checked, autoMode: false });
+});
+
+document.getElementById('toggle-npc-auto-mode')?.addEventListener('change', (e) => {
+    const threshold = parseInt(document.getElementById('npc-min-cops-input')?.value) || 1;
+    postNUI('updateNpcConfig', { autoMode: e.target.checked, minCopsThreshold: threshold });
+});
+
+document.getElementById('toggle-npc-stars')?.addEventListener('change', (e) => {
+    postNUI('updateNpcConfig', { wantedStarsEnabled: e.target.checked });
+});
+
+document.getElementById('toggle-npc-ems')?.addEventListener('change', (e) => {
+    postNUI('updateNpcConfig', { emsNpcEnabled: e.target.checked });
+});
+
+document.getElementById('btn-save-cops-threshold')?.addEventListener('click', () => {
+    const threshold = parseInt(document.getElementById('npc-min-cops-input')?.value) || 1;
+    postNUI('updateNpcConfig', { autoMode: true, minCopsThreshold: threshold });
+});
+
+window.setQuickCopsThreshold = function(val) {
+    const input = document.getElementById('npc-min-cops-input');
+    if (input) input.value = val;
+    postNUI('updateNpcConfig', { autoMode: true, minCopsThreshold: val });
+};
+
+document.getElementById('btn-clean-npc-cops')?.addEventListener('click', () => {
+    postNUI('cleanNpcCopsNow', {});
+});
+
+// Live Slider Labels
+document.getElementById('slider-ped-density')?.addEventListener('input', (e) => {
+    const lbl = document.getElementById('lbl-ped-density');
+    if (lbl) lbl.innerText = `${e.target.value}%`;
+});
+document.getElementById('slider-traffic-density')?.addEventListener('input', (e) => {
+    const lbl = document.getElementById('lbl-traffic-density');
+    if (lbl) lbl.innerText = `${e.target.value}%`;
+});
+document.getElementById('slider-parked-density')?.addEventListener('input', (e) => {
+    const lbl = document.getElementById('lbl-parked-density');
+    if (lbl) lbl.innerText = `${e.target.value}%`;
+});
+
+document.getElementById('btn-apply-npc-sliders')?.addEventListener('click', () => {
+    const pedD = (parseInt(document.getElementById('slider-ped-density')?.value) || 0) / 100.0;
+    const trafD = (parseInt(document.getElementById('slider-traffic-density')?.value) || 0) / 100.0;
+    const parkD = (parseInt(document.getElementById('slider-parked-density')?.value) || 0) / 100.0;
+    postNUI('updateNpcConfig', { pedDensity: pedD, trafficDensity: trafD, parkedDensity: parkD });
+});
+
+// Traffic & NPC Population Density Quick Presets
 document.querySelectorAll('.density-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.density-btn').forEach(b => b.classList.remove('active'));

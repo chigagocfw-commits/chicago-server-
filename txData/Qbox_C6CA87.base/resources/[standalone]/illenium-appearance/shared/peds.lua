@@ -1,4 +1,4 @@
-﻿Config.Peds = {
+Config.Peds = {
     pedConfig = {
         {
             -- Default multiplayer models for all normal players (Male & Female)

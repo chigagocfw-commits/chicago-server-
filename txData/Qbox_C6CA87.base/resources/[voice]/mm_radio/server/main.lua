@@ -192,8 +192,12 @@ end
 
 local function GetSlotWithRadio(source)
     for i=1, #Shared.RadioItem do
-        return exports.ox_inventory:GetSlotIdWithItem(source, Shared.RadioItem[i])
+        local slot = exports.ox_inventory:GetSlotIdWithItem(source, Shared.RadioItem[i])
+        if slot then
+            return slot
+        end
     end
+    return nil
 end
 
 lib.callback.register('mm_radio:server:getradiodata', function(source, slot)
@@ -202,9 +206,12 @@ lib.callback.register('mm_radio:server:getradiodata', function(source, slot)
     local slotid = false
     if not slot then
         slotid = GetSlotWithRadio(source)
-    else
+    elseif type(slot) == 'number' then
+        slotid = slot
+    elseif type(slot) == 'table' then
         slotid = slot.slot
     end
+    if not slotid then return 0, 'NO_RADIO' end
     local slotData = exports.ox_inventory:GetSlot(source, slotid)
     if slotData and lib.table.contains(Shared.RadioItem, slotData.name) then
         local id = false
@@ -228,7 +235,15 @@ if Shared.UseCommand then
         help = 'Open Radio Menu',
         params = {},
     }, function(source)
-        TriggerClientEvent('mm_radio:client:use', source, 100)
+        local slot = GetSlotWithRadio(source)
+        if not slot then
+            TriggerClientEvent('ox_lib:notify', source, {
+                description = 'ما عندكش راديو فجيبك (You do not have a radio)',
+                type = 'error'
+            })
+            return
+        end
+        TriggerClientEvent('mm_radio:client:use', source, slot)
     end)
     lib.addCommand('jammer', {
         help = 'Setup Jammer',
