@@ -267,6 +267,7 @@ end
 exports('weaponWheel', Utils.WeaponWheel)
 
 function Utils.CreateBlip(settings, coords)
+    if not coords or not coords.x then return end
     local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
     SetBlipSprite(blip, settings.id)
     SetBlipDisplay(blip, 4)

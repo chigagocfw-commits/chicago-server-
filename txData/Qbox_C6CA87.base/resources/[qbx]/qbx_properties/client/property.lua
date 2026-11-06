@@ -311,37 +311,37 @@ local function singlePropertyMenu(property, noBackMenu)
             args = { id = property.id }
         }
     elseif property.owner == nil then
+        options[#options + 1] = {
+            title = string.format('Buy / Acheter - $%s', property.price),
+            icon = 'dollar-sign',
+            arrow = true,
+            onSelect = function()
+                local alert = lib.alertDialog({
+                    header = string.format('Buying - %s', property.property_name),
+                    content = string.format('Are you sure you want to buy %s for $%s?', property.property_name, property.price),
+                    centered = true,
+                    cancel = true
+                })
+                if alert == 'confirm' then
+                    TriggerServerEvent('qbx_properties:server:buyProperty', property.id)
+                end
+            end,
+        }
         if property.rent_interval then
+            local rentPrice = math.floor(property.price / 10)
             options[#options + 1] = {
-                title = 'Rent',
-                icon = 'dollar-sign',
+                title = string.format('Rent / Louer - $%s / %sh', rentPrice, property.rent_interval),
+                icon = 'key',
                 arrow = true,
                 onSelect = function()
                     local alert = lib.alertDialog({
                         header = string.format('Renting - %s', property.property_name),
-                        content = string.format('Are you sure you want to rent %s for $%s which will be billed every %sh(s)?', property.property_name, property.price, property.rent_interval),
+                        content = string.format('Are you sure you want to rent %s for $%s which will be billed every %sh(s)?', property.property_name, rentPrice, property.rent_interval),
                         centered = true,
                         cancel = true
                     })
                     if alert == 'confirm' then
                         TriggerServerEvent('qbx_properties:server:rentProperty', property.id)
-                    end
-                end,
-            }
-        else
-            options[#options + 1] = {
-                title = 'Buy',
-                icon = 'dollar-sign',
-                arrow = true,
-                onSelect = function()
-                    local alert = lib.alertDialog({
-                        header = string.format('Buying - %s', property.property_name),
-                        content = string.format('Are you sure you want to buy %s for $%s?', property.property_name, property.price),
-                        centered = true,
-                        cancel = true
-                    })
-                    if alert == 'confirm' then
-                        TriggerServerEvent('qbx_properties:server:buyProperty', property.id)
                     end
                 end,
             }
@@ -426,12 +426,20 @@ CreateThread(function()
         end
     end
 
-    properties = lib.callback.await('qbx_properties:callback:loadProperties')
+    properties = lib.callback.await('qbx_properties:callback:loadProperties') or {}
+    for i = 1, #properties do
+        local propCoords = properties[i]
+        local key = string.format('%.1f_%.1f', propCoords.x, propCoords.y)
+        if not blips[key] then
+            blips[key] = createBlip(propCoords, 'Property / Maison')
+        end
+    end
+
     while true do
         local sleep = 800
         local playerCoords = GetEntityCoords(cache.ped)
         for i = 1, #properties do
-            if #(playerCoords - properties[i].xyz) < 1.6 then
+            if #(playerCoords - properties[i].xyz) < 2.5 then
                 sleep = 0
                 qbx.drawText3d({ coords = properties[i].xyz, text = locale('drawtext.view_property') })
                 if IsControlJustPressed(0, 38) then

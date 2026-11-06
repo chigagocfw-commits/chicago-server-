@@ -147,7 +147,24 @@ lib.callback.register('qbx_properties:callback:loadProperties', function()
 end)
 
 lib.callback.register('qbx_properties:callback:requestProperties', function(_, propertyCoords)
-    return MySQL.query.await('SELECT property_name, owner, id, price, rent_interval, keyholders FROM properties WHERE coords = ?', {json.encode(propertyCoords)})
+    local exact = MySQL.query.await('SELECT property_name, owner, id, price, rent_interval, keyholders FROM properties WHERE coords = ?', {json.encode(propertyCoords)})
+    if exact and #exact > 0 then return exact end
+
+    local allProps = MySQL.query.await('SELECT property_name, owner, id, price, rent_interval, keyholders, coords FROM properties')
+    local matches = {}
+    if allProps and propertyCoords then
+        local pCoords = vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)
+        for i = 1, #allProps do
+            local decoded = json.decode(allProps[i].coords)
+            if decoded and decoded.x then
+                local dist = #(pCoords - vec3(decoded.x, decoded.y, decoded.z))
+                if dist < 3.5 then
+                    matches[#matches + 1] = allProps[i]
+                end
+            end
+        end
+    end
+    return matches
 end)
 
 local function hasAccess(citizenId, propertyId)
@@ -449,14 +466,26 @@ end
 RegisterNetEvent('qbx_properties:server:rentProperty', function(propertyId)
     local playerSource = source --[[@as number]]
     local player = exports.qbx_core:GetPlayer(playerSource)
+    if not player then return end
     local playerCoords = GetEntityCoords(GetPlayerPed(playerSource))
     local property = MySQL.single.await('SELECT owner, price, property_name, coords, rent_interval, keyholders, garage FROM properties WHERE id = ?', {propertyId})
+    if not property then return end
     local propertyCoords = json.decode(property.coords)
-    if #(playerCoords - vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)) > 8.0 then return end
+    if #(playerCoords - vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)) > 12.0 then return end
     if property.owner then return end
     if not property.rent_interval then return end
 
-    if player.PlayerData.money.bank < property.price then
+    local rentFee = math.floor(property.price / 10)
+    local oxCash = exports.ox_inventory:Search(playerSource, 'count', 'money') or 0
+    local bankCash = player.PlayerData.money.bank or 0
+
+    if bankCash >= rentFee then
+        player.Functions.RemoveMoney('bank', rentFee, string.format('Rented %s', property.property_name))
+    elseif oxCash >= rentFee then
+        exports.ox_inventory:RemoveItem(playerSource, 'money', rentFee)
+    elseif (player.PlayerData.money.cash or 0) >= rentFee then
+        player.Functions.RemoveMoney('cash', rentFee, string.format('Rented %s', property.property_name))
+    else
         exports.qbx_core:Notify(playerSource, 'Not enough money to rent property.', 'error')
         return
     end
@@ -467,7 +496,7 @@ RegisterNetEvent('qbx_properties:server:rentProperty', function(propertyId)
 
     exports.qbx_core:Notify(playerSource, string.format('Successfully started renting %s', property.property_name), 'success')
     MySQL.update('UPDATE properties SET owner = ? WHERE id = ?', {player.PlayerData.citizenid, propertyId})
-    startRentThread()
+    startRentThread(propertyId)
 
     logger.log({
         source = playerSource,
@@ -480,13 +509,29 @@ end)
 RegisterNetEvent('qbx_properties:server:buyProperty', function(propertyId)
     local playerSource = source --[[@as number]]
     local player = exports.qbx_core:GetPlayer(playerSource)
+    if not player then return end
     local playerCoords = GetEntityCoords(GetPlayerPed(playerSource))
     local property = MySQL.single.await('SELECT owner, price, property_name, coords, keyholders, garage FROM properties WHERE id = ?', {propertyId})
+    if not property then return end
     local propertyCoords = json.decode(property.coords)
 
-    if #(playerCoords - vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)) > 8.0 or property.owner then return end
+    if #(playerCoords - vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)) > 12.0 or property.owner then return end
 
-    if not player.Functions.RemoveMoney('cash', property.price, string.format('Purchased %s', property.property_name)) and not player.Functions.RemoveMoney('bank', property.price, string.format('Purchased %s', property.property_name)) then
+    local price = property.price
+    local oxCash = exports.ox_inventory:Search(playerSource, 'count', 'money') or 0
+    local bankCash = player.PlayerData.money.bank or 0
+    local qbCash = player.PlayerData.money.cash or 0
+
+    local paid = false
+    if oxCash >= price then
+        paid = exports.ox_inventory:RemoveItem(playerSource, 'money', price)
+    elseif qbCash >= price then
+        paid = player.Functions.RemoveMoney('cash', price, string.format('Purchased %s', property.property_name))
+    elseif bankCash >= price then
+        paid = player.Functions.RemoveMoney('bank', price, string.format('Purchased %s', property.property_name))
+    end
+
+    if not paid then
         exports.qbx_core:Notify(playerSource, 'Not enough money to purchase property.', 'error')
         return
     end
