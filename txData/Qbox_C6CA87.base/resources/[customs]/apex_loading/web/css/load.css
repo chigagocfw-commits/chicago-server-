@@ -112,8 +112,8 @@ body:not(.ls-page):not(.editing) #enterHint { display: none !important; }
   55%, 100% { left: 115vw; }
 }
 
-.bg-video-wrap { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
-.bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: -webkit-optimize-contrast; transform: translateZ(0); backface-visibility: hidden; }
+.bg-video-wrap { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+.bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; filter: contrast(107%) brightness(102%) saturate(108%); image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
 
 /* the music player's hidden YouTube host. ⚠ NOT display:none: a hidden
    YouTube player refuses to start; it has to exist, just out of sight. */
