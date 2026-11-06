@@ -5,8 +5,9 @@ lib.addCommand('createproperty', {
     help = 'Create a property at your current location',
 }, function(source)
     local player = exports.qbx_core:GetPlayer(source)
+    local isAuthorized = player.PlayerData.job.name == 'realestate' or exports.qbx_core:HasPermission(source, 'admin') or exports.qbx_core:HasPermission(source, 'god')
 
-    if player.PlayerData.job.name ~= 'realestate' then exports.qbx_core:Notify(source, 'Not a realtor', 'error') return end
+    if not isAuthorized then exports.qbx_core:Notify(source, 'Must be a Realtor or Admin', 'error') return end
 
     TriggerClientEvent('qbx_properties:client:createProperty', source)
 end)
@@ -15,8 +16,9 @@ RegisterNetEvent('qbx_properties:server:createProperty', function(interiorIndex,
     local playerSource = source --[[@as number]]
     local player = exports.qbx_core:GetPlayer(playerSource)
     local playerCoords = GetEntityCoords(GetPlayerPed(playerSource))
+    local isAuthorized = player.PlayerData.job.name == 'realestate' or exports.qbx_core:HasPermission(playerSource, 'admin') or exports.qbx_core:HasPermission(playerSource, 'god')
 
-    if player.PlayerData.job.name ~= 'realestate' then return end
+    if not isAuthorized then return end
     if not garageCoords and #(playerCoords - propertyCoords) > 5.0 then return end
     if garageCoords and #(playerCoords - garageCoords.xyz) > 5.0 then return end
 

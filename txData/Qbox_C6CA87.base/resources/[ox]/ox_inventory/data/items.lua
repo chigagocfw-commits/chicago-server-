@@ -1613,6 +1613,7 @@ return {
 		description = "Comes in handy when people misbehave. Maybe it can be used for something else?",
 		client = {
 			image = "handcuffs.png",
+			event = "police:client:CuffPlayerSoft",
 		}
 	},
 

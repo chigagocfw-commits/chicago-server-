@@ -830,6 +830,28 @@ lib.callback.register('souh4il_dev:server:setTrafficDensity', function(source, d
     return { success = true, density = d }
 end)
 
+---Command: Reload Bank, Housing & Police Services (Owner Only)
+lib.addCommand('sdev_services', {
+    help = 'Reload Bank, Housing & Police services (Owner Only)'
+}, function(source)
+    if source ~= 0 and not Permissions.IsOwner(source) then
+        exports.qbx_core:Notify(source, "Unauthorized: Owner Only", "error")
+        return
+    end
+
+    ExecuteCommand('restart bablo-banking')
+    ExecuteCommand('restart qbx_properties')
+    ExecuteCommand('restart qbx_police')
+    ExecuteCommand('restart ox_inventory')
+
+    if source ~= 0 then
+        exports.qbx_core:Notify(source, "Bank, Housing, and Police services reloaded successfully!", "success")
+        Logger.Write("RELOAD_SERVICES", source, nil, { services = "banking, properties, police, inventory" }, "SUCCESS")
+    else
+        print("^2[SOUH4IL-DEV] Bank, Housing, and Police services reloaded successfully!^0")
+    end
+end)
+
 -- Clean shutdown handler
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= cache.resource then return end

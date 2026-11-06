@@ -7,25 +7,25 @@ Config.Logs = false
     Framework - The framework that the script will use. See what frameworks are available in the 'frameworks' folder.
     auto: This will automatically detect the framework.
 ]]
-Config.Framework = 'auto'
+Config.Framework = 'qbox'
 
 --[[
     qb-inventory, ox_inventory, qs-inventory, ps-inventory, core_inventory, codem-inventory, origen_inventory, tgiann-inventory
 ]]
-Config.Inventory = 'auto'
+Config.Inventory = 'ox_inventory'
 
 --[[
     Target - The target that the script will use. See what targets are available in the 'interactions' folder.
 
     auto: This will automatically detect the target.
 ]]
-Config.Target = 'auto'
+Config.Target = 'ox_target'
 
 --[[
     Interaction - The interaction that the script will use. See what interactions are available in the 'interactions' folder.
     auto: This will automatically detect the interaction.
 ]]
-Config.Interaction = 'auto'
+Config.Interaction = 'ox_lib'
 
 --[[
     BankingInteraction - How players interact with the bank

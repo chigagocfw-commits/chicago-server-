@@ -44,7 +44,7 @@ client_scripts {
 }
 
 server_scripts {
-    '@mysql-async/lib/MySQL.lua',
+    '@oxmysql/lib/MySQL.lua',
     'src/resource/server/**/*.lua',
     'frameworks/qbox/server.lua',
     'frameworks/custom/server.lua',

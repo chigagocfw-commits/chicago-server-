@@ -235,7 +235,10 @@ return {
 			{ name = 'WEAPON_NIGHTSTICK', price = 100 },
 			{ name = 'WEAPON_PISTOL', price = 500, metadata = { registered = true, serial = 'POL' }, license = 'weapon' },
 			{ name = 'WEAPON_CARBINERIFLE', price = 1000, metadata = { registered = true, serial = 'POL' }, license = 'weapon', grade = 3 },
-			{ name = 'WEAPON_STUNGUN', price = 500, metadata = { registered = true, serial = 'POL'} }
+			{ name = 'WEAPON_STUNGUN', price = 500, metadata = { registered = true, serial = 'POL'} },
+			{ name = 'handcuffs', price = 50 },
+			{ name = 'radio', price = 150 },
+			{ name = 'armor', price = 250 },
 		}, locations = {
 			vec3(451.51, -979.44, 30.68)
 		}, targets = {
