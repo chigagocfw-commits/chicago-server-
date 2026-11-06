@@ -330,6 +330,8 @@ window.addEventListener('message', (event) => {
         const d = data.details;
         const content = document.getElementById('info-modal-content');
         if (content && d) {
+            const vehCount = (d.vehicles || []).length;
+            const propCount = (d.properties || []).length;
             content.innerHTML = `
                 <div class="player-info-card">
                     <div class="info-grid">
@@ -342,6 +344,8 @@ window.addEventListener('message', (event) => {
                         <div class="info-row"><span class="info-k">Gang / Grade:</span><span class="info-v">${escapeHtml(d.gang)} (${escapeHtml(d.gangGrade)})</span></div>
                         <div class="info-row"><span class="info-k">Phone Number:</span><span class="info-v font-mono">${escapeHtml(d.phone)}</span></div>
                         <div class="info-row"><span class="info-k">Ping / IP:</span><span class="info-v">${d.ping}ms (${d.ip})</span></div>
+                        <div class="info-row"><span class="info-k">Véhicules Garage:</span><span class="info-v highlight">${vehCount} possédé(s)</span></div>
+                        <div class="info-row"><span class="info-k">Propriétés / Maisons:</span><span class="info-v highlight">${propCount} possédée(s)</span></div>
                         <div class="info-row" style="grid-column: 1 / -1;"><span class="info-k">Rockstar License:</span><span class="info-v font-mono text-muted" style="word-break: break-all;">${escapeHtml(d.license)}</span></div>
                         <div class="info-row" style="grid-column: 1 / -1;"><span class="info-k">Discord ID:</span><span class="info-v font-mono text-muted">${escapeHtml(d.discord)}</span></div>
                     </div>
@@ -361,6 +365,8 @@ window.addEventListener('message', (event) => {
             if (jobEl) jobEl.innerText = `${d.job} (${d.jobGrade})`;
             if (gangEl) gangEl.innerText = `${d.gang} (${d.gangGrade})`;
             if (cidEl) cidEl.innerText = `CID: ${d.citizenid} • Ping: ${d.ping}ms • IP: ${d.ip}`;
+            // Render Vehicles & Properties
+            renderPlayerAssets(d);
         }
     } else if (data.action === 'updateTargetLiveMoney') {
         const cashEl = document.getElementById('manage-live-cash');
@@ -519,6 +525,12 @@ function closePanel() {
     if (jobModal) jobModal.style.display = 'none';
     const staffModal = document.getElementById('staff-modal');
     if (staffModal) staffModal.style.display = 'none';
+    const pedModal = document.getElementById('ped-picker-modal');
+    if (pedModal) pedModal.style.display = 'none';
+    const vehModal = document.getElementById('veh-picker-modal');
+    if (vehModal) vehModal.style.display = 'none';
+    const manageModal = document.getElementById('player-manage-modal');
+    if (manageModal) manageModal.style.display = 'none';
     postNUI('close');
 }
 
@@ -530,15 +542,25 @@ document.getElementById('close-btn')?.addEventListener('click', (e) => {
 
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        const pedModal = document.getElementById('ped-picker-modal');
+        const vehModal = document.getElementById('veh-picker-modal');
         const modal = document.getElementById('ban-modal');
         const jobModal = document.getElementById('job-modal');
         const staffModal = document.getElementById('staff-modal');
-        if (modal && modal.style.display !== 'none') {
+        const manageModal = document.getElementById('player-manage-modal');
+
+        if (pedModal && pedModal.style.display !== 'none') {
+            pedModal.style.display = 'none';
+        } else if (vehModal && vehModal.style.display !== 'none') {
+            vehModal.style.display = 'none';
+        } else if (modal && modal.style.display !== 'none') {
             modal.style.display = 'none';
         } else if (jobModal && jobModal.style.display !== 'none') {
             jobModal.style.display = 'none';
         } else if (staffModal && staffModal.style.display !== 'none') {
             staffModal.style.display = 'none';
+        } else if (manageModal && manageModal.style.display !== 'none') {
+            manageModal.style.display = 'none';
         } else {
             closePanel();
         }
@@ -1588,13 +1610,23 @@ window.openPlayerManageModal = function(targetId, targetName) {
     }
 
     // Reset inputs
-    const elIds = ['manage-money-amount', 'manage-item-name', 'manage-item-count', 'manage-job-name', 'manage-job-grade', 'manage-gang-name', 'manage-gang-grade', 'manage-ped-model', 'manage-pm-msg', 'manage-warn-msg'];
+    const elIds = ['manage-money-amount', 'manage-item-name', 'manage-item-count', 'manage-job-name', 'manage-job-grade', 'manage-gang-name', 'manage-gang-grade', 'manage-ped-model', 'manage-pm-msg', 'manage-warn-msg', 'manage-giveveh-model', 'manage-giveveh-plate'];
     elIds.forEach(id => {
         const el = document.getElementById(id);
         if (el && id.includes('count')) el.value = '1';
         else if (el && id.includes('grade')) el.value = '0';
         else if (el) el.value = '';
     });
+    const garageInput = document.getElementById('manage-giveveh-garage');
+    if (garageInput) garageInput.value = 'motel';
+
+    const vehBox = document.getElementById('manage-vehicles-container');
+    if (vehBox) vehBox.innerHTML = '<div class="asset-empty-state">Chargement des véhicules enregistrés...</div>';
+    const propBox = document.getElementById('manage-properties-container');
+    if (propBox) propBox.innerHTML = '<div class="asset-empty-state">Chargement des propriétés enregistrées...</div>';
+
+    clearVehSelection();
+    renderPedQuickStrip();
 
     modal.style.display = 'flex';
 
@@ -1683,9 +1715,358 @@ window.execPlayerDetailed = function(action, extra = {}) {
         if (!confirm(`Êtes-vous sûr de vouloir vider complètement l'inventaire de [#${targetId}] ${name} ?`)) {
             return;
         }
+    } else if (action === 'give_owned_vehicle') {
+        const model = document.getElementById('manage-giveveh-model')?.value.trim();
+        const plate = document.getElementById('manage-giveveh-plate')?.value.trim();
+        const garage = document.getElementById('manage-giveveh-garage')?.value.trim() || 'motel';
+        if (!model) {
+            alert('Veuillez spécifier le modèle du véhicule (ex: sultan, adder, schafter2) !');
+            return;
+        }
+        payload = { action: 'give_owned_vehicle', targetId, model, plate, garage };
     }
 
     postNUI('playerDetailedAction', payload);
+};
+
+// Render Player Owned Assets (Vehicles & Properties)
+function renderPlayerAssets(d) {
+    const countBadge = document.getElementById('manage-assets-count');
+    const vehBox = document.getElementById('manage-vehicles-container');
+    const propBox = document.getElementById('manage-properties-container');
+
+    const vehs = d.vehicles || [];
+    const props = d.properties || [];
+
+    if (countBadge) {
+        countBadge.innerText = `${vehs.length} Voitures • ${props.length} Maisons`;
+    }
+
+    if (vehBox) {
+        if (vehs.length === 0) {
+            vehBox.innerHTML = '<div class="asset-empty-state">🚫 Ce joueur ne possède aucun véhicule enregistré dans ses garages.</div>';
+        } else {
+            vehBox.innerHTML = vehs.map(v => {
+                const stateLabel = v.state === 1 ? 'Rentré Garage' : (v.state === 0 ? 'Sorti en Ville' : 'Fourrière');
+                const stateColor = v.state === 1 ? 'green' : (v.state === 0 ? 'gold' : 'orange');
+                const plateText = (v.plate || '').trim();
+                const vModel = (v.vehicle || 'Vehicule').toLowerCase();
+                const imgPath = `images/vehicles/${vModel}.webp`;
+                const fallbackImg = `https://docs.fivem.net/vehicles/${vModel}.webp`;
+
+                return `
+                    <div class="asset-item-card">
+                        <div class="asset-item-details">
+                            <div class="asset-item-icon" style="overflow: hidden; padding: 2px;">
+                                <img src="${imgPath}" onerror="this.onerror=null; this.src='${fallbackImg}'; this.onerror=function(){ this.style.display='none'; this.nextElementSibling.style.display='flex'; };" style="width: 100%; height: 100%; object-fit: contain;">
+                                <span style="display: none; font-size: 1.2rem;">🚗</span>
+                            </div>
+                            <div class="asset-info-col">
+                                <div class="asset-item-title">
+                                    <span>${escapeHtml(vModel.toUpperCase())}</span>
+                                    <span class="asset-plate-badge">${escapeHtml(plateText || 'NO PLATE')}</span>
+                                </div>
+                                <div class="asset-meta-row">
+                                    <span>📍 Garage: <strong>${escapeHtml(v.garage || 'motel')}</strong></span>
+                                    <span class="asset-tag ${stateColor}">${stateLabel}</span>
+                                    <span>⛽ ${v.fuel || 100}%</span>
+                                    <span>⚙️ ${Math.round((v.engine || 1000) / 10)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="asset-item-actions" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 480px;">
+                            <button class="asset-action-btn btn-keys" onclick="execAssetAction('give_keys', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Donner les clés au joueur">🔑 Clés</button>
+                            <button class="asset-action-btn btn-bring" onclick="execAssetAction('bring_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', model: '${escapeHtml(vModel)}' })" title="Téléporter ou sortir la voiture devant vous">📍 Bring</button>
+                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_veh_trunk', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Ouvrir le coffre (Trunk)">🧰 Coffre</button>
+                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_veh_glovebox', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Ouvrir la boîte à gants">📂 G-Box</button>
+                            <button class="asset-action-btn btn-repair" onclick="execAssetAction('repair_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Réparer & Laver à 100%">🔧 Réparer</button>
+                            <button class="asset-action-btn btn-transfer" onclick="execAssetAction('transfer_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Transférer la voiture à un autre joueur">🔄 Transférer</button>
+                            <button class="asset-action-btn btn-danger" onclick="execAssetAction('seize_vehicle', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', citizenid: '${escapeHtml(d.citizenid)}' })" title="Saisir et supprimer définitivement ce véhicule">🗑️ Saisir</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    if (propBox) {
+        if (props.length === 0) {
+            propBox.innerHTML = '<div class="asset-empty-state">🏠 Ce joueur ne possède aucune propriété ou maison enregistrée.</div>';
+        } else {
+            propBox.innerHTML = props.map(p => {
+                const isRent = p.rent_interval && p.rent_interval > 0;
+                return `
+                    <div class="asset-item-card property-card">
+                        <div class="asset-item-details">
+                            <div class="asset-item-icon" style="background: rgba(255, 215, 0, 0.05); border-color: rgba(255, 215, 0, 0.2);">🏠</div>
+                            <div class="asset-info-col">
+                                <div class="asset-item-title">
+                                    <span>${escapeHtml(p.property_name || 'Propriété #' + p.id)}</span>
+                                    <span class="asset-tag gold">ID #${p.id}</span>
+                                </div>
+                                <div class="asset-meta-row">
+                                    <span>💵 Valeur: <strong style="color: #00e676;">$${Number(p.price || 0).toLocaleString()}</strong></span>
+                                    <span class="asset-tag ${isRent ? 'orange' : 'green'}">${isRent ? 'Location' : 'Propriété Définitive'}</span>
+                                    ${p.interior ? `<span class="asset-tag">Inter: ${escapeHtml(p.interior)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="asset-item-actions" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;">
+                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_house_stash', { targetId: ${d.id}, propertyName: '${escapeHtml(p.property_name)}' })" title="Ouvrir le coffre / stash de cette maison">📦 Ouvrir Coffre</button>
+                            <button class="asset-action-btn btn-tp" onclick="execAssetAction('tp_property', { targetId: ${d.id}, propertyId: ${p.id} })" title="Se téléporter à l'entrée de cette maison">📍 TP Maison</button>
+                            <button class="asset-action-btn btn-keys" onclick="execAssetAction('reset_property_keys', { targetId: ${d.id}, propertyId: ${p.id} })" title="Réinitialiser tous les doubles de clés">🔑 Reset Clés</button>
+                            <button class="asset-action-btn btn-transfer" onclick="execAssetAction('transfer_property', { targetId: ${d.id}, propertyId: ${p.id} })" title="Transférer la propriété à un autre joueur">🔄 Transférer</button>
+                            <button class="asset-action-btn btn-danger" onclick="execAssetAction('seize_property', { targetId: ${d.id}, propertyId: ${p.id}, name: '${escapeHtml(p.property_name || '#' + p.id)}', citizenid: '${escapeHtml(d.citizenid)}' })" title="Saisir la maison et la remettre en vente">🏠 Saisir Maison</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+}
+
+// Global Asset Action Dispatcher (Houses & Cars Full Control)
+window.execAssetAction = function(action, params) {
+    if (action === 'seize_vehicle') {
+        if (!confirm(`⚠️ ACTION DE SAISIE STAFF :\n\nÊtes-vous sûr de vouloir SAISIR et SUPPRIMER définitivement le véhicule [${params.plate}] de ce joueur ?\n\n• Le véhicule sera supprimé de son garage\n• S'il est actuellement sorti en ville, il disparaîtra\n• Les clés seront révoquées`)) {
+            return;
+        }
+        postNUI('playerDetailedAction', { action: 'seize_vehicle', ...params });
+    } else if (action === 'seize_property') {
+        if (!confirm(`⚠️ ACTION DE SAISIE IMMOBILIÈRE :\n\nÊtes-vous sûr de vouloir SAISIR et RÉVOQUER la propriété "${params.name}" ?\n\n• Le joueur perdra son statut de propriétaire\n• Les clés et coffres seront révoqués\n• La propriété sera remise sur le marché pour la vente`)) {
+            return;
+        }
+        postNUI('playerDetailedAction', { action: 'seize_property', ...params });
+    } else if (action === 'give_keys') {
+        postNUI('playerDetailedAction', { action: 'give_keys', ...params });
+    } else if (action === 'open_house_stash') {
+        postNUI('playerDetailedAction', { action: 'open_house_stash', ...params });
+    } else if (action === 'tp_property') {
+        postNUI('playerDetailedAction', { action: 'tp_property', ...params });
+    } else if (action === 'reset_property_keys') {
+        if (!confirm(`Confirmer la révocation de TOUS les doubles de clés de cette propriété ? Seul le propriétaire légitime conservera l'accès.`)) return;
+        postNUI('playerDetailedAction', { action: 'reset_property_keys', ...params });
+    } else if (action === 'transfer_property') {
+        const toPlayer = prompt(`Entrez l'ID Serveur du nouveau propriétaire pour cette propriété :`);
+        if (!toPlayer || isNaN(toPlayer)) return;
+        postNUI('playerDetailedAction', { action: 'transfer_property', propertyId: params.propertyId, toPlayerId: parseInt(toPlayer) });
+    } else if (action === 'open_veh_trunk') {
+        postNUI('playerDetailedAction', { action: 'open_veh_trunk', ...params });
+    } else if (action === 'open_veh_glovebox') {
+        postNUI('playerDetailedAction', { action: 'open_veh_glovebox', ...params });
+    } else if (action === 'bring_veh') {
+        postNUI('playerDetailedAction', { action: 'bring_veh', ...params });
+    } else if (action === 'repair_veh') {
+        postNUI('playerDetailedAction', { action: 'repair_veh', ...params });
+    } else if (action === 'transfer_veh') {
+        const toPlayer = prompt(`Entrez l'ID Serveur du nouveau propriétaire pour le véhicule [${params.plate}] :`);
+        if (!toPlayer || isNaN(toPlayer)) return;
+        postNUI('playerDetailedAction', { action: 'transfer_veh', plate: params.plate, toPlayerId: parseInt(toPlayer) });
+    }
+};
+
+// ==========================================================================
+// Visual Ped & Skin Selector Logic (With Pictures)
+// ==========================================================================
+let currentPedPickerFilter = 'all';
+
+window.openPedPickerModal = function() {
+    const modal = document.getElementById('ped-picker-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    currentPedPickerFilter = 'all';
+    document.querySelectorAll('#ped-picker-filters .picker-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === 'all');
+    });
+    const searchInput = document.getElementById('ped-picker-search');
+    if (searchInput) searchInput.value = '';
+    renderPedPickerGrid('');
+};
+
+function renderPedPickerGrid(searchQuery = '') {
+    const grid = document.getElementById('ped-picker-grid');
+    const countBadge = document.getElementById('ped-picker-count');
+    if (!grid) return;
+
+    const sourceList = (allServerCharacters && allServerCharacters.length > 0) ? allServerCharacters : VISUAL_PEDS;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
+
+    const filtered = sourceList.filter(p => {
+        const model = p.model.toLowerCase();
+        const label = (p.label || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        if (isSearching) {
+            return model.includes(q) || label.includes(q) || cat.includes(q);
+        }
+        if (currentPedPickerFilter === 'all') return true;
+        if (currentPedPickerFilter === 'vip') return cat === 'vip' || cat === 'story';
+        if (currentPedPickerFilter === 'emergency') return cat === 'emergency';
+        if (currentPedPickerFilter === 'gang') return cat === 'gang' || cat === 'gangs';
+        if (currentPedPickerFilter === 'civilian') return cat === 'civilian' || cat === 'male' || cat === 'female';
+        if (currentPedPickerFilter === 'animal') return cat === 'animal' || cat === 'animals';
+        if (currentPedPickerFilter === 'multiplayer') return cat === 'multiplayer';
+        return true;
+    });
+
+    if (countBadge) countBadge.innerText = `${filtered.length} Peds`;
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="asset-empty-state" style="grid-column: 1 / -1;">Aucun ped correspondant trouvé.</div>';
+        return;
+    }
+
+    grid.innerHTML = filtered.map(p => {
+        const model = p.model.toLowerCase();
+        const label = p.label || model;
+        const imgFiveM = `https://docs.fivem.net/peds/${model}.webp`;
+        const isAnimal = p.category === 'animal' || p.category === 'animals';
+        return `
+            <div class="picker-item-card" onclick="selectPedModel('${escapeHtml(model)}', '${escapeHtml(label)}')">
+                <div class="picker-item-img-wrapper">
+                    <img class="picker-item-img" src="${imgFiveM}" loading="lazy" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="${escapeHtml(label)}">
+                    <div style="display: none; align-items: center; justify-content: center; font-size: 28px;">${isAnimal ? '🐾' : '👤'}</div>
+                </div>
+                <div class="picker-item-title" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                <div class="picker-item-sub">${escapeHtml(model)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.selectPedModel = function(model, label) {
+    const input = document.getElementById('manage-ped-model');
+    if (input) input.value = model;
+    const modal = document.getElementById('ped-picker-modal');
+    if (modal) modal.style.display = 'none';
+    // Immediately apply to player!
+    execPlayerDetailed('apply_ped_target');
+};
+
+function renderPedQuickStrip() {
+    const strip = document.getElementById('manage-ped-quickstrip');
+    if (!strip) return;
+    const topPeds = [
+        { model: 'player_zero', label: 'Michael' },
+        { model: 'player_one', label: 'Franklin' },
+        { model: 'player_two', label: 'Trevor' },
+        { model: 's_m_y_cop_01', label: 'Police' },
+        { model: 's_m_y_sheriff_01', label: 'Sheriff' },
+        { model: 's_m_y_swat_01', label: 'SWAT' },
+        { model: 's_m_m_paramedic_01', label: 'EMS' },
+        { model: 'g_m_y_ballasout_01', label: 'Ballas' },
+        { model: 'a_c_chop', label: 'Chop 🐕' },
+        { model: 'mp_m_freemode_01', label: 'MP Male' },
+        { model: 'mp_f_freemode_01', label: 'MP Female' },
+    ];
+    strip.innerHTML = topPeds.map(p => `
+        <div class="ped-quick-item" onclick="selectPedModel('${p.model}', '${p.label}')" title="Appliquer ${p.label}">
+            <img src="https://docs.fivem.net/peds/${p.model}.webp" onerror="this.style.display='none'">
+            <span>${p.label}</span>
+        </div>
+    `).join('');
+}
+
+// ==========================================================================
+// Visual Vehicle Catalog & Picker Logic (With Pictures)
+// ==========================================================================
+let currentVehPickerFilter = 'all';
+
+window.openVehPickerModal = function() {
+    const modal = document.getElementById('veh-picker-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    currentVehPickerFilter = 'all';
+    document.querySelectorAll('#veh-picker-filters .picker-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === 'all');
+    });
+    const searchInput = document.getElementById('veh-picker-search');
+    if (searchInput) searchInput.value = '';
+    renderVehPickerGrid('');
+};
+
+function renderVehPickerGrid(searchQuery = '') {
+    const grid = document.getElementById('veh-picker-grid');
+    const countBadge = document.getElementById('veh-picker-count');
+    if (!grid) return;
+
+    const sourceList = (allServerVehicles && allServerVehicles.length > 0) ? allServerVehicles : FALLBACK_VEHICLES;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
+
+    const filtered = sourceList.filter(v => {
+        const model = v.model.toLowerCase();
+        const name = (v.name || '').toLowerCase();
+        const brand = (v.brand || '').toLowerCase();
+        const cat = (v.category || '').toLowerCase();
+        if (isSearching) {
+            return model.includes(q) || name.includes(q) || brand.includes(q) || cat.includes(q);
+        }
+        if (currentVehPickerFilter === 'all') return true;
+        if (currentVehPickerFilter === 'super') return cat === 'super';
+        if (currentVehPickerFilter === 'sports') return cat === 'sports' || cat === 'sport';
+        if (currentVehPickerFilter === 'sedans') return cat === 'sedans' || cat === 'coupes' || cat === 'compacts';
+        if (currentVehPickerFilter === 'suvs') return cat === 'suvs' || cat === 'offroad';
+        if (currentVehPickerFilter === 'muscle') return cat === 'muscle';
+        if (currentVehPickerFilter === 'emergency') return cat === 'emergency';
+        if (currentVehPickerFilter === 'motorcycles') return cat === 'motorcycles';
+        return true;
+    });
+
+    if (countBadge) countBadge.innerText = `${filtered.length} Véhicules`;
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="asset-empty-state" style="grid-column: 1 / -1;">Aucun véhicule correspondant trouvé.</div>';
+        return;
+    }
+
+    grid.innerHTML = filtered.slice(0, 150).map(v => {
+        const model = v.model.toLowerCase();
+        const name = v.name || model;
+        const brand = v.brand ? v.brand.toUpperCase() : '';
+        const imgPath = `images/vehicles/${model}.webp`;
+        const fallbackImg = `https://docs.fivem.net/vehicles/${model}.webp`;
+        return `
+            <div class="picker-item-card" onclick="selectVehModel('${escapeHtml(model)}', '${escapeHtml(name)}', '${escapeHtml(brand)}')">
+                <div class="picker-item-img-wrapper">
+                    <img class="picker-item-img" src="${imgPath}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackImg}'; this.onerror=function(){ this.style.display='none'; this.nextElementSibling.style.display='flex'; };" alt="${escapeHtml(name)}">
+                    <div style="display: none; align-items: center; justify-content: center; font-size: 28px;">🚗</div>
+                </div>
+                <div class="picker-item-title" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                <div class="picker-item-sub">${brand ? brand + ' • ' : ''}${escapeHtml(model)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.selectVehModel = function(model, name, brand) {
+    const input = document.getElementById('manage-giveveh-model');
+    if (input) input.value = model;
+    const previewBox = document.getElementById('manage-giveveh-preview-box');
+    if (previewBox) {
+        const imgPath = `images/vehicles/${model}.webp`;
+        previewBox.style.display = 'flex';
+        previewBox.innerHTML = `
+            <img src="${imgPath}" onerror="this.src='https://docs.fivem.net/vehicles/${model}.webp'; this.onerror=function(){ this.style.display='none'; }">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">${escapeHtml(brand ? brand + ' ' + name : name)}</div>
+                <div style="font-size: 0.7rem; color: var(--accent-cyan); font-family: monospace;">SPAWN: ${escapeHtml(model.toUpperCase())}</div>
+            </div>
+            <button class="secondary-btn" style="margin-left: auto; padding: 2px 8px; font-size: 0.7rem;" onclick="clearVehSelection()">&times;</button>
+        `;
+    }
+    const modal = document.getElementById('veh-picker-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.clearVehSelection = function() {
+    const input = document.getElementById('manage-giveveh-model');
+    if (input) input.value = '';
+    const previewBox = document.getElementById('manage-giveveh-preview-box');
+    if (previewBox) {
+        previewBox.style.display = 'none';
+        previewBox.innerHTML = '';
+    }
 };
 
 // Player Info Modal
@@ -1703,6 +2084,46 @@ document.getElementById('info-modal-close')?.addEventListener('click', () => {
 });
 document.getElementById('info-modal-close-btn')?.addEventListener('click', () => {
     document.getElementById('player-info-modal').style.display = 'none';
+});
+
+// Ped Picker Modal Close & Search Listeners
+document.getElementById('ped-picker-close')?.addEventListener('click', () => {
+    document.getElementById('ped-picker-modal').style.display = 'none';
+});
+document.getElementById('ped-picker-close-btn')?.addEventListener('click', () => {
+    document.getElementById('ped-picker-modal').style.display = 'none';
+});
+document.getElementById('ped-picker-search')?.addEventListener('input', (e) => {
+    renderPedPickerGrid(e.target.value);
+});
+document.querySelectorAll('#ped-picker-filters .picker-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#ped-picker-filters .picker-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPedPickerFilter = btn.getAttribute('data-filter') || 'all';
+        const q = document.getElementById('ped-picker-search')?.value || '';
+        renderPedPickerGrid(q);
+    });
+});
+
+// Vehicle Picker Modal Close & Search Listeners
+document.getElementById('veh-picker-close')?.addEventListener('click', () => {
+    document.getElementById('veh-picker-modal').style.display = 'none';
+});
+document.getElementById('veh-picker-close-btn')?.addEventListener('click', () => {
+    document.getElementById('veh-picker-modal').style.display = 'none';
+});
+document.getElementById('veh-picker-search')?.addEventListener('input', (e) => {
+    renderVehPickerGrid(e.target.value);
+});
+document.querySelectorAll('#veh-picker-filters .picker-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#veh-picker-filters .picker-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentVehPickerFilter = btn.getAttribute('data-filter') || 'all';
+        const q = document.getElementById('veh-picker-search')?.value || '';
+        renderVehPickerGrid(q);
+    });
 });
 
 // Logs Rendering

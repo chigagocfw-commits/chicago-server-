@@ -1191,6 +1191,31 @@ lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, ta
     local ping = GetPlayerPing(tostring(tId)) or 0
     local endpoint = GetPlayerEndpoint(tostring(tId)) or "127.0.0.1"
 
+    local vehiclesList = {}
+    local propertiesList = {}
+
+    if citizenid and citizenid ~= "N/A" then
+        pcall(function()
+            local vehRows = MySQL.query.await([[
+                SELECT id, vehicle, plate, garage, fuel, engine, body, state
+                FROM player_vehicles
+                WHERE citizenid = ?
+                ORDER BY id DESC
+            ]], { citizenid })
+            if vehRows then vehiclesList = vehRows end
+        end)
+
+        pcall(function()
+            local propRows = MySQL.query.await([[
+                SELECT id, property_name, price, interior, rent_interval
+                FROM properties
+                WHERE owner = ?
+                ORDER BY id DESC
+            ]], { citizenid })
+            if propRows then propertiesList = propRows end
+        end)
+    end
+
     return {
         success = true,
         details = {
@@ -1208,6 +1233,8 @@ lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, ta
             discord = discord,
             ping = ping,
             ip = endpoint,
+            vehicles = vehiclesList,
+            properties = propertiesList,
         }
     }
 end)
@@ -1434,12 +1461,409 @@ lib.callback.register('souh4il_dev:server:unbanPlayer', function(source, data)
     return { success = true }
 end)
 
----Callback: Give Vehicle Keys To Player
+---Callback: Give Vehicle Keys To Player (Qbox Compatible)
 lib.callback.register('souh4il_dev:server:giveKeysToPlayer', function(source, data)
     local tId = tonumber(data.targetId) or source
-    local plate = tostring(data.plate)
-    TriggerClientEvent('qb-vehiclekeys:client:AddKeys', tId, plate)
+    local plate = tostring(data.plate or '')
+    local cleanPlate = string.gsub(plate, "%s+", ""):upper()
+    local found = false
+
+    -- Check if player is currently in a vehicle
+    local ped = GetPlayerPed(tId)
+    local currVeh = ped ~= 0 and GetVehiclePedIsIn(ped, false) or 0
+    if currVeh ~= 0 and DoesEntityExist(currVeh) then
+        pcall(function() exports.qbx_vehiclekeys:GiveKeys(tId, currVeh) end)
+        found = true
+    end
+
+    -- If plate specified, match against all vehicles in world
+    if #cleanPlate > 0 then
+        local allVehs = GetAllVehicles()
+        for _, veh in ipairs(allVehs) do
+            if DoesEntityExist(veh) then
+                local vPlate = GetVehicleNumberPlateText(veh)
+                if vPlate and string.gsub(vPlate, "%s+", ""):upper() == cleanPlate then
+                    pcall(function() exports.qbx_vehiclekeys:GiveKeys(tId, veh) end)
+                    found = true
+                    break
+                end
+            end
+        end
+    end
+
+    Logger.Write("GIVE_KEYS", source, tId, { plate = plate, foundEntity = found }, "SUCCESS")
+    return { success = true, found = found }
+end)
+
+---Callback: Seize / Remove Player Vehicle
+lib.callback.register('souh4il_dev:server:seizePlayerVehicle', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
+    local targetId = tonumber(data and data.targetId)
+    local citizenid = data and data.citizenid
+
+    if #plate == 0 then
+        return { success = false, error = "INVALID_PLATE" }
+    end
+
+    -- 1. Remove from database
+    local deleteResult = MySQL.query.await('DELETE FROM player_vehicles WHERE plate = ?', { plate })
+
+    -- 2. Find and delete physical entity in world & revoke keys
+    local cleanPlate = string.gsub(plate, "%s+", ""):upper()
+    local allVehs = GetAllVehicles()
+    for _, veh in ipairs(allVehs) do
+        if DoesEntityExist(veh) then
+            local vehPlate = GetVehicleNumberPlateText(veh)
+            if vehPlate and string.gsub(vehPlate, "%s+", ""):upper() == cleanPlate then
+                if targetId and DoesPlayerExist(tostring(targetId)) then
+                    pcall(function() exports.qbx_vehiclekeys:RemoveKeys(targetId, veh, true) end)
+                end
+                DeleteEntity(veh)
+            end
+        end
+    end
+
+    Logger.Write("SEIZE_VEHICLE", source, targetId, { plate = plate, citizenid = citizenid }, "SUCCESS")
+    Outbox.QueueDiscordAlert("VEHICLE_SEIZED", GetPlayerName(tostring(source)) or "Staff", Identifiers.GetLicense(source) or "UNKNOWN", { plate = plate, target = targetId })
+
+    return { success = true, plate = plate }
+end)
+
+---Callback: Give Owned Vehicle (Saved in player_vehicles with Keys)
+lib.callback.register('souh4il_dev:server:givePlayerOwnedVehicle', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data and data.targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then
+        return { success = false, error = "PLAYER_NOT_FOUND" }
+    end
+
+    local player = exports.qbx_core:GetPlayer(tId)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local model = tostring(data and data.model or ''):lower():gsub('^%s*(.-)%s*$', '%1')
+    if #model == 0 then return { success = false, error = "INVALID_MODEL" } end
+
+    local plate = tostring(data and data.plate or ''):upper():gsub('^%s*(.-)%s*$', '%1')
+    if #plate == 0 then
+        local letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        local numbers = "0123456789"
+        local p = ""
+        for i = 1, 3 do
+            local r = math.random(1, #letters)
+            p = p .. letters:sub(r, r)
+        end
+        p = p .. " "
+        for i = 1, 4 do
+            local r = math.random(1, #numbers)
+            p = p .. numbers:sub(r, r)
+        end
+        plate = p
+    else
+        if #plate > 8 then plate = plate:sub(1, 8) end
+    end
+
+    local garage = tostring(data and data.garage or 'motel')
+    local citizenid = player.PlayerData.citizenid
+    local license = player.PlayerData.license or Identifiers.GetLicense(tId) or "UNKNOWN"
+    local hash = joaat(model)
+    local defaultMods = json.encode({ plate = plate, model = hash })
+
+    -- Insert into player_vehicles
+    MySQL.insert.await([[
+        INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, garage, fuel, engine, body, state)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 100, 1000, 1000, 0)
+        ON DUPLICATE KEY UPDATE citizenid = VALUES(citizenid), vehicle = VALUES(vehicle), hash = VALUES(hash)
+    ]], { license, citizenid, model, hash, defaultMods, plate, garage })
+
+    -- Spawn vehicle near player & warp
+    local ped = GetPlayerPed(tId)
+    local coords = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+    local spawnedVeh = nil
+
+    pcall(function()
+        if exports.qbx_core and exports.qbx_core.SpawnVehicle then
+            local _, v = exports.qbx_core:SpawnVehicle(tId, model, vec4(coords.x, coords.y, coords.z, heading), true)
+            spawnedVeh = v
+        end
+    end)
+
+    if not spawnedVeh or not DoesEntityExist(spawnedVeh) then
+        spawnedVeh = CreateVehicleServerSetter(hash, "automobile", coords.x, coords.y, coords.z, heading)
+    end
+
+    if spawnedVeh and DoesEntityExist(spawnedVeh) then
+        SetVehicleNumberPlateText(spawnedVeh, plate)
+        Entity(spawnedVeh).state.owner = citizenid
+        TaskWarpPedIntoVehicle(ped, spawnedVeh, -1)
+        pcall(function() exports.qbx_vehiclekeys:GiveKeys(tId, spawnedVeh) end)
+    end
+
+    Logger.Write("GIVE_OWNED_VEHICLE", source, tId, { model = model, plate = plate, citizenid = citizenid, garage = garage }, "SUCCESS")
+    Outbox.QueueDiscordAlert("GIVE_OWNED_VEHICLE", GetPlayerName(tostring(source)) or "Staff", Identifiers.GetLicense(source) or "UNKNOWN", { model = model, plate = plate, target = tId })
+
+    return { success = true, plate = plate, model = model, garage = garage }
+end)
+
+---Callback: Seize / Revoke Player Property (House)
+lib.callback.register('souh4il_dev:server:seizePlayerProperty', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local propertyId = tonumber(data and data.propertyId)
+    local targetId = tonumber(data and data.targetId)
+    local citizenid = data and data.citizenid
+
+    if not propertyId then return { success = false, error = "INVALID_PROPERTY_ID" } end
+
+    local prop = MySQL.single.await('SELECT property_name, owner FROM properties WHERE id = ?', { propertyId })
+    if not prop then return { success = false, error = "PROPERTY_NOT_FOUND" } end
+
+    -- Reset property in DB
+    MySQL.update.await('UPDATE properties SET owner = NULL, keyholders = JSON_OBJECT() WHERE id = ?', { propertyId })
+
+    Logger.Write("SEIZE_PROPERTY", source, targetId, { propertyId = propertyId, propertyName = prop.property_name, citizenid = citizenid }, "SUCCESS")
+    Outbox.QueueDiscordAlert("PROPERTY_SEIZED", GetPlayerName(tostring(source)) or "Staff", Identifiers.GetLicense(source) or "UNKNOWN", { propertyId = propertyId, propertyName = prop.property_name, target = targetId })
+
+    return { success = true, propertyId = propertyId, propertyName = prop.property_name }
+end)
+
+---Callback: Open House ox_inventory Stash
+lib.callback.register('souh4il_dev:server:openHouseStash', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local propName = tostring(data and data.propertyName or '')
+    if #propName == 0 then return { success = false, error = "INVALID_PROPERTY" } end
+
+    local stashId = 'qbx_properties_' .. propName
+    exports.ox_inventory:forceOpenInventory(source, 'stash', stashId)
+    Logger.Write("OPEN_HOUSE_STASH", source, nil, { propertyName = propName, stashId = stashId }, "SUCCESS")
+    return { success = true, stashId = stashId }
+end)
+
+---Callback: Teleport to Property Entrance
+lib.callback.register('souh4il_dev:server:teleportToProperty', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local propId = tonumber(data and data.propertyId)
+    if not propId then return { success = false, error = "INVALID_ID" } end
+
+    local prop = MySQL.single.await('SELECT coords, property_name FROM properties WHERE id = ?', { propId })
+    if not prop or not prop.coords then return { success = false, error = "PROPERTY_NOT_FOUND" } end
+
+    local coords = json.decode(prop.coords)
+    if coords and coords.x then
+        local ped = GetPlayerPed(source)
+        SetEntityCoords(ped, coords.x, coords.y, coords.z + 0.2, false, false, false, false)
+        Logger.Write("TP_PROPERTY", source, nil, { propertyId = propId, propertyName = prop.property_name }, "SUCCESS")
+        return { success = true, propertyName = prop.property_name }
+    end
+
+    return { success = false, error = "INVALID_COORDS" }
+end)
+
+---Callback: Reset House Keyholders
+lib.callback.register('souh4il_dev:server:resetPropertyKeyholders', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local propId = tonumber(data and data.propertyId)
+    if not propId then return { success = false, error = "INVALID_ID" } end
+
+    MySQL.update.await('UPDATE properties SET keyholders = JSON_OBJECT() WHERE id = ?', { propId })
+    Logger.Write("RESET_PROPERTY_KEYS", source, nil, { propertyId = propId }, "SUCCESS")
     return { success = true }
+end)
+
+---Callback: Transfer Property Ownership
+lib.callback.register('souh4il_dev:server:transferPlayerProperty', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local propId = tonumber(data and data.propertyId)
+    local toPlayerId = tonumber(data and data.toPlayerId)
+    if not propId or not toPlayerId then return { success = false, error = "INVALID_PARAMS" } end
+
+    local target = exports.qbx_core:GetPlayer(toPlayerId)
+    if not target then return { success = false, error = "TARGET_NOT_FOUND" } end
+
+    local newCid = target.PlayerData.citizenid
+    local prop = MySQL.single.await('SELECT property_name FROM properties WHERE id = ?', { propId })
+    if not prop then return { success = false, error = "PROPERTY_NOT_FOUND" } end
+
+    MySQL.update.await('UPDATE properties SET owner = ?, keyholders = JSON_OBJECT() WHERE id = ?', { newCid, propId })
+    Logger.Write("TRANSFER_PROPERTY", source, toPlayerId, { propertyId = propId, propertyName = prop.property_name, newOwner = newCid }, "SUCCESS")
+    Outbox.QueueDiscordAlert("TRANSFER_PROPERTY", GetPlayerName(tostring(source)) or "Staff", Identifiers.GetLicense(source) or "UNKNOWN", { propertyId = propId, propertyName = prop.property_name, toTarget = toPlayerId })
+
+    return { success = true, newOwnerName = GetPlayerName(tostring(toPlayerId)) }
+end)
+
+---Callback: Open Vehicle Trunk Remotely
+lib.callback.register('souh4il_dev:server:openVehicleTrunk', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
+    if #plate == 0 then return { success = false, error = "INVALID_PLATE" } end
+
+    exports.ox_inventory:forceOpenInventory(source, 'trunk', 'trunk' .. plate)
+    Logger.Write("OPEN_VEH_TRUNK", source, nil, { plate = plate }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Open Vehicle Glovebox Remotely
+lib.callback.register('souh4il_dev:server:openVehicleGlovebox', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
+    if #plate == 0 then return { success = false, error = "INVALID_PLATE" } end
+
+    exports.ox_inventory:forceOpenInventory(source, 'glovebox', 'glove' .. plate)
+    Logger.Write("OPEN_VEH_GLOVEBOX", source, nil, { plate = plate }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Bring Player Vehicle (Active or from Garage)
+lib.callback.register('souh4il_dev:server:bringPlayerVehicle', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
+    local model = tostring(data and data.model or 'adder')
+    local cleanPlate = string.gsub(plate, "%s+", ""):upper()
+    local adminPed = GetPlayerPed(source)
+    local coords = GetEntityCoords(adminPed)
+    local heading = GetEntityHeading(adminPed)
+
+    -- 1. Check if vehicle exists in world
+    local foundVeh = nil
+    local allVehs = GetAllVehicles()
+    for _, v in ipairs(allVehs) do
+        if DoesEntityExist(v) then
+            local p = GetVehicleNumberPlateText(v)
+            if p and string.gsub(p, "%s+", ""):upper() == cleanPlate then
+                foundVeh = v
+                break
+            end
+        end
+    end
+
+    if foundVeh and DoesEntityExist(foundVeh) then
+        SetEntityCoords(foundVeh, coords.x + 2.0, coords.y, coords.z + 0.5, false, false, false, false)
+        SetEntityHeading(foundVeh, heading)
+        pcall(function() exports.qbx_vehiclekeys:GiveKeys(source, foundVeh) end)
+        Logger.Write("BRING_VEHICLE", source, nil, { plate = plate, spawned = false }, "SUCCESS")
+        return { success = true, action = "teleported" }
+    end
+
+    -- 2. If stored in garage, spawn it directly to admin
+    local spawnedVeh = nil
+    pcall(function()
+        if exports.qbx_core and exports.qbx_core.SpawnVehicle then
+            local _, v = exports.qbx_core:SpawnVehicle(source, model, vec4(coords.x + 2.0, coords.y, coords.z, heading), true)
+            spawnedVeh = v
+        end
+    end)
+
+    if not spawnedVeh or not DoesEntityExist(spawnedVeh) then
+        local hash = joaat(model)
+        spawnedVeh = CreateVehicleServerSetter(hash, "automobile", coords.x + 2.0, coords.y, coords.z, heading)
+    end
+
+    if spawnedVeh and DoesEntityExist(spawnedVeh) then
+        SetVehicleNumberPlateText(spawnedVeh, plate)
+        pcall(function() exports.qbx_vehiclekeys:GiveKeys(source, spawnedVeh) end)
+        MySQL.update.await('UPDATE player_vehicles SET state = 0 WHERE plate = ?', { plate })
+        Logger.Write("BRING_VEHICLE", source, nil, { plate = plate, spawned = true }, "SUCCESS")
+        return { success = true, action = "spawned" }
+    end
+
+    return { success = false, error = "FAILED_TO_BRING" }
+end)
+
+---Callback: Repair & Wash Player Vehicle
+lib.callback.register('souh4il_dev:server:repairPlayerVehicle', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
+    local cleanPlate = string.gsub(plate, "%s+", ""):upper()
+
+    MySQL.update.await('UPDATE player_vehicles SET engine = 1000, body = 1000, fuel = 100 WHERE plate = ?', { plate })
+
+    local allVehs = GetAllVehicles()
+    for _, v in ipairs(allVehs) do
+        if DoesEntityExist(v) then
+            local p = GetVehicleNumberPlateText(v)
+            if p and string.gsub(p, "%s+", ""):upper() == cleanPlate then
+                SetVehicleFixed(v)
+                SetVehicleDeformationFixed(v)
+                SetVehicleDirtLevel(v, 0.0)
+                SetVehicleEngineHealth(v, 1000.0)
+                SetVehicleBodyHealth(v, 1000.0)
+                break
+            end
+        end
+    end
+
+    Logger.Write("REPAIR_VEHICLE", source, nil, { plate = plate }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Transfer Player Vehicle
+lib.callback.register('souh4il_dev:server:transferPlayerVehicle', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
+    local toPlayerId = tonumber(data and data.toPlayerId)
+    if not toPlayerId or #plate == 0 then return { success = false, error = "INVALID_PARAMS" } end
+
+    local target = exports.qbx_core:GetPlayer(toPlayerId)
+    if not target then return { success = false, error = "TARGET_NOT_FOUND" } end
+
+    local newCid = target.PlayerData.citizenid
+    local newLic = target.PlayerData.license or Identifiers.GetLicense(toPlayerId) or "UNKNOWN"
+
+    MySQL.update.await('UPDATE player_vehicles SET citizenid = ?, license = ? WHERE plate = ?', { newCid, newLic, plate })
+
+    local cleanPlate = string.gsub(plate, "%s+", ""):upper()
+    local allVehs = GetAllVehicles()
+    for _, v in ipairs(allVehs) do
+        if DoesEntityExist(v) then
+            local p = GetVehicleNumberPlateText(v)
+            if p and string.gsub(p, "%s+", ""):upper() == cleanPlate then
+                Entity(v).state.owner = newCid
+                pcall(function() exports.qbx_vehiclekeys:GiveKeys(toPlayerId, v) end)
+                break
+            end
+        end
+    end
+
+    Logger.Write("TRANSFER_VEHICLE", source, toPlayerId, { plate = plate, newOwner = newCid }, "SUCCESS")
+    Outbox.QueueDiscordAlert("TRANSFER_VEHICLE", GetPlayerName(tostring(source)) or "Staff", Identifiers.GetLicense(source) or "UNKNOWN", { plate = plate, toTarget = toPlayerId })
+
+    return { success = true, newOwnerName = GetPlayerName(tostring(toPlayerId)) }
 end)
 
 ---Callback: Toggle Job Duty

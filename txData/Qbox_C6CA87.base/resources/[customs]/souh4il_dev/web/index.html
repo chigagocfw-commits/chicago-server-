@@ -1181,7 +1181,7 @@
 
                     <!-- Category 6: Véhicule du Joueur -->
                     <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">🚗 6. CONTRÔLE DE SON VÉHICULE</div>
+                        <div class="perm-cat-header">🚗 6. CONTRÔLE DE SON VÉHICULE ACTUEL</div>
                         <div class="quick-actions-grid">
                             <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Donner les Clés</span></button>
                             <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'repair' })"><span class="btn-icon">🔧</span><span class="btn-text">Réparer & Laver</span></button>
@@ -1192,15 +1192,66 @@
                         </div>
                     </div>
 
+                    <!-- Category 6B: Patrimoine du Joueur (Véhicules & Propriétés) -->
+                    <div class="perm-cat-group asset-management-panel" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center;">
+                            <span>🏛️ 6B. PATRIMOINE DU JOUEUR (MAISONS & VÉHICULES OFFICIELS)</span>
+                            <span class="asset-count-badge" id="manage-assets-count">0 Voitures • 0 Maisons</span>
+                        </div>
+
+                        <!-- Sub-section A: Véhicules Possédés -->
+                        <div style="margin-bottom: 16px;">
+                            <div class="asset-sub-header">
+                                <span>🚗 Véhicules Possédés (player_vehicles)</span>
+                                <span class="asset-sub-info">Gestion des cartes grises, clés & saisie</span>
+                            </div>
+                            <div id="manage-vehicles-container" class="assets-scroll-box">
+                                <div class="asset-empty-state">Chargement des véhicules du joueur...</div>
+                            </div>
+
+                            <!-- Formulaire d'attribution de nouveau véhicule -->
+                            <div class="asset-form-card" style="margin-top: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <div style="font-size: 0.76rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase;">
+                                        🎁 Attribuer un Véhicule Officiel (Enregistré + Clés Offertes)
+                                    </div>
+                                    <button class="secondary-btn" style="padding: 4px 12px; font-size: 0.74rem; background: rgba(0, 229, 255, 0.1); border-color: rgba(0, 229, 255, 0.35); color: var(--accent-cyan); font-weight: 700;" onclick="openVehPickerModal()">🖼️ Catalogue Visuel</button>
+                                </div>
+                                <div id="manage-giveveh-preview-box" style="display: none; margin-bottom: 10px;" class="asset-selected-preview"></div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <input type="text" id="manage-giveveh-model" class="search-input" placeholder="Modèle spawn (ex: sultan, adder, schafter2)...">
+                                    <input type="text" id="manage-giveveh-plate" class="search-input" placeholder="Plaque (Optionnel max 8 char)" maxlength="8" style="max-width: 150px; text-transform: uppercase;">
+                                    <input type="text" id="manage-giveveh-garage" class="search-input" placeholder="Garage (ex: motel, pillbox)" value="motel" style="max-width: 140px;">
+                                    <button class="primary-btn" style="white-space: nowrap; font-weight: 700;" onclick="execPlayerDetailed('give_owned_vehicle')">➕ Attribuer + Clés</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sub-section B: Maisons & Propriétés -->
+                        <div>
+                            <div class="asset-sub-header">
+                                <span>🏠 Maisons & Propriétés (qbx_properties)</span>
+                                <span class="asset-sub-info">Biens immobiliers enregistrés au citizenid</span>
+                            </div>
+                            <div id="manage-properties-container" class="assets-scroll-box">
+                                <div class="asset-empty-state">Chargement des propriétés du joueur...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Category 7: Skins & Apparence -->
                     <div class="perm-cat-group" style="margin-bottom: 14px;">
-                        <div class="perm-cat-header">🎭 7. SKINS, PEDS & APPARENCE</div>
-                        <div class="form-row">
-                            <input type="text" id="manage-ped-model" class="search-input" placeholder="Modèle de Ped (ex: s_m_y_cop_01, player_zero, a_c_chop)...">
-                            <button class="primary-btn" onclick="execPlayerDetailed('apply_ped_target')">Changer Ped</button>
+                        <div class="perm-cat-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>🎭 7. SKINS, PEDS & APPARENCE DU JOUEUR</span>
+                            <button class="secondary-btn" style="padding: 4px 12px; font-size: 0.74rem; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #c084fc; font-weight: 700;" onclick="openPedPickerModal()">🖼️ Galerie Visuelle des Peds</button>
+                        </div>
+                        <div class="form-row" style="margin-bottom: 10px;">
+                            <input type="text" id="manage-ped-model" class="search-input" placeholder="Modèle de Ped ou addon (ex: s_m_y_cop_01, player_zero, a_c_chop)...">
+                            <button class="primary-btn" onclick="execPlayerDetailed('apply_ped_target')">Appliquer Ped</button>
                             <button class="secondary-btn" onclick="execPlayerDetailed('clothing_menu')">👔 Clothing Menu</button>
                             <button class="secondary-btn" onclick="execPlayerDetailed('clean_ped')">🧼 Nettoyer Sang</button>
                         </div>
+                        <div id="manage-ped-quickstrip" class="ped-quick-strip"></div>
                     </div>
 
                     <!-- Category 8: Trolls & Sanctions -->
@@ -1447,9 +1498,68 @@
                 </div>
             </div>
         </div>
-                <div class="modal-footer">
-                    <button class="secondary-btn" id="btn-cancel-staff">Cancel</button>
-                    <button class="primary-btn" id="btn-save-staff">💾 Enregistrer les permissions</button>
+
+        <!-- Visual Ped Picker Modal -->
+        <div id="ped-picker-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+            <div class="modal-box modal-large" style="max-width: 950px; max-height: 85vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <div>
+                        <h3>🎭 SÉLECTEUR VISUEL DE PEDS & SKINS</h3>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Cliquez sur n'importe quel personnage pour l'appliquer immédiatement sur le joueur sélectionné.</p>
+                    </div>
+                    <button class="modal-close" id="ped-picker-close">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; flex: 1;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="text" id="ped-picker-search" class="search-input" placeholder="🔍 Rechercher un ped (nom, modèle, police, gangster, chien)..." style="flex: 1;">
+                        <span id="ped-picker-count" class="asset-count-badge">0 Peds</span>
+                    </div>
+                    <div class="picker-filter-row" id="ped-picker-filters">
+                        <button class="picker-filter-btn active" data-filter="all">Tous</button>
+                        <button class="picker-filter-btn" data-filter="vip">Story & VIP</button>
+                        <button class="picker-filter-btn" data-filter="emergency">Police & Secours</button>
+                        <button class="picker-filter-btn" data-filter="gang">Gangs & Cartels</button>
+                        <button class="picker-filter-btn" data-filter="civilian">Civils & Métiers</button>
+                        <button class="picker-filter-btn" data-filter="animal">Animaux</button>
+                        <button class="picker-filter-btn" data-filter="multiplayer">Multijoueur MP</button>
+                    </div>
+                    <div id="ped-picker-grid" class="visual-picker-grid" style="overflow-y: auto; flex: 1; max-height: 520px;"></div>
+                </div>
+                <div class="modal-footer" style="padding: 12px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                    <button class="secondary-btn" id="ped-picker-close-btn">Fermer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Vehicle Picker Modal -->
+        <div id="veh-picker-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+            <div class="modal-box modal-large" style="max-width: 980px; max-height: 85vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <div>
+                        <h3>🚗 CATALOGUE VISUEL DES VÉHICULES</h3>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Sélectionnez visuellement la voiture à attribuer avec carte grise et clés offertes.</p>
+                    </div>
+                    <button class="modal-close" id="veh-picker-close">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; flex: 1;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="text" id="veh-picker-search" class="search-input" placeholder="🔍 Rechercher par marque, nom (ex: adder, lamborghini, sultan, bmw)..." style="flex: 1;">
+                        <span id="veh-picker-count" class="asset-count-badge">0 Véhicules</span>
+                    </div>
+                    <div class="picker-filter-row" id="veh-picker-filters">
+                        <button class="picker-filter-btn active" data-filter="all">Tous</button>
+                        <button class="picker-filter-btn" data-filter="super">Super & Hyper</button>
+                        <button class="picker-filter-btn" data-filter="sports">Sports</button>
+                        <button class="picker-filter-btn" data-filter="sedans">Berlines (Sedans)</button>
+                        <button class="picker-filter-btn" data-filter="suvs">SUV & 4x4</button>
+                        <button class="picker-filter-btn" data-filter="muscle">Muscle Cars</button>
+                        <button class="picker-filter-btn" data-filter="emergency">Police / EMS</button>
+                        <button class="picker-filter-btn" data-filter="motorcycles">Motos</button>
+                    </div>
+                    <div id="veh-picker-grid" class="visual-picker-grid" style="overflow-y: auto; flex: 1; max-height: 520px;"></div>
+                </div>
+                <div class="modal-footer" style="padding: 12px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                    <button class="secondary-btn" id="veh-picker-close-btn">Fermer</button>
                 </div>
             </div>
         </div>

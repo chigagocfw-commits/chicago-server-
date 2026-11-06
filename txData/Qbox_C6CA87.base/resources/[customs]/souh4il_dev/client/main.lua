@@ -1598,10 +1598,142 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
         end, tId)
     elseif action == 'give_keys' then
         local veh = GetVehiclePedIsIn(PlayerPedId(), false)
-        local plate = veh ~= 0 and GetVehicleNumberPlateText(veh) or "CHICAGO"
-        lib.callback('souh4il_dev:server:giveKeysToPlayer', false, function()
-            lib.notify({ title = SharedConfig.PanelName, description = "Keys granted to player.", type = 'success' })
+        local plate = data.plate or (veh ~= 0 and GetVehicleNumberPlateText(veh) or "")
+        lib.callback('souh4il_dev:server:giveKeysToPlayer', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Clés transmises au joueur avec succès." or "Échec de l'envoi des clés.", type = res and res.success and 'success' or 'error' })
         end, { targetId = tId, plate = plate })
+    elseif action == 'seize_vehicle' then
+        lib.callback('souh4il_dev:server:seizePlayerVehicle', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] saisi et supprimé du garage du joueur."):format(res.plate or data.plate), type = 'success' })
+                -- Refresh player assets live
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de la saisie du véhicule.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'give_owned_vehicle' then
+        lib.callback('souh4il_dev:server:givePlayerOwnedVehicle', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule %s [%s] attribué au joueur avec les clés !"):format(res.model:upper(), res.plate), type = 'success' })
+                -- Refresh player assets live
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de l'attribution du véhicule.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'seize_property' then
+        lib.callback('souh4il_dev:server:seizePlayerProperty', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Propriété '%s' saisie et révoquée avec succès."):format(res.propertyName or ("#" .. tostring(data.propertyId))), type = 'success' })
+                -- Refresh player assets live
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de la révocation de la propriété.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'open_house_stash' then
+        SetNuiFocus(false, false)
+        lib.callback('souh4il_dev:server:openHouseStash', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = "Coffre de la propriété ouvert.", type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec d'ouverture du coffre.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'tp_property' then
+        lib.callback('souh4il_dev:server:teleportToProperty', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Téléporté à l'entrée de '%s' !"):format(res.propertyName or "Propriété"), type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de la téléportation.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'reset_property_keys' then
+        lib.callback('souh4il_dev:server:resetPropertyKeyholders', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = "Tous les doubles de clés révoqués avec succès.", type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Erreur de réinitialisation des clés.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'transfer_property' then
+        lib.callback('souh4il_dev:server:transferPlayerProperty', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Propriété transférée à %s avec succès !"):format(res.newOwnerName or "Nouveau propriétaire"), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec du transfert.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'open_veh_trunk' then
+        SetNuiFocus(false, false)
+        lib.callback('souh4il_dev:server:openVehicleTrunk', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Coffre [%s] ouvert."):format(data.plate), type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Échec d'ouverture du coffre.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'open_veh_glovebox' then
+        SetNuiFocus(false, false)
+        lib.callback('souh4il_dev:server:openVehicleGlovebox', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Boîte à gants [%s] ouverte."):format(data.plate), type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Échec d'ouverture de la boîte à gants.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'bring_veh' then
+        lib.callback('souh4il_dev:server:bringPlayerVehicle', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] rapatrié à votre position (%s) !"):format(data.plate, res.action == 'spawned' and 'Sorti du Garage' or 'Téléporté'), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec du rapatriement du véhicule.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'repair_veh' then
+        lib.callback('souh4il_dev:server:repairPlayerVehicle', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] réparé & lavé à 100%% !"):format(data.plate), type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Erreur de réparation.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'transfer_veh' then
+        lib.callback('souh4il_dev:server:transferPlayerVehicle', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] transféré à %s !"):format(data.plate, res.newOwnerName or "Nouveau propriétaire"), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec du transfert du véhicule.", type = 'error' })
+            end
+        end, data)
     elseif action == 'set_gang' then
         lib.callback('souh4il_dev:server:setPlayerGang', false, function(res)
             lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Player gang updated." or "Failed", type = res and res.success and 'success' or 'error' })

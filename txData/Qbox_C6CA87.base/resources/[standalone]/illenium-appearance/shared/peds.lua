@@ -1,6 +1,15 @@
-Config.Peds = {
+﻿Config.Peds = {
     pedConfig = {
         {
+            -- Default multiplayer models for all normal players (Male & Female)
+            peds = {
+                "mp_m_freemode_01",
+                "mp_f_freemode_01",
+            }
+        },
+        {
+            -- Full ped models restricted to players with Role / Admin / SOUH4IL
+            aces = { "admin", "group.admin", "souh4il" },
             peds = {
                 "a_c_boar",
                 "a_c_boar_02",
