@@ -6,8 +6,161 @@ let isOwner = false;
 let onlinePlayersCache = [];
 let currentItemFilter = 'all';
 let currentVehFilter = 'all';
+let currentPedFilter = 'all';
+let currentJobFilter = 'all';
 let allServerItems = [];
 let allServerVehicles = [];
+let allServerJobs = [];
+
+// Curated Characters & Peds Catalog (Top GTA V / FiveM Ped Models)
+const VISUAL_PEDS = [
+    // VIP & Story Characters
+    { model: 'player_zero', label: 'Michael De Santa', category: 'vip' },
+    { model: 'player_one', label: 'Franklin Clinton', category: 'vip' },
+    { model: 'player_two', label: 'Trevor Philips', category: 'vip' },
+    { model: 'ig_lestercrest', label: 'Lester Crest', category: 'vip' },
+    { model: 'ig_lamardavis', label: 'Lamar Davis', category: 'vip' },
+    { model: 'cs_martinmadrazo', label: 'Martin Madrazo', category: 'vip' },
+    { model: 'ig_bankman', label: 'Bank Manager', category: 'vip' },
+    { model: 'ig_solomon', label: 'Solomon Richards', category: 'vip' },
+    { model: 'ig_beverly', label: 'Beverly Felton', category: 'vip' },
+    { model: 'ig_davenorton', label: 'Dave Norton (FIB)', category: 'vip' },
+    { model: 'ig_stevehains', label: 'Steve Haines (FIB)', category: 'vip' },
+    { model: 'ig_siemonyetarian', label: 'Simeon Yetarian', category: 'vip' },
+    { model: 'ig_drfriedlander', label: 'Dr. Friedlander', category: 'vip' },
+
+    // Emergency & Law Enforcement
+    { model: 's_m_y_cop_01', label: 'Police Officer', category: 'emergency' },
+    { model: 's_f_y_cop_01', label: 'Female Police Officer', category: 'emergency' },
+    { model: 's_m_y_sheriff_01', label: 'Sheriff Deputy', category: 'emergency' },
+    { model: 's_f_y_sheriff_01', label: 'Female Sheriff', category: 'emergency' },
+    { model: 's_m_y_swat_01', label: 'SWAT Tactical Unit', category: 'emergency' },
+    { model: 's_m_y_hwaycop_01', label: 'Highway Patrol Trooper', category: 'emergency' },
+    { model: 's_m_m_paramedic_01', label: 'EMS Paramedic', category: 'emergency' },
+    { model: 's_m_y_fireman_01', label: 'Firefighter', category: 'emergency' },
+    { model: 's_m_m_doctor_01', label: 'Doctor / Surgeon', category: 'emergency' },
+    { model: 's_m_m_security_01', label: 'Armed Security Guard', category: 'emergency' },
+    { model: 's_m_m_prisguard_01', label: 'Prison Guard', category: 'emergency' },
+    { model: 's_m_m_fiboffice_01', label: 'FIB Special Agent', category: 'emergency' },
+    { model: 's_m_m_armoured_01', label: 'Gruppe 6 Cash Transit', category: 'emergency' },
+
+    // Gangs & Street Soldiers
+    { model: 'g_m_y_ballasout_01', label: 'Ballas Leader', category: 'gang' },
+    { model: 'g_m_y_ballaorig_01', label: 'Ballas Original', category: 'gang' },
+    { model: 'g_m_y_famca_01', label: 'Families Gang Member', category: 'gang' },
+    { model: 'g_m_y_famdn_01', label: 'Families Enforcer', category: 'gang' },
+    { model: 'g_m_y_salvaboss_01', label: 'Vagos / Marabunta Boss', category: 'gang' },
+    { model: 'g_m_y_salvagoon_01', label: 'Vagos Street Soldier', category: 'gang' },
+    { model: 'g_m_y_mexgoon_01', label: 'Cartel Hitman', category: 'gang' },
+    { model: 'g_m_y_lost_01', label: 'The Lost MC Biker', category: 'gang' },
+    { model: 'g_m_y_lost_02', label: 'The Lost MC Road Captain', category: 'gang' },
+    { model: 'g_m_y_korean_01', label: 'Triad / Korean Mobster', category: 'gang' },
+    { model: 'g_m_y_strpunk_01', label: 'Street Punk Rebel', category: 'gang' },
+    { model: 'g_m_m_armboss_01', label: 'Armenian Mob Boss', category: 'gang' },
+
+    // Civilians & Business
+    { model: 'a_m_m_business_01', label: 'Wall Street Executive', category: 'civilian' },
+    { model: 'a_f_m_business_02', label: 'Corporate Woman', category: 'civilian' },
+    { model: 'a_m_y_business_01', label: 'Young Businessman', category: 'civilian' },
+    { model: 'a_m_y_hipster_01', label: 'Downtown Hipster', category: 'civilian' },
+    { model: 'a_m_y_skater_01', label: 'Venice Beach Skater', category: 'civilian' },
+    { model: 's_m_y_autopep_01', label: 'Mechanic / Tuner', category: 'civilian' },
+    { model: 's_m_m_bouncer_01', label: 'Nightclub Bouncer', category: 'civilian' },
+    { model: 's_m_y_bartender_01', label: 'Bar Lounge Tender', category: 'civilian' },
+    { model: 's_m_y_chef_01', label: 'Restaurant Chef', category: 'civilian' },
+    { model: 's_m_y_construct_01', label: 'Construction Worker', category: 'civilian' },
+    { model: 's_m_m_postal_01', label: 'PostOP Delivery Driver', category: 'civilian' },
+    { model: 's_m_m_trucker_01', label: 'Highway Trucker', category: 'civilian' },
+
+    // Animals & Pets
+    { model: 'a_c_chop', label: 'Chop (Rottweiler)', category: 'animal' },
+    { model: 'a_c_husky', label: 'Husky Dog', category: 'animal' },
+    { model: 'a_c_retriever', label: 'Golden Retriever', category: 'animal' },
+    { model: 'a_c_poodle', label: 'White Poodle', category: 'animal' },
+    { model: 'a_c_pug', label: 'Pug Dog', category: 'animal' },
+    { model: 'a_c_cat_01', label: 'House Cat', category: 'animal' },
+    { model: 'a_c_chimp', label: 'Chimpanzee', category: 'animal' },
+    { model: 'a_c_coyote', label: 'Wild Coyote', category: 'animal' },
+    { model: 'a_c_deer', label: 'Forest Deer', category: 'animal' },
+    { model: 'a_c_mountainlion', label: 'Mountain Cougar', category: 'animal' },
+
+    // Multiplayer Characters
+    { model: 'mp_m_freemode_01', label: 'Male MP Custom Character', category: 'multiplayer' },
+    { model: 'mp_f_freemode_01', label: 'Female MP Custom Character', category: 'multiplayer' },
+];
+
+// Curated Fallback Jobs Catalog
+const FALLBACK_JOBS = [
+    { name: 'police', label: 'Chicago Police Department', category: 'emergency', type: 'leo', grades: [
+        { grade: 0, name: 'Cadet', payment: 50 },
+        { grade: 1, name: 'Officer', payment: 100 },
+        { grade: 2, name: 'Sergeant', payment: 150 },
+        { grade: 3, name: 'Lieutenant', payment: 200 },
+        { grade: 4, name: 'Chief of Police', payment: 300, isBoss: true }
+    ]},
+    { name: 'ambulance', label: 'EMS Medical Services', category: 'emergency', type: 'ems', grades: [
+        { grade: 0, name: 'Intern', payment: 45 },
+        { grade: 1, name: 'Paramedic', payment: 95 },
+        { grade: 2, name: 'Doctor', payment: 160 },
+        { grade: 3, name: 'Hospital Director', payment: 280, isBoss: true }
+    ]},
+    { name: 'mechanic', label: 'Customs & Tuning Shop', category: 'business', type: 'mechanic', grades: [
+        { grade: 0, name: 'Apprentice', payment: 40 },
+        { grade: 1, name: 'Mechanic', payment: 85 },
+        { grade: 2, name: 'Lead Tuner', payment: 140 },
+        { grade: 3, name: 'Shop Owner', payment: 250, isBoss: true }
+    ]},
+    { name: 'cardealer', label: 'Luxury Motors Dealership', category: 'business', type: 'dealer', grades: [
+        { grade: 0, name: 'Trainee', payment: 40 },
+        { grade: 1, name: 'Salesman', payment: 90 },
+        { grade: 2, name: 'General Manager', payment: 220, isBoss: true }
+    ]},
+    { name: 'realestate', label: 'Dynasty8 Real Estate', category: 'business', type: 'realestate', grades: [
+        { grade: 0, name: 'Agent', payment: 50 },
+        { grade: 1, name: 'Broker', payment: 120 },
+        { grade: 2, name: 'CEO', payment: 250, isBoss: true }
+    ]},
+    { name: 'taxi', label: 'Downtown Cab Co.', category: 'public', type: 'taxi', grades: [
+        { grade: 0, name: 'Driver', payment: 50 },
+        { grade: 1, name: 'Fleet Manager', payment: 120, isBoss: true }
+    ]},
+    { name: 'lawyer', label: 'Department of Justice', category: 'emergency', type: 'legal', grades: [
+        { grade: 0, name: 'Paralegal', payment: 60 },
+        { grade: 1, name: 'Attorney', payment: 150 },
+        { grade: 2, name: 'District Judge', payment: 320, isBoss: true }
+    ]},
+    { name: 'reporter', label: 'Weazel News Media', category: 'public', type: 'news', grades: [
+        { grade: 0, name: 'Camera Operator', payment: 45 },
+        { grade: 1, name: 'Investigative Journalist', payment: 110 },
+        { grade: 2, name: 'News Anchor / Editor', payment: 220, isBoss: true }
+    ]},
+    { name: 'garbage', label: 'Sanitation Waste Dept', category: 'public', type: 'sanitation', grades: [
+        { grade: 0, name: 'Sanitation Worker', payment: 60 },
+        { grade: 1, name: 'Route Supervisor', payment: 130, isBoss: true }
+    ]},
+    { name: 'tow', label: 'Impound & Tow Services', category: 'public', type: 'tow', grades: [
+        { grade: 0, name: 'Tow Operator', payment: 55 },
+        { grade: 1, name: 'Impound Director', payment: 140, isBoss: true }
+    ]},
+    { name: 'ballas', label: 'Ballas Street Syndicate', category: 'gang', type: 'gang', grades: [
+        { grade: 0, name: 'Runner', payment: 0 },
+        { grade: 1, name: 'Shooter', payment: 0 },
+        { grade: 2, name: 'OG / Leader', payment: 0, isBoss: true }
+    ]},
+    { name: 'vagos', label: 'Los Santos Vagos Cartel', category: 'gang', type: 'gang', grades: [
+        { grade: 0, name: 'Soldado', payment: 0 },
+        { grade: 1, name: 'Sicario', payment: 0 },
+        { grade: 2, name: 'El Patron', payment: 0, isBoss: true }
+    ]},
+    { name: 'families', label: 'Grove Street Families', category: 'gang', type: 'gang', grades: [
+        { grade: 0, name: 'Baby Gangster', payment: 0 },
+        { grade: 1, name: 'Enforcer', payment: 0 },
+        { grade: 2, name: 'Top Dog', payment: 0, isBoss: true }
+    ]},
+    { name: 'unemployed', label: 'Unemployed Civilian', category: 'public', type: 'none', grades: [
+        { grade: 0, name: 'Freelancer', payment: 10 }
+    ]}
+];
 
 // Curated Fallback Vehicles Catalog
 const FALLBACK_VEHICLES = [
@@ -117,8 +270,11 @@ window.addEventListener('message', (event) => {
             postNUI('fetchPlayers');
             postNUI('fetchAllItems');
             postNUI('fetchAllVehicles');
+            postNUI('fetchAllJobs');
             renderVisualItems();
             renderVisualVehicles();
+            renderVisualCharacters();
+            renderVisualJobs();
         } else {
             app.style.display = 'none';
         }
@@ -139,6 +295,12 @@ window.addEventListener('message', (event) => {
             allServerVehicles = data.vehicles;
             const query = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
             renderVisualVehicles(query);
+        }
+    } else if (data.action === 'updateAllJobs') {
+        if (data.jobs && Array.isArray(data.jobs) && data.jobs.length > 0) {
+            allServerJobs = data.jobs;
+            const query = document.getElementById('job-search-input')?.value.toLowerCase().trim() || '';
+            renderVisualJobs(query);
         }
     } else if (data.action === 'updateCoordsDisplay') {
         const el = document.getElementById('current-coords-display');
@@ -229,6 +391,12 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         } else if (tab === 'vehicles') {
             const query = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
             renderVisualVehicles(query);
+        } else if (tab === 'characters') {
+            const query = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
+            renderVisualCharacters(query);
+        } else if (tab === 'jobs') {
+            const query = document.getElementById('job-search-input')?.value.toLowerCase().trim() || '';
+            renderVisualJobs(query);
         } else if (tab === 'devtools') {
             postNUI('requestCoordsDisplay');
         }
@@ -503,6 +671,198 @@ document.querySelectorAll('.filter-chip-veh').forEach(chip => {
 
 document.getElementById('veh-search-input')?.addEventListener('input', (e) => {
     renderVisualVehicles(e.target.value.toLowerCase().trim());
+});
+
+// Characters & Skins Rendering (Visual Peds Catalog)
+function renderVisualCharacters(searchQuery = '') {
+    const container = document.getElementById('visual-characters-container');
+    if (!container) return;
+
+    const filtered = VISUAL_PEDS.filter(ped => {
+        const matchesCategory = (currentPedFilter === 'all' || ped.category === currentPedFilter);
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch = !q || 
+            ped.model.toLowerCase().includes(q) || 
+            ped.label.toLowerCase().includes(q);
+        return matchesCategory && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="table-empty" style="grid-column: 1 / -1;">No matching characters found.</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(ped => {
+        const model = ped.model.toLowerCase();
+        const label = ped.label || model;
+        const imgFiveM = `https://docs.fivem.net/peds/${model}.webp`;
+        const imgFallback = `https://raw.githubusercontent.com/root-cause/v-ped-hashes/master/images/${model}.png`;
+        const isAnimal = ped.category === 'animal';
+
+        return `
+            <div class="visual-ped-card">
+                <div class="ped-thumb-wrapper">
+                    <img class="ped-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\\'font-size:32px;opacity:0.7;\\'>${isAnimal ? '🐾' : '👤'}</span>'; };">
+                </div>
+                <div class="ped-title" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                <div class="ped-model-sub">${model}</div>
+                <button class="ped-apply-btn" onclick="applyPedDirect('${model}')">Apply Skin</button>
+            </div>
+        `;
+    }).join('');
+}
+
+window.applyPedDirect = function(model) {
+    postNUI('setPedModel', { model });
+};
+
+document.querySelectorAll('.filter-chip-ped').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip-ped').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentPedFilter = chip.getAttribute('data-cat');
+        const query = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
+        renderVisualCharacters(query);
+    });
+});
+
+document.getElementById('ped-search-input')?.addEventListener('input', (e) => {
+    renderVisualCharacters(e.target.value.toLowerCase().trim());
+});
+
+document.getElementById('btn-reset-ped')?.addEventListener('click', () => {
+    applyPedDirect('mp_m_freemode_01');
+});
+
+document.getElementById('btn-apply-custom-skin')?.addEventListener('click', () => {
+    const input = document.getElementById('custom-skin-input');
+    const model = input?.value.trim();
+    if (model) {
+        applyPedDirect(model);
+        input.value = '';
+    }
+});
+
+// Jobs & Careers Rendering (Dynamic Qbox Jobs Catalog)
+function renderVisualJobs(searchQuery = '') {
+    const container = document.getElementById('visual-jobs-container');
+    if (!container) return;
+
+    const sourceList = (allServerJobs && allServerJobs.length > 0) ? allServerJobs : FALLBACK_JOBS;
+
+    const filtered = sourceList.filter(job => {
+        const cat = (job.category || 'public').toLowerCase();
+        let matchesCategory = false;
+        if (currentJobFilter === 'all') {
+            matchesCategory = true;
+        } else if (currentJobFilter === 'emergency') {
+            matchesCategory = cat === 'emergency';
+        } else if (currentJobFilter === 'public') {
+            matchesCategory = cat === 'public';
+        } else if (currentJobFilter === 'business') {
+            matchesCategory = cat === 'business';
+        } else if (currentJobFilter === 'gang') {
+            matchesCategory = cat === 'gang';
+        }
+
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch = !q || 
+            job.name.toLowerCase().includes(q) || 
+            (job.label && job.label.toLowerCase().includes(q));
+
+        return matchesCategory && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="table-empty" style="grid-column: 1 / -1;">No matching jobs found.</div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(job => {
+        const jName = job.name.toLowerCase();
+        const jTitle = job.label || jName;
+        const selectId = `grade-sel-${jName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+        let icon = '💼';
+        if (job.category === 'emergency' || jName.includes('police') || jName.includes('sheriff')) icon = '👮';
+        else if (jName.includes('ambulance') || jName.includes('ems') || jName.includes('doctor')) icon = '🚑';
+        else if (jName.includes('mechanic') || jName.includes('tuner')) icon = '🔧';
+        else if (jName.includes('taxi')) icon = '🚕';
+        else if (jName.includes('lawyer') || jName.includes('judge')) icon = '⚖️';
+        else if (jName.includes('cardealer')) icon = '🏎️';
+        else if (jName.includes('realestate')) icon = '🏢';
+        else if (job.category === 'gang') icon = '🔫';
+
+        const grades = (job.grades && job.grades.length > 0) ? job.grades : [{ grade: 0, name: 'Employee', payment: 0 }];
+        const gradeOptions = grades.map(g => {
+            const bossTag = g.isBoss ? ' ★ BOSS' : '';
+            const salaryTag = g.payment ? ` ($${g.payment})` : '';
+            return `<option value="${g.grade}">${g.grade}: ${escapeHtml(g.name)}${salaryTag}${bossTag}</option>`;
+        }).join('');
+
+        return `
+            <div class="visual-job-card">
+                <div class="job-card-header">
+                    <div class="job-badge-icon">${icon}</div>
+                    <div class="job-card-info">
+                        <div class="job-title" title="${escapeHtml(jTitle)}">${escapeHtml(jTitle)}</div>
+                        <div class="job-name-tag">${jName}</div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <select id="${selectId}" class="job-grades-select">
+                        ${gradeOptions}
+                    </select>
+                </div>
+                <button class="job-apply-btn" onclick="setMyJobDirect('${jName}', '${selectId}')">Set My Job</button>
+            </div>
+        `;
+    }).join('');
+}
+
+window.setMyJobDirect = function(jobName, selectId) {
+    const sel = document.getElementById(selectId);
+    const grade = parseInt(sel?.value) || 0;
+    postNUI('setMyJob', { job: jobName, grade });
+};
+
+document.querySelectorAll('.filter-chip-job').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip-job').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentJobFilter = chip.getAttribute('data-cat');
+        const query = document.getElementById('job-search-input')?.value.toLowerCase().trim() || '';
+        renderVisualJobs(query);
+    });
+});
+
+document.getElementById('job-search-input')?.addEventListener('input', (e) => {
+    renderVisualJobs(e.target.value.toLowerCase().trim());
+});
+
+// Owner Arsenal & Economy
+window.equipArsenalDirect = function(loadout) {
+    postNUI('equipLoadout', { loadout });
+};
+
+document.getElementById('btn-give-quick-cash')?.addEventListener('click', () => {
+    const amt = parseInt(document.getElementById('quick-cash-amount')?.value) || 100000;
+    postNUI('giveMoney', { amount: amt, moneyType: 'cash' });
+});
+
+document.getElementById('btn-give-quick-bank')?.addEventListener('click', () => {
+    const amt = parseInt(document.getElementById('quick-cash-amount')?.value) || 100000;
+    postNUI('giveMoney', { amount: amt, moneyType: 'bank' });
+});
+
+// Traffic & NPC Population Density
+document.querySelectorAll('.density-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.density-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const density = parseFloat(btn.getAttribute('data-density'));
+        postNUI('setTrafficDensity', { density });
+    });
 });
 
 // Vehicles Spawner & Workshop

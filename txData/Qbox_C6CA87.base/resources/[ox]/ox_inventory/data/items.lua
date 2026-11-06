@@ -256,6 +256,10 @@ return {
 	['lockpick'] = {
 		label = 'Lockpick',
 		weight = 160,
+		description = 'Used to lockpick vehicle doors and hotwire ignitions.',
+		client = {
+			export = 'qbx_vehiclekeys.useLockpick'
+		}
 	},
 
 	["phone"] = {
@@ -1530,6 +1534,7 @@ return {
 		close = true,
 		description = "If you lose your keys a lot this is very useful... Also useful to open your beers",
 		client = {
+			export = 'qbx_vehiclekeys.useLockpick',
 			image = "advancedlockpick.png",
 		}
 	},

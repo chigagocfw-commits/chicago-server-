@@ -194,7 +194,14 @@ RegisterNetEvent('QBCore:Client:VehicleInfo', function(data)
     isTakingKeys = false
 end)
 
-RegisterNetEvent('lockpicks:UseLockpick', function(isAdvanced)
+local function useLockpick(data)
+    local isAdvanced = false
+    if type(data) == 'table' then
+        isAdvanced = (data.name == 'advancedlockpick')
+    elseif type(data) == 'boolean' then
+        isAdvanced = data
+    end
+
     local vehicle = cache.vehicle
     if vehicle then
         if GetKeySearchEnabled() then
@@ -207,7 +214,10 @@ RegisterNetEvent('lockpicks:UseLockpick', function(isAdvanced)
     else
         LockpickDoor(isAdvanced)
     end
-end)
+end
+
+exports('useLockpick', useLockpick)
+RegisterNetEvent('lockpicks:UseLockpick', useLockpick)
 
 RegisterNetEvent('qbx_vehiclekeys:client:OnLostKeys', function()
     if cache.seat == -1 then
