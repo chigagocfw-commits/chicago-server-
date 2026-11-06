@@ -3136,8 +3136,8 @@ input:checked + .slider:before {
 
 /* Dedicated Manage Player Tab Selector Bar */
 .manage-selector-card {
-    background: linear-gradient(135deg, rgba(16, 23, 38, 0.92), rgba(10, 15, 25, 0.95));
-    border: 1px solid rgba(0, 229, 255, 0.25);
+    background: linear-gradient(135deg, rgba(16, 23, 38, 0.94), rgba(10, 15, 25, 0.96));
+    border: 1px solid rgba(0, 229, 255, 0.28);
     border-radius: 12px;
     padding: 14px 18px;
     margin-bottom: 14px;
@@ -3152,19 +3152,59 @@ input:checked + .slider:before {
     gap: 12px;
     margin-bottom: 12px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.manage-selector-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .manage-selector-badge {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
+    padding: 5px 12px;
+    border-radius: 7px;
     background: rgba(0, 229, 255, 0.14);
-    border: 1px solid rgba(0, 229, 255, 0.4);
-    display: flex;
+    border: 1px solid rgba(0, 229, 255, 0.45);
+    color: var(--accent-cyan);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
+    gap: 6px;
+}
+
+.manage-selector-hint {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+.manage-selector-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.manage-ctrl-input {
+    width: 210px !important;
+    padding: 7px 11px !important;
+    font-size: 0.76rem !important;
+}
+
+.manage-ctrl-select {
+    min-width: 230px !important;
+    padding: 7px 11px !important;
+    font-size: 0.76rem !important;
+}
+
+.manage-refresh-btn {
+    padding: 7px 13px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap;
 }
 
 .manage-online-pills-strip {
@@ -3177,8 +3217,8 @@ input:checked + .slider:before {
 .manage-player-pill {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 8px 13px;
+    gap: 10px;
+    padding: 8px 14px;
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.035);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3201,9 +3241,9 @@ input:checked + .slider:before {
 }
 
 .manage-pill-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     background: rgba(0, 229, 255, 0.18);
     border: 1px solid rgba(0, 229, 255, 0.4);
     display: flex;
@@ -3223,7 +3263,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     text-align: left;
-    line-height: 1.2;
+    line-height: 1.25;
 }
 
 .manage-pill-name {
@@ -3237,6 +3277,283 @@ input:checked + .slider:before {
     color: var(--text-muted);
     font-family: var(--font-mono);
 }
+
+.dossier-qbtn.neutral {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.16);
+}
+.dossier-qbtn.neutral:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: #fff;
+}
+
+/* Structured Section Cards inside Manage Tab */
+.manage-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.manage-card-title {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.manage-card-title h5 {
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.4px;
+    margin: 0;
+}
+
+.manage-card-title small {
+    display: block;
+    font-size: 0.71rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.manage-sec-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.manage-sec-num.cyan { background: rgba(0, 229, 255, 0.15); border: 1px solid rgba(0, 229, 255, 0.45); color: var(--accent-cyan); }
+.manage-sec-num.green { background: rgba(0, 230, 118, 0.15); border: 1px solid rgba(0, 230, 118, 0.45); color: var(--accent-green); }
+.manage-sec-num.gold { background: rgba(250, 204, 21, 0.15); border: 1px solid rgba(250, 204, 21, 0.45); color: #facc15; }
+.manage-sec-num.blue { background: rgba(59, 130, 246, 0.16); border: 1px solid rgba(59, 130, 246, 0.45); color: #60a5fa; }
+.manage-sec-num.purple { background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.55); color: #d8b4fe; }
+.manage-sec-num.red { background: rgba(255, 51, 102, 0.16); border: 1px solid rgba(255, 51, 102, 0.45); color: #ff4d79; }
+
+.manage-inner-box {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 11px 12px;
+}
+
+.manage-box-label {
+    display: block;
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 7px;
+}
+
+.manage-label-With-chips {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.manage-preset-pills {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.mini-preset-pill {
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--accent-cyan);
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mini-preset-pill:hover {
+    background: var(--accent-cyan);
+    color: #000;
+}
+
+.manage-two-btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.manage-compact-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+}
+
+.manage-compact-grid-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 7px !important;
+}
+
+.manage-compact-grid-6 {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 8px !important;
+}
+
+.manage-troll-forms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Dashboard Live Services Strip */
+.dash-services-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.dash-service-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    background: rgba(16, 23, 38, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.dash-service-pill .srv-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    background: rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+}
+
+.dash-service-pill b {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.dash-service-pill small {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.dash-service-pill.blue { border-color: rgba(59, 130, 246, 0.35); }
+.dash-service-pill.green { border-color: rgba(0, 230, 118, 0.35); }
+.dash-service-pill.gold { border-color: rgba(250, 204, 21, 0.35); }
+.dash-service-pill.purple { border-color: rgba(168, 85, 247, 0.35); }
+
+/* Live Visual Pocket Inventory Grid inside Manage Tab */
+.manage-live-inv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+    gap: 8px;
+    max-height: 215px;
+    overflow-y: auto;
+    padding: 4px 2px;
+}
+
+.live-inv-slot-card {
+    background: rgba(12, 18, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    transition: all 0.15s ease;
+}
+
+.live-inv-slot-card:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 229, 255, 0.08);
+}
+
+.live-inv-count-tag {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    background: rgba(0, 0, 0, 0.75);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.live-inv-img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+
+.live-inv-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-bottom: 5px;
+}
+
+.live-inv-actions {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+}
+
+.live-inv-btn {
+    flex: 1;
+    padding: 3px 0;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.live-inv-btn.plus {
+    background: rgba(0, 230, 118, 0.15);
+    border-color: rgba(0, 230, 118, 0.4);
+    color: var(--accent-green);
+}
+.live-inv-btn.plus:hover { background: var(--accent-green); color: #000; }
+
+.live-inv-btn.del {
+    background: rgba(255, 51, 102, 0.15);
+    border-color: rgba(255, 51, 102, 0.4);
+    color: #ff4d79;
+}
+.live-inv-btn.del:hover { background: #ff3366; color: #fff; }
+
+
 
 
 

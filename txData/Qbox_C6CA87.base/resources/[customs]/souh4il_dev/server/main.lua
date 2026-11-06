@@ -226,6 +226,14 @@ lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
             local citizenid = "N/A"
             local charName = pName
             local jobLabel = "Civilian"
+            local jobName = "unemployed"
+            local onDuty = false
+            local gangName = "none"
+            local cash = 0
+            local bank = 0
+            local isDead = false
+            local ped = GetPlayerPed(srcStr)
+            local inVehicle = (ped and ped ~= 0 and GetVehiclePedIsIn(ped, false) ~= 0) or false
 
             if qPlayer and qPlayer.PlayerData then
                 citizenid = qPlayer.PlayerData.citizenid or "N/A"
@@ -238,6 +246,18 @@ lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
                 end
                 if qPlayer.PlayerData.job then
                     jobLabel = qPlayer.PlayerData.job.label or qPlayer.PlayerData.job.name or "Civilian"
+                    jobName = tostring(qPlayer.PlayerData.job.name or "unemployed"):lower()
+                    onDuty = qPlayer.PlayerData.job.onduty == true
+                end
+                if qPlayer.PlayerData.gang then
+                    gangName = tostring(qPlayer.PlayerData.gang.name or "none"):lower()
+                end
+                if qPlayer.PlayerData.money then
+                    cash = tonumber(qPlayer.PlayerData.money.cash) or 0
+                    bank = tonumber(qPlayer.PlayerData.money.bank) or 0
+                end
+                if qPlayer.PlayerData.metadata then
+                    isDead = (qPlayer.PlayerData.metadata.isdead == true or qPlayer.PlayerData.metadata.inlaststand == true)
                 end
             end
 
@@ -248,6 +268,13 @@ lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
                 citizenid = citizenid,
                 ping = pPing,
                 job = jobLabel,
+                jobName = jobName,
+                onDuty = onDuty,
+                gangName = gangName,
+                cash = cash,
+                bank = bank,
+                isDead = isDead,
+                inVehicle = inVehicle,
                 role = Permissions.GetStaffRole(srcNum)
             })
         end
@@ -835,14 +862,18 @@ lib.callback.register('souh4il_dev:server:setMyJob', function(source, data)
     return { success = false, error = "PLAYER_NOT_FOUND" }
 end)
 
----Callback 23: Equip Owner Arsenal Loadout
-lib.callback.register('souh4il_dev:server:giveArsenalLoadout', function(source, loadoutKey)
+---Callback 23: Equip Owner Arsenal Loadout (Self or Target Player)
+lib.callback.register('souh4il_dev:server:giveArsenalLoadout', function(source, payload)
     local allowed, reason = Security.CheckRateLimit(source, 'arsenal')
     if not allowed then return { success = false, error = reason } end
 
     if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
         return { success = false, error = "ACCESS_DENIED" }
     end
+
+    local loadoutKey = type(payload) == 'table' and payload.loadout or payload
+    local targetId = (type(payload) == 'table' and tonumber(payload.targetId)) or source
+    if not DoesPlayerExist(tostring(targetId)) then targetId = source end
 
     local loadouts = {
         swat = {
@@ -891,11 +922,11 @@ lib.callback.register('souh4il_dev:server:giveArsenalLoadout', function(source, 
 
     local items = loadouts[loadoutKey] or loadouts.god_arsenal
     for _, it in ipairs(items) do
-        exports.ox_inventory:AddItem(source, it.item, it.count)
+        exports.ox_inventory:AddItem(targetId, it.item, it.count)
     end
 
-    Logger.Write("EQUIP_OWNER_ARSENAL", source, source, { loadout = loadoutKey, itemCount = #items }, "SUCCESS")
-    return { success = true, loadout = loadoutKey }
+    Logger.Write("EQUIP_OWNER_ARSENAL", source, targetId, { loadout = loadoutKey, itemCount = #items }, "SUCCESS")
+    return { success = true, loadout = loadoutKey, targetId = targetId }
 end)
 
 -- =========================================================================
@@ -1374,6 +1405,36 @@ lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, ta
 
     local vehiclesList = {}
     local propertiesList = {}
+    local availableProperties = {}
+    local inventoryList = {}
+
+    pcall(function()
+        local rawInv = exports.ox_inventory:GetInventoryItems(tId)
+        if type(rawInv) == 'table' then
+            for _, it in pairs(rawInv) do
+                if type(it) == 'table' and it.name and (tonumber(it.count) or 0) > 0 then
+                    table.insert(inventoryList, {
+                        slot = it.slot,
+                        name = tostring(it.name):lower(),
+                        label = it.label or it.name,
+                        count = tonumber(it.count) or 1,
+                        weight = tonumber(it.weight) or 0
+                    })
+                end
+            end
+            table.sort(inventoryList, function(a, b) return (tonumber(a.slot) or 0) < (tonumber(b.slot) or 0) end)
+        end
+    end)
+
+    pcall(function()
+        local allProps = MySQL.query.await([[
+            SELECT id, property_name, price, interior, owner
+            FROM properties
+            ORDER BY id ASC
+            LIMIT 150
+        ]])
+        if allProps then availableProperties = allProps end
+    end)
 
     if citizenid and citizenid ~= "N/A" then
         pcall(function()
@@ -1416,8 +1477,139 @@ lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, ta
             ip = endpoint,
             vehicles = vehiclesList,
             properties = propertiesList,
+            availableProperties = availableProperties,
+            inventory = inventoryList,
         }
     }
+end)
+
+---Callback: Remove Specific Item from Player Inventory
+lib.callback.register('souh4il_dev:server:removePlayerItem', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data and data.targetId)
+    local item = tostring(data and data.item or ''):lower()
+    local count = math.max(1, tonumber(data and data.count) or 1)
+    local slot = tonumber(data and data.slot)
+
+    if not tId or not DoesPlayerExist(tostring(tId)) or item == '' then
+        return { success = false, error = "INVALID_PARAMS" }
+    end
+
+    local ok = exports.ox_inventory:RemoveItem(tId, item, count, nil, slot)
+    Logger.Write("REMOVE_ITEM_TARGET", source, tId, { item = item, count = count, slot = slot }, ok and "SUCCESS" or "REJECTED")
+    return { success = ok == true }
+end)
+
+---Callback: Give / Assign Official Property (House) to Player
+lib.callback.register('souh4il_dev:server:givePlayerProperty', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data and data.targetId)
+    local propId = tonumber(data and data.propertyId)
+    if not tId or not propId then return { success = false, error = "INVALID_PARAMS" } end
+
+    local player = exports.qbx_core:GetPlayer(tId)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local citizenid = player.PlayerData.citizenid
+    local prop = MySQL.single.await('SELECT id, property_name FROM properties WHERE id = ?', { propId })
+    if not prop then return { success = false, error = "PROPERTY_NOT_FOUND" } end
+
+    MySQL.update.await('UPDATE properties SET owner = ?, keyholders = JSON_OBJECT() WHERE id = ?', { citizenid, propId })
+    Logger.Write("GIVE_PROPERTY", source, tId, { propertyId = propId, propertyName = prop.property_name, citizenid = citizenid }, "SUCCESS")
+    Outbox.QueueDiscordAlert("GIVE_PROPERTY", GetPlayerName(tostring(source)) or "Staff", Identifiers.GetLicense(source) or "UNKNOWN", { propertyId = propId, propertyName = prop.property_name, target = tId })
+
+    return { success = true, propertyName = prop.property_name }
+end)
+
+---Callback: Mass Server Action (Heal & Feed All, Clean Abandoned Cars)
+lib.callback.register('souh4il_dev:server:massServerAction', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local mType = tostring(data and data.massType or '')
+    if mType == 'heal_feed_all' then
+        local players = GetPlayers()
+        for _, srcStr in ipairs(players) do
+            local pid = tonumber(srcStr)
+            if pid then
+                TriggerClientEvent('qbx_medical:client:playerRevived', pid)
+                TriggerClientEvent('hospital:client:Revive', pid)
+                TriggerClientEvent('souh4il_dev:client:receiveHeal', pid)
+                TriggerClientEvent('souh4il_dev:client:receiveVitalsControl', pid, { type = 'feed' })
+            end
+        end
+        Logger.Write("MASS_HEAL_FEED_ALL", source, nil, { count = #players }, "SUCCESS")
+        return { success = true, count = #players }
+    elseif mType == 'clean_abandoned_cars' then
+        local allVehs = GetAllVehicles()
+        local deletedCount = 0
+        for _, v in ipairs(allVehs) do
+            if DoesEntityExist(v) then
+                local occupied = false
+                for seat = -1, 6 do
+                    local pedInSeat = GetPedInVehicleSeat(v, seat)
+                    if pedInSeat and pedInSeat ~= 0 then
+                        occupied = true
+                        break
+                    end
+                end
+                if not occupied then
+                    DeleteEntity(v)
+                    deletedCount = deletedCount + 1
+                end
+            end
+        end
+        Logger.Write("MASS_CLEAN_ABANDONED_CARS", source, nil, { deleted = deletedCount }, "SUCCESS")
+        return { success = true, count = deletedCount }
+    end
+
+    return { success = false, error = "UNKNOWN_MASS_ACTION" }
+end)
+
+---Callback: Save Admin's Current Vehicle to Personal Garage
+lib.callback.register('souh4il_dev:server:saveMyCurrentVehicle', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local player = exports.qbx_core:GetPlayer(source)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local model = tostring(data and data.model or ''):lower()
+    local plate = tostring(data and data.plate or ''):upper():gsub('^%s*(.-)%s*$', '%1')
+    local mods = data and data.mods or {}
+    local garage = tostring(data and data.garage or 'motel')
+
+    if #model == 0 or #plate == 0 then
+        return { success = false, error = "NOT_IN_VEHICLE" }
+    end
+
+    local citizenid = player.PlayerData.citizenid
+    local license = player.PlayerData.license or Identifiers.GetLicense(source) or "UNKNOWN"
+    local hash = joaat(model)
+
+    MySQL.insert.await([[
+        INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, garage, fuel, engine, body, state)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 100, 1000, 1000, 0)
+        ON DUPLICATE KEY UPDATE citizenid = VALUES(citizenid), license = VALUES(license), vehicle = VALUES(vehicle), hash = VALUES(hash), mods = VALUES(mods)
+    ]], { license, citizenid, model, hash, json.encode(mods), plate, garage })
+
+    local ped = GetPlayerPed(source)
+    local currVeh = ped ~= 0 and GetVehiclePedIsIn(ped, false) or 0
+    if currVeh ~= 0 and DoesEntityExist(currVeh) then
+        Entity(currVeh).state.owner = citizenid
+        pcall(function() exports.qbx_vehiclekeys:GiveKeys(source, currVeh) end)
+    end
+
+    Logger.Write("SAVE_VEHICLE_TO_GARAGE", source, source, { model = model, plate = plate, garage = garage }, "SUCCESS")
+    return { success = true, plate = plate, model = model, garage = garage }
 end)
 
 ---Callback: Wipe Player (Cash, Inventory, or Full)

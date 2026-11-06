@@ -46,6 +46,12 @@ local TELEPORT_LOCATIONS = {
     ['paleto']   = vector4(-103.73, 6467.89, 31.63, 45.0),
     ['mazebank'] = vector4(-75.0, -818.0, 326.0, 0.0),
     ['casino']   = vector4(925.33, 47.11, 81.11, 60.0),
+    ['pdm']      = vector4(-56.79, -1096.55, 26.42, 25.0),
+    ['bennys']   = vector4(-211.55, -1324.55, 30.89, 180.0),
+    ['prison']   = vector4(1845.91, 2585.87, 45.67, 90.0),
+    ['lsia']     = vector4(-1037.51, -2737.61, 20.17, 330.0),
+    ['grove']    = vector4(105.78, -1940.21, 20.8, 50.0),
+    ['cayo']     = vector4(4440.12, -4482.55, 4.22, 200.0),
 }
 
 ---Toggles the SOUH4IL-DEV Control Panel
@@ -1236,15 +1242,15 @@ RegisterNUICallback('setMyJob', function(data, cb)
     cb('ok')
 end)
 
--- Equip Owner Arsenal Preset Loadout
+-- Equip Owner Arsenal Preset Loadout (Self or Target Player)
 RegisterNUICallback('equipLoadout', function(data, cb)
     lib.callback('souh4il_dev:server:giveArsenalLoadout', false, function(response)
         if response and response.success then
-            lib.notify({ title = SharedConfig.PanelName, description = ("Equipped '%s' Loadout."):format(data.loadout:upper()), type = 'success' })
+            lib.notify({ title = SharedConfig.PanelName, description = ("Arsenal '%s' équipé avec succès !"):format(tostring(data.loadout):upper()), type = 'success' })
         else
             lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
         end
-    end, data.loadout)
+    end, { loadout = data.loadout, targetId = data.targetId })
     cb('ok')
 end)
 
@@ -2162,7 +2168,133 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
         lib.callback('souh4il_dev:server:controlPlayerAppearance', false, function(res)
             lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Action apparence '%s' envoyée à #%d."):format(data.appType, tId) or "Erreur", type = res and res.success and 'success' or 'error' })
         end, data)
+    elseif action == 'remove_item_target' then
+        lib.callback('souh4il_dev:server:removePlayerItem', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Item %s retiré de l'inventaire de #%d."):format(data.item, tId), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Échec du retrait de l'item.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'give_property' then
+        lib.callback('souh4il_dev:server:givePlayerProperty', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Propriété '%s' attribuée officiellement à #%d !"):format(res.propertyName or "Maison", tId), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de l'attribution de la propriété.", type = 'error' })
+            end
+        end, data)
     end
+    cb('ok')
+end)
+
+-- Mass Server Actions (Heal & Feed All, Clean Abandoned Cars)
+RegisterNUICallback('massServerAction', function(data, cb)
+    lib.callback('souh4il_dev:server:massServerAction', false, function(res)
+        if res and res.success then
+            lib.notify({ title = SharedConfig.PanelName, description = ("Action globale '%s' exécutée (%d entités/joueurs) !"):format(data.massType, res.count or 0), type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Erreur", type = 'error' })
+        end
+    end, data)
+    cb('ok')
+end)
+
+-- Save Current Vehicle to Personal Garage
+RegisterNUICallback('saveMyCurrentVehicle', function(data, cb)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh == 0 then
+        lib.notify({ title = SharedConfig.PanelName, description = "Vous devez être assis dans un véhicule !", type = 'error' })
+        cb('ok')
+        return
+    end
+    local modelHash = GetEntityModel(veh)
+    local modelName = (data and data.model and #data.model > 0) and data.model or string.lower(GetDisplayNameFromVehicleModel(modelHash))
+    local plate = GetVehicleNumberPlateText(veh)
+    local mods = lib.getVehicleProperties and lib.getVehicleProperties(veh) or { plate = plate, model = modelHash }
+    local garage = (data and data.garage and #data.garage > 0) and data.garage or 'motel'
+
+    lib.callback('souh4il_dev:server:saveMyCurrentVehicle', false, function(res)
+        if res and res.success then
+            lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] enregistré dans votre garage (%s) avec les clés !"):format(res.plate, res.garage), type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Erreur d'enregistrement garage.", type = 'error' })
+        end
+    end, { model = modelName, plate = plate, mods = mods, garage = garage })
+    cb('ok')
+end)
+
+-- Vehicle Workshop Extra Controls (Liveries, Neon Lights, Window Tint)
+RegisterNUICallback('vehicleWorkshopExtra', function(data, cb)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh == 0 then
+        lib.notify({ title = SharedConfig.PanelName, description = "Vous devez être dans un véhicule !", type = 'error' })
+        cb('ok')
+        return
+    end
+    SetVehicleModKit(veh, 0)
+    local eType = data.extraType
+    if eType == 'next_livery' then
+        local count = GetVehicleLiveryCount(veh)
+        if count and count > 0 then
+            local cur = GetVehicleLivery(veh)
+            local nxt = (cur + 1) % count
+            SetVehicleLivery(veh, nxt)
+            lib.notify({ title = SharedConfig.PanelName, description = ("Livery changée : #%d / %d"):format(nxt + 1, count), type = 'success' })
+        else
+            local modCount = GetNumVehicleMods(veh, 48)
+            if modCount and modCount > 0 then
+                local cur = GetVehicleMod(veh, 48)
+                local nxt = (cur + 1) % modCount
+                SetVehicleMod(veh, 48, nxt, false)
+                lib.notify({ title = SharedConfig.PanelName, description = ("Mod Livery changée : #%d / %d"):format(nxt + 1, modCount), type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Ce véhicule n'a pas de Livery supplémentaire.", type = 'inform' })
+            end
+        end
+    elseif eType == 'neon_on' then
+        for i = 0, 3 do SetVehicleNeonLightEnabled(veh, i, true) end
+        local r = tonumber(data.r) or 0
+        local g = tonumber(data.g) or 229
+        local b = tonumber(data.b) or 255
+        SetVehicleNeonLightsColour(veh, r, g, b)
+        lib.notify({ title = SharedConfig.PanelName, description = "Néons LED activés sous le véhicule !", type = 'success' })
+    elseif eType == 'neon_off' then
+        for i = 0, 3 do SetVehicleNeonLightEnabled(veh, i, false) end
+        lib.notify({ title = SharedConfig.PanelName, description = "Néons désactivés.", type = 'inform' })
+    elseif eType == 'tint_limo' then
+        SetVehicleWindowTint(veh, 1)
+        lib.notify({ title = SharedConfig.PanelName, description = "Vitres teintées 100% Noir (Limo) appliquées !", type = 'success' })
+    end
+    cb('ok')
+end)
+
+-- Upgrade Held Weapon (Full Tactical Attachments + Gold/Platinum Tint + Max Ammo)
+RegisterNUICallback('upgradeCurrentWeapon', function(data, cb)
+    local ped = PlayerPedId()
+    local wep = GetSelectedPedWeapon(ped)
+    if not wep or wep == `WEAPON_UNARMED` then
+        lib.notify({ title = SharedConfig.PanelName, description = "Prenez une arme en main d'abord !", type = 'error' })
+        cb('ok')
+        return
+    end
+    local tint = tonumber(data and data.tint) or 2 -- 2 = Gold, 7 = Platinum
+    SetPedWeaponTintIndex(ped, wep, tint)
+    AddAmmoToPed(ped, wep, 250)
+    SetPedAmmo(ped, wep, 999)
+    lib.notify({ title = SharedConfig.PanelName, description = "Arme équipée avec Munitions Max (999) & Finition Luxe !", type = 'success' })
     cb('ok')
 end)
 

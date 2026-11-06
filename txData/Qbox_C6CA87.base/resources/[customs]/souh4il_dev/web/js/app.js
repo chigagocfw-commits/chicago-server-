@@ -1861,6 +1861,22 @@ window.openPlayerManageModal = function(targetId, targetName) {
     switchManageSection('all');
 };
 
+window.quickFillManageItem = function(item, count = 1) {
+    const itemEl = document.getElementById('manage-item-name');
+    const countEl = document.getElementById('manage-item-count');
+    if (itemEl) itemEl.value = item;
+    if (countEl) countEl.value = count;
+    execPlayerDetailed('give_item_direct');
+};
+
+window.quickFillManageJob = function(job, grade = 0) {
+    const jobEl = document.getElementById('manage-job-name');
+    const gradeEl = document.getElementById('manage-job-grade');
+    if (jobEl) jobEl.value = job;
+    if (gradeEl) gradeEl.value = grade;
+    execPlayerDetailed('set_job');
+};
+
 window.switchManageSection = function(sec) {
     document.querySelectorAll('#manage-subnav .manage-subnav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-section') === sec);
@@ -1868,7 +1884,7 @@ window.switchManageSection = function(sec) {
     const grid = document.getElementById('manage-sections-grid');
     const inlinePedGrid = document.getElementById('manage-inline-ped-grid');
     if (grid) {
-        grid.style.gridTemplateColumns = (sec === 'all') ? 'repeat(2, 1fr)' : '1fr';
+        grid.style.gridTemplateColumns = (sec === 'all' || sec === 'sec-char') ? 'repeat(2, 1fr)' : '1fr';
     }
     if (inlinePedGrid) {
         inlinePedGrid.style.maxHeight = (sec === 'sec-skins') ? '560px' : '410px';
@@ -1979,6 +1995,16 @@ window.execPlayerDetailed = function(action, extra = {}) {
     }
 
     postNUI('playerDetailedAction', payload);
+
+    // Auto-refresh live dossier stats after state-modifying actions
+    if (['money_give', 'money_remove', 'money_set', 'set_job', 'set_gang', 'give_owned_vehicle', 'wipe'].includes(action)) {
+        setTimeout(() => {
+            if (targetId) {
+                postNUI('playerDetailedAction', { action: 'get_details', targetId });
+                postNUI('fetchPlayers');
+            }
+        }, 450);
+    }
 };
 
 // Render Player Owned Assets (Vehicles & Properties)

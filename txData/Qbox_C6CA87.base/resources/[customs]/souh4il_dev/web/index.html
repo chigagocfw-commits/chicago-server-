@@ -164,21 +164,85 @@
                             </div>
                         </div>
 
-                        <!-- Quick Actions Section -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>QUICK MASTER ACTIONS</h4>
-                                <span>Immediate One-Click Controls</span>
+                        <!-- Live RP Services & Duty Counters Strip -->
+                        <div class="dash-services-strip">
+                            <div class="dash-service-pill blue">
+                                <span class="srv-icon">👮</span>
+                                <div>
+                                    <b id="dash-cops-count">0 En Service</b>
+                                    <small>Policiers RP (LSPD / Sheriff)</small>
+                                </div>
                             </div>
-                            <div class="quick-actions-grid">
-                                <button class="action-btn" id="qa-revive"><span class="btn-icon">✚</span><span class="btn-text">Revive Self</span></button>
-                                <button class="action-btn" id="qa-heal"><span class="btn-icon">♥</span><span class="btn-text">Heal & Feed</span></button>
-                                <button class="action-btn" id="qa-armor"><span class="btn-icon">🛡</span><span class="btn-text">Max Armor (100)</span></button>
-                                <button class="action-btn" id="qa-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair Vehicle</span></button>
-                                <button class="action-btn" id="qa-clean"><span class="btn-icon">✨</span><span class="btn-text">Clean Vehicle</span></button>
-                                <button class="action-btn" id="qa-tpm"><span class="btn-icon">📍</span><span class="btn-text">TP to Waypoint</span></button>
-                                <button class="action-btn danger" id="qa-dv"><span class="btn-icon">🗑</span><span class="btn-text">Delete Vehicle</span></button>
-                                <button class="action-btn" id="qa-cash"><span class="btn-icon">💵</span><span class="btn-text">Give $50,000 Cash</span></button>
+                            <div class="dash-service-pill green">
+                                <span class="srv-icon">🚑</span>
+                                <div>
+                                    <b id="dash-ems-count">0 En Service</b>
+                                    <small>Médecins & EMS Pillbox</small>
+                                </div>
+                            </div>
+                            <div class="dash-service-pill gold">
+                                <span class="srv-icon">🔧</span>
+                                <div>
+                                    <b id="dash-mech-count">0 En Service</b>
+                                    <small>Mécaniciens & Benny's</small>
+                                </div>
+                            </div>
+                            <div class="dash-service-pill purple">
+                                <span class="srv-icon">🚔</span>
+                                <div>
+                                    <b id="dash-npccop-state">Mode Auto-RP</b>
+                                    <small>Statut Police NPC IA</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px;">
+                            <!-- Left Column: Personal Quick Actions + Server Mass Actions -->
+                            <div>
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <h4>⚡ ACTIONS PERSONNELLES RAPIDES (SELF)</h4>
+                                        <span>Contrôles immédiats en 1 clic sur votre personnage</span>
+                                    </div>
+                                    <div class="quick-actions-grid">
+                                        <button class="action-btn" id="qa-revive"><span class="btn-icon">✚</span><span class="btn-text">Revive Self</span></button>
+                                        <button class="action-btn" id="qa-heal"><span class="btn-icon">♥</span><span class="btn-text">Heal & Feed</span></button>
+                                        <button class="action-btn" id="qa-armor"><span class="btn-icon">🛡</span><span class="btn-text">Max Armor (100)</span></button>
+                                        <button class="action-btn" id="qa-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair Vehicle</span></button>
+                                        <button class="action-btn" id="qa-clean"><span class="btn-icon">✨</span><span class="btn-text">Clean Vehicle</span></button>
+                                        <button class="action-btn" id="qa-tpm"><span class="btn-icon">📍</span><span class="btn-text">TP to Waypoint</span></button>
+                                        <button class="action-btn danger" id="qa-dv"><span class="btn-icon">🗑</span><span class="btn-text">Delete Vehicle</span></button>
+                                        <button class="action-btn" id="qa-cash"><span class="btn-icon">💵</span><span class="btn-text">Give $50,000 Cash</span></button>
+                                    </div>
+                                </div>
+
+                                <div class="section-card" style="border-color: rgba(0, 229, 255, 0.3);">
+                                    <div class="section-header">
+                                        <h4>🌐 CONTRÔLE GLOBAL DU SERVEUR (MASS ACTIONS)</h4>
+                                        <span>Actions globales sur tous les joueurs ou véhicules du serveur</span>
+                                    </div>
+                                    <div class="quick-actions-grid" style="margin-bottom: 12px;">
+                                        <button class="action-btn" onclick="postNUI('clientAction', { action: 'revive_all' })"><span class="btn-icon">🌟</span><span class="btn-text">Revive Tout le Serveur</span></button>
+                                        <button class="action-btn" onclick="execMassServerAction('heal_feed_all')"><span class="btn-icon">🍔</span><span class="btn-text">Heal & Nourrir Tous</span></button>
+                                        <button class="action-btn danger" onclick="execMassServerAction('clean_abandoned_cars')"><span class="btn-icon">🧹</span><span class="btn-text">Purger Voitures Vides</span></button>
+                                        <button class="action-btn danger" onclick="postNUI('cleanNpcCopsNow')"><span class="btn-icon">🚔</span><span class="btn-text">Purger Police NPC</span></button>
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <input type="text" id="dash-quick-announce" class="search-input" placeholder="📢 Envoyer une annonce rapide à tout le serveur...">
+                                        <button class="primary-btn" onclick="sendDashQuickAnnounce()">📢 Diffuser</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Live Recent Audit Feed -->
+                            <div class="section-card" style="display: flex; flex-direction: column;">
+                                <div class="section-header">
+                                    <h4>🛡️ DERNIÈRES ACTIONS STAFF (LIVE FEED)</h4>
+                                    <button class="secondary-btn" style="padding: 4px 10px; font-size: 0.72rem;" onclick="postNUI('fetchLogs')">🔄 Actualiser</button>
+                                </div>
+                                <div id="dash-recent-logs" class="logs-container" style="max-height: 365px; flex: 1;">
+                                    <div class="log-entry">Chargement de l'activité récente...</div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -366,14 +430,32 @@
                                 <span>Fast Warp to Key Locations in Chicago</span>
                             </div>
                             <div class="teleport-grid">
-                                <button class="teleport-btn" data-loc="legion"><span>Legion Square</span><small>City Center</small></button>
-                                <button class="teleport-btn" data-loc="pillbox"><span>Pillbox Hospital</span><small>Medical HQ</small></button>
-                                <button class="teleport-btn" data-loc="mrpd"><span>Mission Row PD</span><small>Police Station</small></button>
-                                <button class="teleport-btn" data-loc="sandy"><span>Sandy Shores Airfield</span><small>Desert Runway</small></button>
-                                <button class="teleport-btn" data-loc="paleto"><span>Paleto Bay</span><small>North Coast</small></button>
-                                <button class="teleport-btn" data-loc="mazebank"><span>Maze Bank Tower</span><small>Rooftop Helipad</small></button>
-                                <button class="teleport-btn" data-loc="casino"><span>Diamond Casino</span><small>Luxury Resort</small></button>
+                                <button class="teleport-btn" data-loc="legion"><span>🌆 Legion Square</span><small>Centre-Ville & Parking</small></button>
+                                <button class="teleport-btn" data-loc="pillbox"><span>🏥 Pillbox Hospital</span><small>Urgences & EMS HQ</small></button>
+                                <button class="teleport-btn" data-loc="mrpd"><span>🚓 Mission Row PD</span><small>Commissariat LSPD</small></button>
+                                <button class="teleport-btn" data-loc="pdm"><span>🚘 Concessionnaire PDM</span><small>Premium Deluxe Motorsport</small></button>
+                                <button class="teleport-btn" data-loc="bennys"><span>🔧 Benny's Workshop</span><small>Atelier Custom & Mécano</small></button>
+                                <button class="teleport-btn" data-loc="casino"><span>🎰 Diamond Casino</span><small>Complexe & Rooftop</small></button>
+                                <button class="teleport-btn" data-loc="lsia"><span>✈️ Aéroport LSIA</span><small>Terminal & Piste Sud</small></button>
+                                <button class="teleport-btn" data-loc="grove"><span>🔥 Grove Street</span><small>Quartier Sud & Gangs</small></button>
+                                <button class="teleport-btn" data-loc="prison"><span>🔒 Prison Bolingbroke</span><small>Pénitencier Fédéral</small></button>
+                                <button class="teleport-btn" data-loc="sandy"><span>🏜️ Sandy Shores</span><small>Aérodrome du Désert</small></button>
+                                <button class="teleport-btn" data-loc="paleto"><span>🌲 Paleto Bay</span><small>Côte Nord & Sheriff</small></button>
+                                <button class="teleport-btn" data-loc="mazebank"><span>🏙️ Maze Bank Tower</span><small>Héliport Sommet</small></button>
+                                <button class="teleport-btn" data-loc="cayo"><span>🏝️ Cayo Perico</span><small>Île Privée & Villa</small></button>
                             </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>⭐ MES POSITIONS FAVORIS (SAVED BOOKMARKS)</h4>
+                                <span>Enregistrez votre position actuelle pour vous y téléporter en 1 clic à tout moment</span>
+                            </div>
+                            <div class="form-row" style="margin-bottom: 12px;">
+                                <input type="text" id="tp-bookmark-name" class="search-input" placeholder="Nom du repère (ex: Planque Mafia, Villa Boss, Garage Secret)...">
+                                <button class="primary-btn" onclick="saveCurrentTpBookmark()">⭐ Sauvegarder ma Position Actuelle</button>
+                            </div>
+                            <div id="tp-bookmarks-container" class="teleport-grid"></div>
                         </div>
 
                         <div class="section-card">
@@ -394,12 +476,12 @@
                     <section class="tab-pane" id="pane-items">
                         <div class="section-card">
                             <div class="section-header">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                     <h4>VISUAL ITEM SPAWNER (ALL SERVER ITEMS & WEAPONS)</h4>
-
                                     <span class="catalog-badge text-cyan" id="total-items-badge">392+ ITEMS</span>
-
+                                    <select id="items-target-player-select" class="search-input" style="min-width: 220px; padding: 5px 10px; font-size: 0.76rem; border-color: var(--accent-cyan);">
+                                        <option value="">🎯 Cible : Moi-même (Self)</option>
+                                    </select>
                                 </div>
                                 <div class="header-tools">
                                     <div class="item-filter-tabs">
@@ -417,15 +499,29 @@
                             <div class="visual-items-grid" id="visual-items-container"></div>
                         </div>
 
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>CUSTOM ITEM DIRECT SPAWN</h4>
-                                <span>Spawn any raw item from ox_inventory</span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <h4>CUSTOM ITEM DIRECT SPAWN</h4>
+                                    <span>Spawn any raw item from ox_inventory</span>
+                                </div>
+                                <div class="form-row">
+                                    <input type="text" id="custom-item-name" class="search-input" placeholder="Item name (e.g. radio, burger, weapon_pistol)...">
+                                    <input type="number" id="custom-item-count" class="search-input count-input" value="1" min="1" max="1000">
+                                    <button class="primary-btn" id="btn-spawn-item">Give Item</button>
+                                </div>
                             </div>
-                            <div class="form-row">
-                                <input type="text" id="custom-item-name" class="search-input" placeholder="Item name (e.g. water, burger, weapon_pistol)...">
-                                <input type="number" id="custom-item-count" class="search-input count-input" value="1" min="1" max="1000">
-                                <button class="primary-btn" id="btn-spawn-item">Give Item</button>
+
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <h4>🔫 ATELIER ARME EN MAIN (TINT & MUNITIONS MAX)</h4>
+                                    <span>Améliorer l'arme que vous tenez actuellement en main</span>
+                                </div>
+                                <div class="quick-actions-grid" style="grid-template-columns: repeat(3, 1fr);">
+                                    <button class="action-btn" onclick="postNUI('upgradeCurrentWeapon', { tint: 2 })"><span class="btn-icon">✨</span><span class="btn-text">Finition Or + 999 Ammo</span></button>
+                                    <button class="action-btn" onclick="postNUI('upgradeCurrentWeapon', { tint: 7 })"><span class="btn-icon">💎</span><span class="btn-text">Platine + 999 Ammo</span></button>
+                                    <button class="action-btn" onclick="postNUI('upgradeCurrentWeapon', { tint: 5 })"><span class="btn-icon">🔥</span><span class="btn-text">LSPD + 999 Ammo</span></button>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -478,7 +574,9 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <h4>CUSTOM PLATE & WORKSHOP CONTROLS</h4>
-                                <span>Modify current occupied vehicle</span>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button class="primary-btn" style="background: linear-gradient(135deg, #00e676, #00b4d8); color: #000; font-weight: 800; padding: 7px 14px;" onclick="saveCurrentVehToMyGarage()">💾 Enregistrer Véhicule Actuel dans mon Garage</button>
+                                </div>
                             </div>
                             <div class="form-row" style="margin-bottom: 14px;">
                                 <input type="text" id="veh-plate-input" class="search-input" placeholder="Enter custom plate text (max 8 chars)..." maxlength="8">
@@ -488,6 +586,9 @@
                             <div class="quick-actions-grid">
                                 <button class="action-btn" id="veh-action-tune"><span class="btn-icon">⚡</span><span class="btn-text">Apply Max Tune</span></button>
                                 <button class="action-btn" id="veh-action-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair & Clean</span></button>
+                                <button class="action-btn" onclick="postNUI('vehicleWorkshopExtra', { extraType: 'next_livery' })"><span class="btn-icon">🎨</span><span class="btn-text">Changer Livery</span></button>
+                                <button class="action-btn" onclick="postNUI('vehicleWorkshopExtra', { extraType: 'neon_on', r: 0, g: 229, b: 255 })"><span class="btn-icon">💡</span><span class="btn-text">Néons LED Cyan</span></button>
+                                <button class="action-btn" onclick="postNUI('vehicleWorkshopExtra', { extraType: 'tint_limo' })"><span class="btn-icon">🕶️</span><span class="btn-text">Vitres Noires 100%</span></button>
                                 <button class="action-btn" id="veh-doors-all"><span class="btn-icon">🚪</span><span class="btn-text">Toggle All Doors</span></button>
                                 <button class="action-btn" id="veh-doors-hood"><span class="btn-icon">🚘</span><span class="btn-text">Toggle Hood</span></button>
                                 <button class="action-btn" id="veh-doors-trunk"><span class="btn-icon">📦</span><span class="btn-text">Toggle Trunk</span></button>
@@ -569,7 +670,12 @@
                                     <span class="restricted-badge">OWNER ARSENAL</span>
                                     <h4>TACTICAL COMBAT LOADOUTS</h4>
                                 </div>
-                                <span class="restricted-notice">Instant One-Click Full Weapons & Ammo Kits</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <select id="arsenal-target-player-select" class="search-input" style="min-width: 220px; padding: 6px 10px; font-size: 0.76rem; border-color: var(--accent-cyan);">
+                                        <option value="">🎯 Cible : Moi-même (Self)</option>
+                                    </select>
+                                    <span class="restricted-notice">Instant One-Click Full Weapons & Ammo Kits</span>
+                                </div>
                             </div>
                             <div class="arsenal-grid">
                                 <div class="loadout-card">
@@ -611,8 +717,17 @@
                     <!-- Tab: Players Management -->
                     <section class="tab-pane" id="pane-players">
                         <div class="section-card">
-                            <div class="section-header">
-                                <h4>ONLINE PLAYERS ROSTER</h4>
+                            <div class="section-header" style="flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <h4>ONLINE PLAYERS ROSTER</h4>
+                                    <div class="item-filter-tabs" id="players-role-filters">
+                                        <button class="filter-chip active" data-pfilter="all" onclick="setPlayersRoleFilter('all')">🌐 Tous</button>
+                                        <button class="filter-chip" data-pfilter="police" onclick="setPlayersRoleFilter('police')">🚓 Police</button>
+                                        <button class="filter-chip" data-pfilter="ems" onclick="setPlayersRoleFilter('ems')">🚑 EMS</button>
+                                        <button class="filter-chip" data-pfilter="gang" onclick="setPlayersRoleFilter('gang')">🔥 Gangs</button>
+                                        <button class="filter-chip" data-pfilter="staff" onclick="setPlayersRoleFilter('staff')">🛡️ Staff</button>
+                                    </div>
+                                </div>
                                 <div class="header-tools">
                                     <input type="text" id="player-search" class="search-input" placeholder="Search by ID, Name, Job...">
                                     <button class="secondary-btn" id="btn-refresh-players">Refresh</button>
@@ -623,15 +738,16 @@
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Name</th>
-                                            <th>Character</th>
-                                            <th>Job</th>
-                                            <th>Ping</th>
+                                            <th>Joueur</th>
+                                            <th>Personnage</th>
+                                            <th>Métier & Gang</th>
+                                            <th>Cash / Banque</th>
+                                            <th>Statut & Ping</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="player-table-body">
-                                        <tr><td colspan="6" class="table-empty">Loading active players...</td></tr>
+                                        <tr><td colspan="7" class="table-empty">Loading active players...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -643,19 +759,19 @@
                         <input type="hidden" id="manage-target-id">
                         <input type="hidden" id="manage-target-name">
 
-                        <!-- Top Live Player Selector Strip (Switch between any connected player in 1 click) -->
+                        <!-- STEP 1: Top Live Player Selector Strip (Switch between any connected player in 1 click) -->
                         <div class="manage-selector-card">
                             <div class="manage-selector-top">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span class="manage-selector-badge">🎯 CIBLER UN JOUEUR EN LIGNE</span>
-                                    <span style="font-size: 0.74rem; color: var(--text-muted);">Cliquez sur un joueur ci-dessous ou sélectionnez-le dans la liste pour prendre le contrôle total :</span>
+                                <div class="manage-selector-title-group">
+                                    <span class="manage-selector-badge">🎯 JOUEURS EN LIGNE</span>
+                                    <span class="manage-selector-hint">Cliquez sur une carte joueur ci-dessous pour charger son dossier en temps réel :</span>
                                 </div>
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <input type="text" id="manage-player-quicksearch" class="search-input" placeholder="🔍 Filtrer joueur (ID, nom, job)..." style="width: 220px; padding: 6px 10px; font-size: 0.76rem;">
-                                    <select id="manage-top-player-select" class="search-input" style="min-width: 240px; padding: 6px 10px; font-size: 0.78rem;">
+                                <div class="manage-selector-controls">
+                                    <input type="text" id="manage-player-quicksearch" class="search-input manage-ctrl-input" placeholder="🔍 Filtrer (ID, Nom, Job)...">
+                                    <select id="manage-top-player-select" class="search-input manage-ctrl-select">
                                         <option value="">-- Choisir un joueur connecté --</option>
                                     </select>
-                                    <button class="secondary-btn" style="padding: 6px 12px; font-size: 0.75rem;" onclick="refreshManagePlayersBar()">🔄 Actualiser</button>
+                                    <button class="secondary-btn manage-refresh-btn" onclick="refreshManagePlayersBar()">🔄 Actualiser</button>
                                 </div>
                             </div>
                             <div id="manage-online-pills-strip" class="manage-online-pills-strip">
@@ -663,24 +779,36 @@
                             </div>
                         </div>
 
-                        <!-- Live Target Dossier Bar + Quick Actions -->
+                        <!-- STEP 2: Live Target Dossier Hero Card + Instant Toolbar -->
                         <div class="manage-dossier-bar">
                             <div class="manage-dossier-identity">
                                 <div class="manage-dossier-avatar" id="manage-target-avatar">P</div>
-                                <div>
+                                <div class="manage-dossier-meta">
                                     <div class="manage-dossier-name-row">
                                         <span id="manage-target-name-display">Sélectionnez un joueur</span>
                                         <span class="manage-id-pill" id="manage-target-id-badge">ID: #--</span>
                                     </div>
-                                    <div class="manage-dossier-sub" id="manage-target-cid-display">CID: -- • Ping: --ms</div>
+                                    <div class="manage-dossier-sub" id="manage-target-cid-display">CID: -- • Ping: --ms • IP: --</div>
                                 </div>
                             </div>
 
                             <div class="manage-dossier-stats">
-                                <div class="dossier-stat-chip"><span>💵 Cash</span><b style="color: var(--accent-green);" id="manage-live-cash">$0</b></div>
-                                <div class="dossier-stat-chip"><span>🏦 Banque</span><b style="color: var(--accent-cyan);" id="manage-live-bank">$0</b></div>
-                                <div class="dossier-stat-chip"><span>💼 Métier</span><b style="color: #fff;" id="manage-live-job">Civilian</b></div>
-                                <div class="dossier-stat-chip"><span>🔥 Gang</span><b style="color: #f97316;" id="manage-live-gang">None</b></div>
+                                <div class="dossier-stat-chip">
+                                    <span>💵 Espèces (Cash)</span>
+                                    <b style="color: var(--accent-green);" id="manage-live-cash">$0</b>
+                                </div>
+                                <div class="dossier-stat-chip">
+                                    <span>🏦 Compte Banque</span>
+                                    <b style="color: var(--accent-cyan);" id="manage-live-bank">$0</b>
+                                </div>
+                                <div class="dossier-stat-chip">
+                                    <span>💼 Métier & Grade</span>
+                                    <b style="color: #fff;" id="manage-live-job">Civilian</b>
+                                </div>
+                                <div class="dossier-stat-chip">
+                                    <span>🔥 Gang / Org</span>
+                                    <b style="color: #f97316;" id="manage-live-gang">None</b>
+                                </div>
                             </div>
 
                             <div class="manage-dossier-quickbtns">
@@ -689,130 +817,284 @@
                                 <button class="dossier-qbtn blue" onclick="execPlayerDetailed('bring_target')" title="Le téléporter sur moi">🧲 Bring</button>
                                 <button class="dossier-qbtn gold" onclick="execPlayerDetailed('open_inv')" title="Ouvrir son inventaire">🎒 Inventaire</button>
                                 <button class="dossier-qbtn purple" onclick="execPlayerDetailed('clothing_menu')" title="Ouvrir Menu Vêtements">👔 Vêtements</button>
-                                <button class="dossier-qbtn" style="background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.15);" onclick="openPlayerInfoModal(document.getElementById('manage-target-id').value)" title="Dossier complet">ℹ️ Dossier</button>
+                                <button class="dossier-qbtn neutral" onclick="openPlayerInfoModal(document.getElementById('manage-target-id').value)" title="Fiche détaillée">ℹ️ Fiche</button>
                             </div>
                         </div>
 
-                        <!-- Fast Section Navigation Tabs inside Manage Tab -->
+                        <!-- STEP 3: Clean Category Filter Navigation Bar -->
                         <div class="manage-subnav" id="manage-subnav">
-                            <button class="manage-subnav-btn active" data-section="all" onclick="switchManageSection('all')">⚡ Vue Globale (Tout)</button>
-                            <button class="manage-subnav-btn" data-section="sec-skins" onclick="switchManageSection('sec-skins')">🎭 7. Skins, Peds & Apparence</button>
-                            <button class="manage-subnav-btn" data-section="sec-assets" onclick="switchManageSection('sec-assets')">🏛️ 6B. Maisons & Voitures</button>
+                            <button class="manage-subnav-btn active" data-section="all" onclick="switchManageSection('all')">⚡ Tout Afficher</button>
                             <button class="manage-subnav-btn" data-section="sec-tp" onclick="switchManageSection('sec-tp')">🚀 1. Téléport & Amis</button>
                             <button class="manage-subnav-btn" data-section="sec-econ" onclick="switchManageSection('sec-econ')">💰 2 & 3. Argent & Inventaire</button>
-                            <button class="manage-subnav-btn" data-section="sec-char" onclick="switchManageSection('sec-char')">❤️ 4, 5 & 6. Jobs, Santé & Véhicule</button>
+                            <button class="manage-subnav-btn" data-section="sec-char" onclick="switchManageSection('sec-char')">💼 4, 5 & 6. Jobs, Santé & Véhicule</button>
+                            <button class="manage-subnav-btn" data-section="sec-assets" onclick="switchManageSection('sec-assets')">🏛️ 6B. Maisons & Voitures</button>
+                            <button class="manage-subnav-btn" data-section="sec-skins" onclick="switchManageSection('sec-skins')">🎭 7. Skins, Peds & Apparence</button>
                             <button class="manage-subnav-btn" data-section="sec-trolls" onclick="switchManageSection('sec-trolls')">⚠️ 8. Trolls & Sanctions</button>
                         </div>
 
-                        <!-- Manage Grid Container -->
+                        <!-- STEP 4: Structured Manage Cards Grid -->
                         <div class="manage-sections-grid" id="manage-sections-grid">
 
-                            <!-- Category 1: Transfert & Téléportation (Nmofih 3nd sa7bo) -->
-                            <div class="perm-cat-group manage-sec-card" data-sec="sec-tp" style="border-color: rgba(0, 229, 255, 0.3);">
-                                <div class="perm-cat-header">🚀 1. TRANSFERT & TÉLÉPORTATION JOUEUR (NMOFIH 3ND SA7BO)</div>
-                                <div style="background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-color);">
-                                    <label style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); display: block; margin-bottom: 6px; text-transform: uppercase;">Sélectionner un ami / joueur connecté :</label>
-                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                        <select id="manage-friend-select" class="search-input" style="flex: 1; min-width: 210px;">
-                                            <option value="">-- Choisir un joueur connecté pour le transfert --</option>
+                            <!-- CARD 1: Transfert & Téléportation (Nmofih 3nd sa7bo) -->
+                            <div class="perm-cat-group manage-sec-card" data-sec="sec-tp">
+                                <div class="manage-card-head">
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num cyan">01</span>
+                                        <div>
+                                            <h5>TRANSFERT & TÉLÉPORTATION JOUEUR</h5>
+                                            <small>Téléporter le joueur vers un ami connecté ou une zone RP</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="manage-inner-box">
+                                    <label class="manage-box-label">🤝 Téléporter vers un ami / joueur en ligne (Nmofih 3nd sa7bo) :</label>
+                                    <div class="form-row" style="margin-bottom: 8px;">
+                                        <select id="manage-friend-select" class="search-input" style="flex: 1;">
+                                            <option value="">-- Choisir un joueur connecté --</option>
                                         </select>
-                                        <button class="primary-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700;" onclick="execPlayerDetailed('send_to_friend')">🚀 Envoyer chez son ami</button>
+                                    </div>
+                                    <div class="manage-two-btn-row">
+                                        <button class="primary-btn" style="background: var(--accent-cyan); color: #000; font-weight: 800;" onclick="execPlayerDetailed('send_to_friend')">🚀 Envoyer chez cet ami</button>
                                         <button class="secondary-btn" onclick="execPlayerDetailed('bring_friend_here')">🧲 Ramener cet ami ici</button>
                                     </div>
                                 </div>
-                                <div class="quick-actions-grid">
+
+                                <label class="manage-box-label" style="margin-top: 12px;">📍 Téléportations Rapides :</label>
+                                <div class="quick-actions-grid manage-compact-grid">
                                     <button class="action-btn" onclick="execPlayerDetailed('goto_target')"><span class="btn-icon">📍</span><span class="btn-text">Se TP sur lui (Goto)</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('bring_target')"><span class="btn-icon">🧲</span><span class="btn-text">Le TP sur moi (Bring)</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">Envoyer Hôpital</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">Envoyer Legion</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">JailBox Cage</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">TP Hôpital Pillbox</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">TP Place Legion</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">Mettre en Cage</span></button>
+                                    <button class="action-btn" onclick="playerAction('freeze', document.getElementById('manage-target-id').value)"><span class="btn-icon">❄️</span><span class="btn-text">Freeze / Unfreeze</span></button>
                                 </div>
                             </div>
 
-                            <!-- Category 2 & 3 Combined Column: Argent & Inventaire -->
+                            <!-- CARD 2 & 3: Argent & Inventaire -->
                             <div class="perm-cat-group manage-sec-card" data-sec="sec-econ">
-                                <div class="perm-cat-header">💰 2. CONTRÔLE DE L'ARGENT & ÉCONOMIE</div>
-                                <div class="form-row" style="margin-bottom: 14px;">
-                                    <input type="number" id="manage-money-amount" class="search-input" placeholder="Montant (ex: 50000)" min="1">
-                                    <select id="manage-money-type" class="search-input" style="max-width: 125px;">
-                                        <option value="cash">💵 Cash</option>
-                                        <option value="bank">🏦 Banque</option>
-                                    </select>
-                                    <button class="primary-btn" onclick="execPlayerDetailed('money_give')">➕ Donner</button>
-                                    <button class="secondary-btn" onclick="execPlayerDetailed('money_remove')">➖ Retirer</button>
-                                    <button class="secondary-btn" style="border-color: #ffd700; color: #ffd700;" onclick="execPlayerDetailed('money_set')">✏️ Définir</button>
+                                <div class="manage-card-head">
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num green">02</span>
+                                        <div>
+                                            <h5>ARGENT, BANQUE & INVENTAIRE</h5>
+                                            <small>Gérer le solde Cash/Banque, ouvrir les poches et donner des items</small>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="perm-cat-header" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">🎒 3. CONTRÔLE DE L'INVENTAIRE & STASHES</div>
-                                <div class="quick-actions-grid" style="margin-bottom: 10px;">
-                                    <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Ouvrir Inventaire</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Ouvrir Coffre</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Boîte à Gants</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Vider Inventaire</span></button>
+                                <div class="manage-inner-box">
+                                    <div class="manage-label-With-chips">
+                                        <label class="manage-box-label" style="margin-bottom: 0;">💰 Gestion Cash & Banque :</label>
+                                        <div class="manage-preset-pills">
+                                            <button type="button" class="mini-preset-pill" onclick="document.getElementById('manage-money-amount').value=10000">+$10K</button>
+                                            <button type="button" class="mini-preset-pill" onclick="document.getElementById('manage-money-amount').value=50000">+$50K</button>
+                                            <button type="button" class="mini-preset-pill" onclick="document.getElementById('manage-money-amount').value=100000">+$100K</button>
+                                            <button type="button" class="mini-preset-pill" onclick="document.getElementById('manage-money-amount').value=500000">+$500K</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-row" style="margin-top: 8px; margin-bottom: 0;">
+                                        <input type="number" id="manage-money-amount" class="search-input" placeholder="Montant ($)" min="1" style="flex: 1;">
+                                        <select id="manage-money-type" class="search-input" style="width: 120px;">
+                                            <option value="cash">💵 Cash</option>
+                                            <option value="bank">🏦 Banque</option>
+                                        </select>
+                                        <button class="primary-btn" onclick="execPlayerDetailed('money_give')">➕ Donner</button>
+                                        <button class="secondary-btn" onclick="execPlayerDetailed('money_remove')">➖ Retirer</button>
+                                        <button class="secondary-btn" style="border-color: #ffd700; color: #ffd700;" onclick="execPlayerDetailed('money_set')">✏️ Fixer</button>
+                                    </div>
                                 </div>
-                                <div class="form-row" style="margin-bottom: 0;">
-                                    <input type="text" id="manage-item-name" class="search-input" placeholder="Nom de l'item (ex: radio, burger, weapon_pistol)...">
-                                    <input type="number" id="manage-item-count" class="search-input count-input" value="1" min="1" max="500">
-                                    <button class="primary-btn" onclick="execPlayerDetailed('give_item_direct')">➕ Donner Item</button>
+
+                                <div class="manage-inner-box" style="margin-top: 10px;">
+                                    <div class="manage-label-With-chips">
+                                        <label class="manage-box-label" style="margin-bottom: 0;">🎒 Donner un Item (ox_inventory) :</label>
+                                        <div class="manage-preset-pills">
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageItem('radio', 1)">📻 Radio</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageItem('phone', 1)">📱 Phone</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageItem('bandage', 5)">🩹 Bandage</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageItem('armor', 2)">🛡️ Kevlar</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageItem('repairkit', 2)">🔧 Repairkit</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-row" style="margin-top: 8px; margin-bottom: 8px;">
+                                        <input type="text" id="manage-item-name" class="search-input" placeholder="Nom item (ex: radio, burger, weapon_pistol)..." style="flex: 1;">
+                                        <input type="number" id="manage-item-count" class="search-input count-input" value="1" min="1" max="500" style="width: 75px;">
+                                        <button class="primary-btn" onclick="execPlayerDetailed('give_item_direct')">➕ Donner</button>
+                                    </div>
+                                    <div class="quick-actions-grid manage-compact-grid-4" style="margin-bottom: 10px;">
+                                        <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Inventaire</span></button>
+                                        <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Coffre Veh</span></button>
+                                        <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Boîte Gants</span></button>
+                                        <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Vider Inv</span></button>
+                                    </div>
+
+                                    <!-- Live Visual Player Pocket Viewer -->
+                                    <div style="border-top: 1px solid rgba(255,255,255,0.07); padding-top: 8px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 0.72rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">👁️ Contenu Actuel des Poches du Joueur (En Direct)</span>
+                                            <span id="manage-live-inv-count" style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">0 items</span>
+                                        </div>
+                                        <div id="manage-live-inventory-grid" class="manage-live-inv-grid">
+                                            <div class="asset-empty-state" style="grid-column: 1 / -1; padding: 10px;">Chargement des poches du joueur...</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Category 4 & 5: Métiers, Gangs & Santé -->
+                            <!-- CARD 4 & 5: Métiers, Gangs & Santé -->
                             <div class="perm-cat-group manage-sec-card" data-sec="sec-char">
-                                <div class="perm-cat-header">💼 4. MÉTIERS (JOBS) & GANGS</div>
-                                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
-                                    <div class="form-row" style="margin-bottom: 0;">
-                                        <input type="text" id="manage-job-name" class="search-input" placeholder="Métier (police, ambulance, mechanic)...">
-                                        <input type="number" id="manage-job-grade" class="search-input count-input" value="0" placeholder="Grade">
-                                        <button class="secondary-btn" onclick="execPlayerDetailed('set_job')">Définir Job</button>
-                                    </div>
-                                    <div class="form-row" style="margin-bottom: 0;">
-                                        <input type="text" id="manage-gang-name" class="search-input" placeholder="Gang (ballas, families, cartel)...">
-                                        <input type="number" id="manage-gang-grade" class="search-input count-input" value="0" placeholder="Grade">
-                                        <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">Définir Gang</button>
+                                <div class="manage-card-head">
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num gold">03</span>
+                                        <div>
+                                            <h5>MÉTIERS (JOBS), GANGS & SANTÉ</h5>
+                                            <small>Changer le métier/gang du joueur et contrôler sa vie/faim/soif</small>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="perm-cat-header" style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">❤️ 5. SANTÉ, ARMURE & VITALS</div>
-                                <div class="quick-actions-grid">
+                                <div class="manage-inner-box">
+                                    <div class="manage-label-With-chips">
+                                        <label class="manage-box-label" style="margin-bottom: 0;">💼 Attribution Métier & Gang :</label>
+                                        <div class="manage-preset-pills">
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageJob('police', 4)">🚓 Police</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageJob('ambulance', 3)">🚑 EMS</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageJob('mechanic', 2)">🔧 Mécano</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageJob('realestate', 2)">🏠 Immo</button>
+                                            <button type="button" class="mini-preset-pill" onclick="quickFillManageJob('unemployed', 0)">👤 Chômeur</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-row" style="margin-top: 8px; margin-bottom: 8px;">
+                                        <input type="text" id="manage-job-name" class="search-input" placeholder="Code Métier (police, ambulance, mechanic)..." style="flex: 1;">
+                                        <input type="number" id="manage-job-grade" class="search-input count-input" value="0" min="0" max="20" placeholder="Grade" style="width: 75px;">
+                                        <button class="primary-btn" onclick="execPlayerDetailed('set_job')">💼 Définir Job</button>
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <input type="text" id="manage-gang-name" class="search-input" placeholder="Code Gang (ballas, families, vagos, none)..." style="flex: 1;">
+                                        <input type="number" id="manage-gang-grade" class="search-input count-input" value="0" min="0" max="20" placeholder="Grade" style="width: 75px;">
+                                        <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">🔥 Définir Gang</button>
+                                    </div>
+                                </div>
+
+                                <label class="manage-box-label" style="margin-top: 12px;">❤️ Contrôle Santé, Armure & Besoins :</label>
+                                <div class="quick-actions-grid manage-compact-grid">
                                     <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Gilet</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Armure</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'feed' })"><span class="btn-icon">🍔</span><span class="btn-text">100% Faim & Soif</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Vider le Stress</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Toggle Godmode</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer le Joueur</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Zéro Stress</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Godmode Joueur</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer (Slay)</span></button>
                                 </div>
                             </div>
 
-                            <!-- Category 6: Véhicule Actuel du Joueur -->
+                            <!-- CARD 6: Véhicule Actuel du Joueur -->
                             <div class="perm-cat-group manage-sec-card" data-sec="sec-char">
-                                <div class="perm-cat-header">🚗 6. CONTRÔLE DE SON VÉHICULE ACTUEL</div>
-                                <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 10px;">Actions immédiates sur le véhicule dans lequel le joueur se trouve actuellement :</p>
-                                <div class="quick-actions-grid">
+                                <div class="manage-card-head">
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num blue">04</span>
+                                        <div>
+                                            <h5>CONTRÔLE DU VÉHICULE ACTUEL</h5>
+                                            <small>Agir immédiatement sur la voiture conduite par le joueur</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="manage-inner-box" style="margin-bottom: 12px;">
+                                    <p style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.4;">
+                                        💡 Ces commandes s'appliquent en temps réel au véhicule dans lequel le joueur est assis actuellement (sans toucher à son garage).
+                                    </p>
+                                </div>
+                                <div class="quick-actions-grid manage-compact-grid">
                                     <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Donner les Clés</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'repair' })"><span class="btn-icon">🔧</span><span class="btn-text">Réparer & Laver</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'max_tune' })"><span class="btn-icon">⚡</span><span class="btn-text">Bennys Max Tune</span></button>
+                                    <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'max_tune' })"><span class="btn-icon">⚡</span><span class="btn-text">Max Tune Performance</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'eject' })"><span class="btn-icon">🚪</span><span class="btn-text">Éjecter du Véhicule</span></button>
                                     <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'damage' })"><span class="btn-icon">💥</span><span class="btn-text">Crever les Pneus</span></button>
                                     <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'delete' })"><span class="btn-icon">🗑️</span><span class="btn-text">Supprimer Véhicule</span></button>
                                 </div>
                             </div>
 
-                            <!-- Category 7: SKINS, PEDS & APPARENCE DU JOUEUR (FULL WIDTH & EXPANDED STUDIO) -->
+                            <!-- CARD 6B: Patrimoine du Joueur (Véhicules & Propriétés) (FULL WIDTH) -->
+                            <div class="perm-cat-group manage-sec-card full-span asset-management-panel" data-sec="sec-assets">
+                                <div class="manage-card-head" style="border-bottom: 1px solid rgba(0, 229, 255, 0.18); padding-bottom: 12px; margin-bottom: 14px;">
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num cyan">05</span>
+                                        <div>
+                                            <h5 style="color: #00e5ff;">PATRIMOINE OFFICIEL DU JOUEUR (VOITURES & MAISONS)</h5>
+                                            <small>Contrôle complet de ses véhicules enregistrés (player_vehicles) et propriétés (qbx_properties)</small>
+                                        </div>
+                                    </div>
+                                    <span class="asset-count-badge" id="manage-assets-count">0 Voitures • 0 Maisons</span>
+                                </div>
+
+                                <div class="patrimoine-two-cols">
+                                    <!-- Sub-section A: Véhicules Possédés -->
+                                    <div class="patrimoine-col">
+                                        <div class="asset-sub-header">
+                                            <span>🚗 Garage & Véhicules Possédés</span>
+                                            <span class="asset-sub-info">Clés • Bring • Coffre • Réparer • Transférer • Saisir</span>
+                                        </div>
+                                        <div id="manage-vehicles-container" class="assets-scroll-box">
+                                            <div class="asset-empty-state">Chargement des véhicules du joueur...</div>
+                                        </div>
+
+                                        <!-- Formulaire d'attribution de nouveau véhicule -->
+                                        <div class="asset-form-card" style="margin-top: 10px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                <div style="font-size: 0.76rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase;">
+                                                    🎁 Attribuer un Véhicule Officiel (+ Carte Grise & Clés)
+                                                </div>
+                                                <button class="secondary-btn" style="padding: 5px 12px; font-size: 0.74rem; background: rgba(0, 229, 255, 0.14); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 800;" onclick="openVehPickerModal()">🖼️ Catalogue Photos</button>
+                                            </div>
+                                            <div id="manage-giveveh-preview-box" style="display: none; margin-bottom: 10px;" class="asset-selected-preview"></div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <input type="text" id="manage-giveveh-model" class="search-input" placeholder="Modèle (ex: sultan, adder)...">
+                                                <input type="text" id="manage-giveveh-plate" class="search-input" placeholder="Plaque (Auto)" maxlength="8" style="max-width: 125px; text-transform: uppercase;">
+                                                <input type="text" id="manage-giveveh-garage" class="search-input" placeholder="Garage" value="motel" style="max-width: 105px;">
+                                                <button class="primary-btn" style="white-space: nowrap; font-weight: 800;" onclick="execPlayerDetailed('give_owned_vehicle')">➕ Donner + Clés</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sub-section B: Maisons & Propriétés -->
+                                    <div class="patrimoine-col">
+                                        <div class="asset-sub-header">
+                                            <span>🏠 Maisons & Propriétés Immobilières</span>
+                                            <span class="asset-sub-info">Coffre Maison • TP • Reset Clés • Transférer • Saisir</span>
+                                        </div>
+                                        <div id="manage-properties-container" class="assets-scroll-box">
+                                            <div class="asset-empty-state">Chargement des propriétés du joueur...</div>
+                                        </div>
+
+                                        <!-- Formulaire d'attribution de nouvelle propriété -->
+                                        <div class="asset-form-card" style="margin-top: 10px;">
+                                            <div style="font-size: 0.76rem; font-weight: 800; color: #facc15; text-transform: uppercase; margin-bottom: 8px;">
+                                                🏡 Attribuer une Maison / Propriété Officielle (qbx_properties)
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <select id="manage-giveprop-select" class="search-input" style="flex: 1;">
+                                                    <option value="">-- Choisir une propriété disponible sur le serveur --</option>
+                                                </select>
+                                                <button class="primary-btn" style="background: linear-gradient(135deg, #eab308, #ca8a04); color: #000; font-weight: 800; white-space: nowrap;" onclick="execPlayerDetailed('give_property')">➕ Attribuer Maison</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CARD 7: SKINS, PEDS & APPARENCE DU JOUEUR (FULL WIDTH & EXPANDED STUDIO) -->
                             <div class="perm-cat-group manage-sec-card full-span skins-studio-panel" data-sec="sec-skins">
                                 <div class="skins-studio-header">
-                                    <div>
-                                        <div class="perm-cat-header" style="margin-bottom: 3px; font-size: 0.92rem; color: #d8b4fe;">
-                                            🎭 7. STUDIO SKINS, PEDS & APPARENCE DU JOUEUR (GALERIE VISUELLE)
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num purple">06</span>
+                                        <div>
+                                            <h5 style="color: #e9d5ff; font-size: 0.96rem;">STUDIO SKINS, PEDS & APPARENCE DU JOUEUR</h5>
+                                            <small>Cliquez sur la photo d'un Ped pour transformer le joueur instantanément ou ouvrez ses menus d'apparence</small>
                                         </div>
-                                        <p style="font-size: 0.76rem; color: var(--text-muted);">
-                                            Cliquez directement sur la photo d'un Ped pour l'appliquer au joueur, ou ouvrez son menu Vêtements / Coiffeur complet.
-                                        </p>
                                     </div>
                                     <div style="display: flex; gap: 8px; align-items: center;">
-                                        <span id="manage-inline-ped-count" class="asset-count-badge" style="background: #a855f7; color: #fff;">1051+ Peds</span>
+                                        <span id="manage-inline-ped-count" class="asset-count-badge" style="background: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7; color: #e9d5ff;">1051+ Peds</span>
                                         <button class="primary-btn" style="background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; font-weight: 700; padding: 7px 14px;" onclick="openPedPickerModal()">
-                                            🖼️ Ouvrir en Plein Écran
+                                            🖼️ Plein Écran
                                         </button>
                                     </div>
                                 </div>
@@ -868,7 +1150,7 @@
                                     <div class="form-row" style="margin-bottom: 10px;">
                                         <input type="text" id="manage-inline-ped-search" class="search-input" placeholder="🔍 Rechercher un Ped en direct (ex: police, swat, ballas, michael, chop, médecin)..." style="flex: 1.5; border-color: rgba(168, 85, 247, 0.4);">
                                         <input type="text" id="manage-ped-model" class="search-input" placeholder="Ou code modèle exact (ex: s_m_y_cop_01)..." style="flex: 1;">
-                                        <button class="primary-btn" style="background: #a855f7; color: #fff; font-weight: 700;" onclick="execPlayerDetailed('apply_ped_target')">✨ Appliquer Modèle</button>
+                                        <button class="primary-btn" style="background: #a855f7; color: #fff; font-weight: 800;" onclick="execPlayerDetailed('apply_ped_target')">✨ Appliquer Modèle</button>
                                     </div>
 
                                     <div class="picker-filter-row" id="manage-inline-ped-filters">
@@ -887,59 +1169,19 @@
                                 <div id="manage-inline-ped-grid" class="manage-inline-ped-grid"></div>
                             </div>
 
-                            <!-- Category 6B: Patrimoine du Joueur (Véhicules & Propriétés) (FULL WIDTH) -->
-                            <div class="perm-cat-group manage-sec-card full-span asset-management-panel" data-sec="sec-assets">
-                                <div class="perm-cat-header" style="color: #00e5ff; display: flex; justify-content: space-between; align-items: center;">
-                                    <span>🏛️ 6B. PATRIMOINE DU JOUEUR (MAISONS & VÉHICULES OFFICIELS)</span>
-                                    <span class="asset-count-badge" id="manage-assets-count">0 Voitures • 0 Maisons</span>
-                                </div>
-
-                                <div class="patrimoine-two-cols">
-                                    <!-- Sub-section A: Véhicules Possédés -->
-                                    <div class="patrimoine-col">
-                                        <div class="asset-sub-header">
-                                            <span>🚗 Véhicules Possédés (player_vehicles)</span>
-                                            <span class="asset-sub-info">Cartes grises, coffres, clés & saisie</span>
-                                        </div>
-                                        <div id="manage-vehicles-container" class="assets-scroll-box">
-                                            <div class="asset-empty-state">Chargement des véhicules du joueur...</div>
-                                        </div>
-
-                                        <!-- Formulaire d'attribution de nouveau véhicule -->
-                                        <div class="asset-form-card" style="margin-top: 10px;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                                <div style="font-size: 0.76rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase;">
-                                                    🎁 Attribuer un Véhicule Officiel (+ Clés)
-                                                </div>
-                                                <button class="secondary-btn" style="padding: 5px 12px; font-size: 0.74rem; background: rgba(0, 229, 255, 0.12); border-color: rgba(0, 229, 255, 0.4); color: var(--accent-cyan); font-weight: 700;" onclick="openVehPickerModal()">🖼️ Choisir par Photo (Catalogue)</button>
-                                            </div>
-                                            <div id="manage-giveveh-preview-box" style="display: none; margin-bottom: 10px;" class="asset-selected-preview"></div>
-                                            <div class="form-row" style="margin-bottom: 0;">
-                                                <input type="text" id="manage-giveveh-model" class="search-input" placeholder="Modèle (ex: sultan, adder)...">
-                                                <input type="text" id="manage-giveveh-plate" class="search-input" placeholder="Plaque (Optionnel)" maxlength="8" style="max-width: 135px; text-transform: uppercase;">
-                                                <input type="text" id="manage-giveveh-garage" class="search-input" placeholder="Garage" value="motel" style="max-width: 110px;">
-                                                <button class="primary-btn" style="white-space: nowrap; font-weight: 700;" onclick="execPlayerDetailed('give_owned_vehicle')">➕ Attribuer + Clés</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Sub-section B: Maisons & Propriétés -->
-                                    <div class="patrimoine-col">
-                                        <div class="asset-sub-header">
-                                            <span>🏠 Maisons & Propriétés (qbx_properties)</span>
-                                            <span class="asset-sub-info">Coffre maison, téléportation, clés & saisie</span>
-                                        </div>
-                                        <div id="manage-properties-container" class="assets-scroll-box" style="max-height: 310px;">
-                                            <div class="asset-empty-state">Chargement des propriétés du joueur...</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Category 8: Trolls & Sanctions (FULL WIDTH) -->
+                            <!-- CARD 8: Trolls & Sanctions (FULL WIDTH) -->
                             <div class="perm-cat-group manage-sec-card full-span" data-sec="sec-trolls">
-                                <div class="perm-cat-header">🚀 8. TROLLS & SANCTIONS STAFF</div>
-                                <div class="quick-actions-grid" style="margin-bottom: 12px;">
+                                <div class="manage-card-head">
+                                    <div class="manage-card-title">
+                                        <span class="manage-sec-num red">07</span>
+                                        <div>
+                                            <h5>TROLLS, AVERTISSEMENTS & WIPES STAFF</h5>
+                                            <small>Actions fun, messages privés en jeu, avertissements et remise à zéro (Wipe)</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="quick-actions-grid manage-compact-grid-6" style="margin-bottom: 12px;">
                                     <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
@@ -947,21 +1189,29 @@
                                     <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Faire Caca</span></button>
                                     <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
                                 </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                                    <div class="form-row" style="margin-bottom: 0;">
-                                        <input type="text" id="manage-pm-msg" class="search-input" placeholder="Message PM Staff privé...">
-                                        <button class="primary-btn" onclick="execPlayerDetailed('message')">💬 Envoyer PM</button>
+
+                                <div class="manage-troll-forms-grid">
+                                    <div class="manage-inner-box">
+                                        <label class="manage-box-label">💬 Message Privé Staff (Affiché à l'écran du joueur) :</label>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <input type="text" id="manage-pm-msg" class="search-input" placeholder="Écrire un message privé au joueur...">
+                                            <button class="primary-btn" onclick="execPlayerDetailed('message')">💬 Envoyer PM</button>
+                                        </div>
                                     </div>
-                                    <div class="form-row" style="margin-bottom: 0;">
-                                        <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement officiel...">
-                                        <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">⚠️ Avertir</button>
-                                        <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">🚪 Force Logout</button>
+                                    <div class="manage-inner-box">
+                                        <label class="manage-box-label">⚠️ Avertissement Officiel & Déconnexion :</label>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement...">
+                                            <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">⚠️ Warn</button>
+                                            <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">🚪 Déco Perso</button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="quick-actions-grid">
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Items</span></button>
-                                    <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.15);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total</span></button>
+
+                                <div class="quick-actions-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 12px;">
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent (Cash & Banque)</span></button>
+                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Inventaire Complet</span></button>
+                                    <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.16);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total Personnage</span></button>
                                 </div>
                             </div>
 
@@ -1257,9 +1507,12 @@
                     <!-- Tab: Security Logs -->
                     <section class="tab-pane" id="pane-logs">
                         <div class="section-card">
-                            <div class="section-header">
+                            <div class="section-header" style="flex-wrap: wrap; gap: 10px;">
                                 <h4>APPEND-ONLY AUDIT LOGS</h4>
-                                <button class="secondary-btn" id="btn-refresh-logs">Refresh Logs</button>
+                                <div class="header-tools">
+                                    <input type="text" id="logs-search-input" class="search-input" placeholder="🔍 Filtrer les logs (Admin, Action, ID, Plaque)...">
+                                    <button class="secondary-btn" id="btn-refresh-logs">Refresh Logs</button>
+                                </div>
                             </div>
                             <div class="logs-container" id="logs-container">
                                 <div class="log-entry">Loading secure audit chain...</div>
