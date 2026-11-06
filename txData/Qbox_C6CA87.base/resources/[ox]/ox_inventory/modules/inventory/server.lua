@@ -254,12 +254,13 @@ local function loadInventoryData(data, player, ignoreSecurityChecks)
                 data.entityId = entity
 			else
 				local vehicles = GetAllVehicles()
+				local cleanTargetPlate = plate:gsub('%s+', ''):upper()
 
 				for i = 1, #vehicles do
 					local vehicle = vehicles[i]
 					local _plate = GetVehicleNumberPlateText(vehicle)
 
-					if _plate:find(plate) then
+					if _plate and (_plate:find(plate, 1, true) or _plate:gsub('%s+', ''):upper() == cleanTargetPlate) then
 						entity = vehicle
                         data.entityId = entity
 						data.netid = NetworkGetNetworkIdFromEntity(entity)
@@ -268,24 +269,47 @@ local function loadInventoryData(data, player, ignoreSecurityChecks)
 				end
 
 				if not entity then
+					local row = MySQL.single.await('SELECT id, vehicle FROM player_vehicles WHERE plate = ? OR REPLACE(UPPER(plate), " ", "") = ? LIMIT 1', { plate, cleanTargetPlate })
+					if row and row.id then
+						local model = row.vehicle and joaat(row.vehicle)
+						local storage = (model and Vehicles[data.type].models[model]) or Vehicles[data.type][0] or { 30, 60000 }
+						inventory = Inventory.Create(data.id, plate, data.type, storage[1], 0, storage[2], false, nil, nil, row.id)
+						return inventory or false
+					end
 					return shared.info('Failed to load vehicle inventory data (no entity exists with given plate).')
 				end
 			end
 
-			if not source then
+			if not source or source <= 0 then
 				source = NetworkGetEntityOwner(entity)
 
-				if not source then
+				if not source or source <= 0 then
+					local cleanTargetPlate = plate:gsub('%s+', ''):upper()
+					local row = MySQL.single.await('SELECT id, vehicle FROM player_vehicles WHERE plate = ? OR REPLACE(UPPER(plate), " ", "") = ? LIMIT 1', { plate, cleanTargetPlate })
+					if row and row.id then
+						local model = row.vehicle and joaat(row.vehicle)
+						local storage = (model and Vehicles[data.type].models[model]) or Vehicles[data.type][0] or { 30, 60000 }
+						inventory = Inventory.Create(data.id, plate, data.type, storage[1], 0, storage[2], false, nil, nil, row.id)
+						return inventory or false
+					end
 					return shared.info('Failed to load vehicle inventory data (entity is unowned).')
 				end
 			end
 
 			local model, class = lib.callback.await('ox_inventory:getVehicleData', source, data.netid)
-			local storage = Vehicles[data.type].models[model] or Vehicles[data.type][class]
+			local storage = (model and Vehicles[data.type].models[model]) or (class and Vehicles[data.type][class]) or Vehicles[data.type][0] or { 30, 60000 }
             local dbId
 
             if server.getOwnedVehicleId then
                 dbId = server.getOwnedVehicleId(entity)
+                if not dbId then
+                    local cleanTargetPlate = plate:gsub('%s+', ''):upper()
+                    local row = MySQL.single.await('SELECT id FROM player_vehicles WHERE plate = ? OR REPLACE(UPPER(plate), " ", "") = ? LIMIT 1', { plate, cleanTargetPlate })
+                    if row and row.id then
+                        dbId = row.id
+                        Entity(entity).state:set('vehicleid', row.id, false)
+                    end
+                end
             else
                 dbId = data.id:sub(6)
             end
@@ -2485,7 +2509,7 @@ local function saveInventories(clearInventories)
         if not inv.open and not inv.player then
             -- clear inventory from memory if unused for x minutes, or on entity/netid mismatch
             if inv.type == 'glovebox' or inv.type == 'trunk' then
-                if NetworkGetEntityFromNetworkId(inv.netid) ~= inv.entityId then
+                if not inv.netid or NetworkGetEntityFromNetworkId(inv.netid) ~= inv.entityId then
                     Inventory.Remove(inv)
                 end
             elseif time - inv.time >= inventoryClearTime then

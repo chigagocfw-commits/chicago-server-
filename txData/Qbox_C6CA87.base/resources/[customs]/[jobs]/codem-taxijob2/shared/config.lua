@@ -336,7 +336,11 @@ Config.GiveVehicleKey      = function(plate, model, vehicle) -- you can change v
         elseif Config.VehicleSystem == 'wasabi-carlock' then
             exports.wasabi_carlock:GiveKey(plate)
         elseif Config.VehicleSystem == 'qb-vehiclekeys' then
-            TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+            if vehicle and DoesEntityExist(vehicle) and NetworkGetEntityIsNetworked(vehicle) then
+                TriggerServerEvent('codem-taxijob:GiveKeys', NetworkGetNetworkIdFromEntity(vehicle), plate)
+            else
+                TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+            end
         end
     end
 end

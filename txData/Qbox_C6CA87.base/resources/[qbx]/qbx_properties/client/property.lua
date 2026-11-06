@@ -296,12 +296,21 @@ RegisterNetEvent('qbx_properties:client:unloadProperty', function()
     DecorationObjects = {}
 end)
 
+local function hasPropertyAccess(property)
+    if QBX.PlayerData.citizenid == property.owner then return true end
+    local ok, kh = pcall(json.decode, property.keyholders or '[]')
+    if ok and type(kh) == 'table' then
+        return lib.table.contains(kh, QBX.PlayerData.citizenid)
+    end
+    return false
+end
+
 local function singlePropertyMenu(property, noBackMenu)
     local options = {}
-    if QBX.PlayerData.citizenid == property.owner or lib.table.contains(json.decode(property.keyholders), QBX.PlayerData.citizenid) then
+    if hasPropertyAccess(property) then
         options[#options + 1] = {
             title = locale('menu.enter'),
-            icon = 'cog',
+            icon = 'door-open',
             arrow = true,
             onSelect = function()
                 DoScreenFadeOut(1000)
@@ -370,35 +379,71 @@ end
 local function propertyMenu(propertyList, owned)
     local options = {
         {
-            title = locale('menu.retrieve_properties'),
-            description = locale('menu.show_owned_properties'),
+            title = owned and 'Show All Units' or locale('menu.retrieve_properties'),
+            description = owned and 'Show all apartments in this building' or locale('menu.show_owned_properties'),
             icon = 'bars',
             onSelect = function()
-                propertyMenu(propertyList, true)
+                propertyMenu(propertyList, not owned)
             end
         }
     }
+
+    local myUnits = {}
+    local availableUnits = {}
+    local occupiedUnits = {}
+
     for i = 1, #propertyList do
-        if owned and propertyList[i].owner == QBX.PlayerData.citizenid or lib.table.contains(json.decode(propertyList[i].keyholders), QBX.PlayerData.citizenid) then
-            options[#options + 1] = {
-                title = propertyList[i].property_name,
-                icon = 'home',
-                arrow = true,
-                onSelect = function()
-                    singlePropertyMenu(propertyList[i])
-                end
-            }
+        local prop = propertyList[i]
+        if hasPropertyAccess(prop) then
+            myUnits[#myUnits + 1] = prop
         elseif not owned then
-            options[#options + 1] = {
-                title = propertyList[i].property_name,
-                icon = 'home',
-                arrow = true,
-                onSelect = function()
-                    singlePropertyMenu(propertyList[i])
-                end
-            }
+            if prop.owner == nil then
+                availableUnits[#availableUnits + 1] = prop
+            else
+                occupiedUnits[#occupiedUnits + 1] = prop
+            end
         end
     end
+
+    for i = 1, #myUnits do
+        local prop = myUnits[i]
+        options[#options + 1] = {
+            title = prop.property_name,
+            description = 'Owned / ديالك (Click to Enter)',
+            icon = 'house-user',
+            arrow = true,
+            onSelect = function()
+                singlePropertyMenu(prop)
+            end
+        }
+    end
+
+    for i = 1, #availableUnits do
+        local prop = availableUnits[i]
+        options[#options + 1] = {
+            title = prop.property_name,
+            description = string.format('Available / متاح للشراء - $%s', prop.price),
+            icon = 'dollar-sign',
+            arrow = true,
+            onSelect = function()
+                singlePropertyMenu(prop)
+            end
+        }
+    end
+
+    for i = 1, #occupiedUnits do
+        local prop = occupiedUnits[i]
+        options[#options + 1] = {
+            title = prop.property_name,
+            description = 'Occupied / مسكونة (Ring Doorbell / صوني)',
+            icon = 'bell',
+            arrow = true,
+            onSelect = function()
+                singlePropertyMenu(prop)
+            end
+        }
+    end
+
     lib.registerContext({
         id = 'qbx_properties_propertiesMenu',
         title = locale('menu.properties'),

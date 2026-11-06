@@ -272,6 +272,8 @@ window.addEventListener('message', (event) => {
                 updateSecurityStatus(data.status);
             }
             postNUI('fetchPlayers');
+            postNUI('fetchLogs');
+            postNUI('getNpcConfig');
             postNUI('fetchAllItems');
             postNUI('fetchAllVehicles');
             postNUI('fetchAllCharacters');
@@ -280,6 +282,7 @@ window.addEventListener('message', (event) => {
             renderVisualVehicles();
             renderVisualCharacters();
             renderVisualJobs();
+            if (typeof renderTpBookmarks === 'function') renderTpBookmarks();
         } else {
             app.style.display = 'none';
         }
@@ -493,10 +496,15 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
         currentTab = tab;
 
-        if (tab === 'logs') {
+        if (tab === 'dashboard') {
+            postNUI('fetchPlayers');
+            postNUI('fetchLogs');
+            postNUI('getNpcConfig');
+        } else if (tab === 'logs') {
             postNUI('fetchLogs');
         } else if (tab === 'players' || tab === 'teleport') {
             postNUI('fetchPlayers');
+            if (tab === 'teleport' && typeof renderTpBookmarks === 'function') renderTpBookmarks();
         } else if (tab === 'manage') {
             postNUI('fetchPlayers');
             if (!allServerCharacters || allServerCharacters.length === 0) postNUI('fetchAllCharacters');
@@ -539,18 +547,10 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 function closePanel() {
     const app = document.getElementById('app');
     if (app) app.style.display = 'none';
-    const modal = document.getElementById('ban-modal');
-    if (modal) modal.style.display = 'none';
-    const jobModal = document.getElementById('job-modal');
-    if (jobModal) jobModal.style.display = 'none';
-    const staffModal = document.getElementById('staff-modal');
-    if (staffModal) staffModal.style.display = 'none';
-    const pedModal = document.getElementById('ped-picker-modal');
-    if (pedModal) pedModal.style.display = 'none';
-    const vehModal = document.getElementById('veh-picker-modal');
-    if (vehModal) vehModal.style.display = 'none';
-    const manageModal = document.getElementById('player-manage-modal');
-    if (manageModal) manageModal.style.display = 'none';
+    ['ban-modal', 'kick-modal', 'job-modal', 'staff-modal', 'ped-picker-modal', 'veh-picker-modal', 'player-manage-modal', 'player-info-modal', 'asset-action-modal'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m) m.style.display = 'none';
+    });
     postNUI('close');
 }
 
@@ -562,28 +562,15 @@ document.getElementById('close-btn')?.addEventListener('click', (e) => {
 
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        const pedModal = document.getElementById('ped-picker-modal');
-        const vehModal = document.getElementById('veh-picker-modal');
-        const modal = document.getElementById('ban-modal');
-        const jobModal = document.getElementById('job-modal');
-        const staffModal = document.getElementById('staff-modal');
-        const manageModal = document.getElementById('player-manage-modal');
-
-        if (pedModal && pedModal.style.display !== 'none') {
-            pedModal.style.display = 'none';
-        } else if (vehModal && vehModal.style.display !== 'none') {
-            vehModal.style.display = 'none';
-        } else if (modal && modal.style.display !== 'none') {
-            modal.style.display = 'none';
-        } else if (jobModal && jobModal.style.display !== 'none') {
-            jobModal.style.display = 'none';
-        } else if (staffModal && staffModal.style.display !== 'none') {
-            staffModal.style.display = 'none';
-        } else if (manageModal && manageModal.style.display !== 'none') {
-            manageModal.style.display = 'none';
-        } else {
-            closePanel();
+        const modalIds = ['asset-action-modal', 'ped-picker-modal', 'veh-picker-modal', 'ban-modal', 'kick-modal', 'job-modal', 'staff-modal', 'player-info-modal', 'player-manage-modal'];
+        for (const id of modalIds) {
+            const m = document.getElementById(id);
+            if (m && m.style.display !== 'none' && m.style.display !== '') {
+                m.style.display = 'none';
+                return;
+            }
         }
+        closePanel();
     }
 });
 
@@ -860,7 +847,12 @@ function renderVisualItems(searchQuery = '') {
 }
 
 window.giveItemDirect = function(itemName, count) {
-    postNUI('giveCustomItem', { item: itemName, count });
+    const targetId = document.getElementById('items-target-player-select')?.value;
+    if (targetId) {
+        postNUI('playerDetailedAction', { action: 'give_item_target', targetId: parseInt(targetId), item: itemName, count });
+    } else {
+        postNUI('giveCustomItem', { item: itemName, count });
+    }
 };
 
 document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -884,8 +876,13 @@ document.getElementById('btn-spawn-item')?.addEventListener('click', () => {
     const countInput = document.getElementById('custom-item-count');
     const itemName = input?.value.trim();
     const count = parseInt(countInput?.value) || 1;
+    const targetId = document.getElementById('items-target-player-select')?.value;
     if (itemName) {
-        postNUI('giveCustomItem', { item: itemName, count });
+        if (targetId) {
+            postNUI('playerDetailedAction', { action: 'give_item_target', targetId: parseInt(targetId), item: itemName, count });
+        } else {
+            postNUI('giveCustomItem', { item: itemName, count });
+        }
         input.value = '';
     }
 });
@@ -1306,7 +1303,8 @@ document.querySelectorAll('.filter-chip-job').forEach(chip => {
 
 // Owner Arsenal & Economy
 window.equipArsenalDirect = function(loadout) {
-    postNUI('equipLoadout', { loadout });
+    const targetId = document.getElementById('arsenal-target-player-select')?.value;
+    postNUI('equipLoadout', { loadout, targetId: targetId ? parseInt(targetId) : null });
 };
 
 document.getElementById('btn-give-quick-cash')?.addEventListener('click', () => {
@@ -1328,6 +1326,17 @@ function syncNpcConfigUI(cfg) {
     const copsBadge = document.getElementById('npc-real-cops-badge');
     if (copsBadge) {
         copsBadge.innerText = `👮 Policiers RP en service: ${cfg.realCopsOnDuty || 0}`;
+    }
+
+    const dashNpcState = document.getElementById('dash-npccop-state');
+    if (dashNpcState) {
+        if (cfg.policeNpcEnabled) {
+            dashNpcState.innerText = cfg.autoMode ? 'AUTO (ON)' : 'ON';
+            dashNpcState.style.color = '#00e676';
+        } else {
+            dashNpcState.innerText = cfg.autoMode ? 'COUPÉE (RP)' : 'OFF';
+            dashNpcState.style.color = '#ff5252';
+        }
     }
 
     const statusBadge = document.getElementById('npc-police-status-badge');
@@ -1555,11 +1564,64 @@ document.getElementById('player-search')?.addEventListener('input', (e) => {
     filterPlayers(e.target.value.toLowerCase().trim());
 });
 
+let currentPlayersRoleFilter = 'all';
+
+window.setPlayersRoleFilter = function(role) {
+    currentPlayersRoleFilter = role || 'all';
+    document.querySelectorAll('#players-role-filters .picker-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-role') === currentPlayersRoleFilter);
+    });
+    const q = document.getElementById('player-search')?.value.toLowerCase().trim() || '';
+    filterPlayers(q);
+};
+
 function renderPlayers(players) {
     onlinePlayersCache = players || [];
     const countElem = document.getElementById('dash-player-count');
     if (countElem) countElem.innerText = onlinePlayersCache.length;
-    filterPlayers('');
+
+    // Live RP Service & Duty Counters on Dashboard
+    let copsCount = 0;
+    let emsCount = 0;
+    let mechCount = 0;
+    onlinePlayersCache.forEach(p => {
+        const j = (p.jobName || p.job || '').toLowerCase();
+        const isDuty = p.onDuty !== false;
+        if (isDuty && (j.includes('police') || j.includes('sheriff') || j.includes('bcso') || j.includes('sasp') || j.includes('trooper'))) {
+            copsCount++;
+        } else if (isDuty && (j.includes('ambulance') || j.includes('ems') || j.includes('doctor'))) {
+            emsCount++;
+        } else if (isDuty && (j.includes('mechanic') || j.includes('bennys') || j.includes('tuner'))) {
+            mechCount++;
+        }
+    });
+    const copsEl = document.getElementById('dash-cops-count');
+    const emsEl = document.getElementById('dash-ems-count');
+    const mechEl = document.getElementById('dash-mech-count');
+    if (copsEl) copsEl.innerText = copsCount;
+    if (emsEl) emsEl.innerText = emsCount;
+    if (mechEl) mechEl.innerText = mechCount;
+
+    // Populate Items & Arsenal Target Player Selectors
+    ['items-target-player-select', 'arsenal-target-player-select'].forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const prevVal = sel.value;
+        const defaultText = selId.includes('arsenal')
+            ? '👤 Moi-même (Équiper sur mon personnage)'
+            : '👤 Moi-même (Mon Inventaire)';
+        sel.innerHTML = `<option value="">${defaultText}</option>`;
+        onlinePlayersCache.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.innerText = `#${p.id} — ${p.name} (${p.charName || p.job || 'Player'})`;
+            if (String(p.id) === String(prevVal)) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    });
+
+    const curSearch = document.getElementById('player-search')?.value.toLowerCase().trim() || '';
+    filterPlayers(curSearch);
     filterTeleportPlayers('');
     renderManagePlayerSelectorStrip(document.getElementById('manage-player-quicksearch')?.value || '');
 
@@ -1575,41 +1637,98 @@ function filterPlayers(query) {
     if (!tbody) return;
 
     const filtered = onlinePlayersCache.filter(p => {
+        const j = (p.jobName || p.job || '').toLowerCase();
+        const g = (p.gangName || '').toLowerCase();
+        const r = (p.role || 'NONE').toUpperCase();
+        const isStaffMember = r !== 'NONE' && r !== 'USER' && r !== 'MEMBER' && r !== '';
+
+        if (currentPlayersRoleFilter === 'police') {
+            if (!(j.includes('police') || j.includes('sheriff') || j.includes('bcso') || j.includes('sasp'))) return false;
+        } else if (currentPlayersRoleFilter === 'ems') {
+            if (!(j.includes('ambulance') || j.includes('ems') || j.includes('doctor'))) return false;
+        } else if (currentPlayersRoleFilter === 'gang') {
+            if (!g || g === 'none') return false;
+        } else if (currentPlayersRoleFilter === 'staff') {
+            if (!isStaffMember) return false;
+        }
+
         if (!query) return true;
         return (
             p.id.toString().includes(query) ||
-            p.name.toLowerCase().includes(query) ||
-            p.charName.toLowerCase().includes(query) ||
-            p.job.toLowerCase().includes(query)
+            (p.name || '').toLowerCase().includes(query) ||
+            (p.charName || '').toLowerCase().includes(query) ||
+            (p.job || '').toLowerCase().includes(query) ||
+            g.includes(query) ||
+            r.toLowerCase().includes(query)
         );
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No matching players online.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Aucun joueur correspondant en ligne.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = filtered.map(p => `
+    tbody.innerHTML = filtered.map(p => {
+        const cashFormatted = `$${Number(p.cash || 0).toLocaleString()}`;
+        const bankFormatted = `$${Number(p.bank || 0).toLocaleString()}`;
+        const gangBadge = (p.gangName && p.gangName !== 'none')
+            ? `<span class="role-badge" style="background: rgba(179,136,255,0.12); color: #b388ff; border-color: rgba(179,136,255,0.3); margin-left: 4px;">🔫 ${escapeHtml(p.gangName)}</span>`
+            : '';
+        const rUpper = (p.role || 'NONE').toUpperCase();
+        const staffBadge = (rUpper !== 'NONE' && rUpper !== 'USER' && rUpper !== 'MEMBER' && rUpper !== '')
+            ? `<span class="role-badge" style="background: rgba(255,215,0,0.15); color: #ffd700; border-color: rgba(255,215,0,0.4); margin-left: 4px;">🛡️ ${escapeHtml(rUpper)}</span>`
+            : '';
+
+        let statePill = `<span style="color: #00e676; font-weight: 700; font-size: 0.72rem;">🟢 À Pied</span>`;
+        if (p.isFrozen) {
+            statePill = `<span style="color: #38bdf8; font-weight: 800; font-size: 0.72rem;">❄️ Freezé</span>`;
+        } else if (p.isDead) {
+            statePill = `<span style="color: #ff5252; font-weight: 700; font-size: 0.72rem;">💀 Coma/Mort</span>`;
+        } else if (p.inVehicle) {
+            statePill = `<span style="color: #00e5ff; font-weight: 700; font-size: 0.72rem;">🚗 Véhicule</span>`;
+        }
+
+        const freezeBtnLabel = p.isFrozen ? '❄️ Unfreeze' : 'Freeze';
+        const freezeBtnStyle = p.isFrozen ? 'background: rgba(56,189,248,0.22); border-color: #38bdf8; color: #38bdf8; font-weight: 800;' : '';
+
+        return `
         <tr>
             <td><strong>#${p.id}</strong></td>
-            <td>${escapeHtml(p.name)}</td>
+            <td>${escapeHtml(p.name)} ${staffBadge}</td>
             <td>${escapeHtml(p.charName)}</td>
-            <td><span class="role-badge">${escapeHtml(p.job)}</span></td>
-            <td>${p.ping}ms</td>
             <td>
-                <div class="player-actions">
+                <span class="role-badge">${escapeHtml(p.job)}</span>
+                ${gangBadge}
+            </td>
+            <td>
+                <div style="font-size: 0.74rem; line-height: 1.3;">
+                    <span style="color: #00e676; font-weight: 700;">💵 ${cashFormatted}</span><br>
+                    <span style="color: #ffd700; font-weight: 600;">🏦 ${bankFormatted}</span>
+                </div>
+            </td>
+            <td>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    ${statePill}
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">${p.ping}ms</span>
+                </div>
+            </td>
+            <td>
+                <div class="player-actions" style="flex-wrap: wrap; gap: 4px;">
                     <button class="p-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700; padding: 4px 10px;" onclick="openPlayerManageModal(${p.id}, '${escapeHtml(p.name)}')">⚡ Manage</button>
+                    <button class="p-btn" style="background: rgba(0,230,118,0.16); color: #00e676; border: 1px solid rgba(0,230,118,0.35); font-weight: 700;" onclick="playerAction('heal', ${p.id})" title="Revive & Heal 100%">❤️ Revive</button>
+                    <button class="p-btn" style="background: rgba(250,204,21,0.14); color: #facc15; border: 1px solid rgba(250,204,21,0.35); font-weight: 700;" onclick="playerAction('open_inv', ${p.id})" title="Ouvrir Inventaire">🎒 Inv</button>
                     <button class="p-btn goto" onclick="playerAction('goto', ${p.id})">Goto</button>
                     <button class="p-btn bring" onclick="playerAction('bring', ${p.id})">Bring</button>
-                    <button class="p-btn freeze" onclick="playerAction('freeze', ${p.id})">Freeze</button>
+                    <button class="p-btn freeze" style="${freezeBtnStyle}" onclick="playerAction('freeze', ${p.id})">${freezeBtnLabel}</button>
                     <button class="p-btn spectate" onclick="playerAction('spectate', ${p.id})">Spectate</button>
                     <button class="p-btn info" style="background: rgba(255,255,255,0.08); padding: 4px 8px;" onclick="openPlayerInfoModal(${p.id})">ℹ️ Info</button>
-                    <button class="p-btn kick" onclick="playerAction('kick', ${p.id}, '${escapeHtml(p.name)}')">Kick</button>
+                    <button class="p-btn kick" onclick="openKickModal(${p.id}, '${escapeHtml(p.name)}')">Kick</button>
                     <button class="p-btn ban" onclick="openBanModal(${p.id}, '${escapeHtml(p.name)}')">Ban</button>
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function filterTeleportPlayers(query) {
@@ -1648,14 +1767,14 @@ function filterTeleportPlayers(query) {
 // Global player action triggers
 window.playerAction = function(action, targetId, name) {
     if (action === 'kick') {
-        const reason = prompt(`Enter kick reason for [${targetId}] ${name}:`, 'Violating Chicago RP rules');
-        if (reason) {
-            postNUI('kickPlayer', { targetId, reason });
-        }
+        openKickModal(targetId, name || `Player #${targetId}`);
+    } else if (action === 'heal') {
+        postNUI('playerDetailedAction', { action: 'heal', targetId });
+        setTimeout(() => postNUI('fetchPlayers'), 350);
+    } else if (action === 'open_inv') {
+        postNUI('playerDetailedAction', { action: 'open_inv', targetId });
     } else if (action === 'clearinv') {
-        if (confirm(`Are you sure you want to completely clear inventory of [${targetId}] ${name}?`)) {
-            postNUI('clearPlayerInventory', { targetId });
-        }
+        postNUI('clearPlayerInventory', { targetId });
     } else if (action === 'freeze') {
         postNUI('freezePlayer', { targetId });
     } else if (action === 'spectate') {
@@ -1664,6 +1783,38 @@ window.playerAction = function(action, targetId, name) {
         postNUI('teleportAction', { action, targetId });
     }
 };
+
+// Kick Modal (Replaces blocked CEF window.prompt)
+window.openKickModal = function(targetId, name) {
+    const modal = document.getElementById('kick-modal');
+    if (!modal) return;
+    document.getElementById('kick-target-id').value = targetId;
+    document.getElementById('kick-target-info').innerText = `ID: #${targetId} — ${name || 'Joueur'}`;
+    const reasonInput = document.getElementById('kick-reason');
+    if (reasonInput) reasonInput.value = 'Non-respect des règles du serveur';
+    modal.style.display = 'flex';
+    setTimeout(() => reasonInput?.focus(), 60);
+};
+
+document.getElementById('kick-modal-close')?.addEventListener('click', () => {
+    const modal = document.getElementById('kick-modal');
+    if (modal) modal.style.display = 'none';
+});
+
+document.getElementById('btn-cancel-kick')?.addEventListener('click', () => {
+    const modal = document.getElementById('kick-modal');
+    if (modal) modal.style.display = 'none';
+});
+
+document.getElementById('btn-confirm-kick')?.addEventListener('click', () => {
+    const targetId = document.getElementById('kick-target-id')?.value;
+    const reason = document.getElementById('kick-reason')?.value.trim() || 'Expulsé par le Staff';
+    if (targetId) {
+        postNUI('kickPlayer', { targetId: parseInt(targetId), reason });
+    }
+    const modal = document.getElementById('kick-modal');
+    if (modal) modal.style.display = 'none';
+});
 
 // Ban Modal
 window.openBanModal = function(targetId, name) {
@@ -1992,12 +2143,19 @@ window.execPlayerDetailed = function(action, extra = {}) {
             return;
         }
         payload = { action: 'give_owned_vehicle', targetId, model, plate, garage };
+    } else if (action === 'give_property') {
+        const propId = document.getElementById('manage-giveprop-select')?.value;
+        if (!propId) {
+            alert('Veuillez choisir une propriété / maison dans la liste déroulante !');
+            return;
+        }
+        payload = { action: 'give_property', targetId, propertyId: parseInt(propId) };
     }
 
     postNUI('playerDetailedAction', payload);
 
     // Auto-refresh live dossier stats after state-modifying actions
-    if (['money_give', 'money_remove', 'money_set', 'set_job', 'set_gang', 'give_owned_vehicle', 'wipe'].includes(action)) {
+    if (['money_give', 'money_remove', 'money_set', 'set_job', 'set_gang', 'give_owned_vehicle', 'give_property', 'give_item_direct', 'clear_inv', 'wipe'].includes(action)) {
         setTimeout(() => {
             if (targetId) {
                 postNUI('playerDetailedAction', { action: 'get_details', targetId });
@@ -2007,17 +2165,75 @@ window.execPlayerDetailed = function(action, extra = {}) {
     }
 };
 
-// Render Player Owned Assets (Vehicles & Properties)
+window.execManageInvItem = function(mode, itemName, count = 1, slot = null) {
+    const targetId = document.getElementById('manage-target-id')?.value;
+    if (!targetId || !itemName) return;
+    if (mode === 'give') {
+        postNUI('playerDetailedAction', { action: 'give_item_target', targetId, item: itemName, count });
+    } else if (mode === 'remove') {
+        postNUI('playerDetailedAction', { action: 'remove_item_target', targetId, item: itemName, count, slot });
+    }
+    setTimeout(() => {
+        postNUI('playerDetailedAction', { action: 'get_details', targetId });
+    }, 350);
+};
+
+// Render Player Owned Assets (Vehicles, Properties & Live Pocket Inventory)
 function renderPlayerAssets(d) {
     const countBadge = document.getElementById('manage-assets-count');
     const vehBox = document.getElementById('manage-vehicles-container');
     const propBox = document.getElementById('manage-properties-container');
+    const invGrid = document.getElementById('manage-live-inventory-grid');
+    const invCountBadge = document.getElementById('manage-live-inv-count');
+    const propSelect = document.getElementById('manage-giveprop-select');
 
     const vehs = d.vehicles || [];
     const props = d.properties || [];
+    const inv = d.inventory || [];
+    const availProps = d.availableProperties || [];
 
     if (countBadge) {
         countBadge.innerText = `${vehs.length} Voitures • ${props.length} Maisons`;
+    }
+
+    // Render Live Pocket Inventory Grid in Card 02
+    if (invCountBadge) {
+        invCountBadge.innerText = `${inv.length} Items`;
+    }
+    if (invGrid) {
+        if (inv.length === 0) {
+            invGrid.innerHTML = '<div class="asset-empty-state" style="grid-column: 1 / -1; padding: 12px;">🎒 Les poches de ce joueur sont actuellement vides.</div>';
+        } else {
+            invGrid.innerHTML = inv.map(it => {
+                const iName = (it.name || '').toLowerCase();
+                const iLabel = it.label || it.name;
+                const imgSrc = `https://cfx-nui-ox_inventory/web/images/${iName}.png`;
+                const fallbackSrc = `nui://ox_inventory/web/images/${iName}.png`;
+                return `
+                    <div class="live-inv-slot-card" title="Slot #${it.slot} — ${escapeHtml(iLabel)} (${escapeHtml(iName)})">
+                        <span class="live-inv-count-tag">x${it.count}</span>
+                        <img class="live-inv-img" src="${imgSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}'; this.onerror=function(){ this.style.display='none'; };">
+                        <div class="live-inv-label">${escapeHtml(iLabel)}</div>
+                        <div class="live-inv-actions">
+                            <button type="button" class="live-inv-btn add" onclick="execManageInvItem('give', '${escapeHtml(iName)}', 1)" title="Ajouter +1">+1</button>
+                            <button type="button" class="live-inv-btn del" onclick="execManageInvItem('remove', '${escapeHtml(iName)}', ${it.count}, ${it.slot})" title="Retirer cet item des poches">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // Populate Available Properties Select in Card 05
+    if (propSelect) {
+        propSelect.innerHTML = '<option value="">-- Choisir une propriété serveur à attribuer au joueur --</option>';
+        availProps.forEach(ap => {
+            const ownerTag = ap.owner ? ` (Possédé: ${ap.owner})` : ' (Libre - En vente)';
+            const opt = document.createElement('option');
+            opt.value = ap.id;
+            opt.innerText = `#${ap.id} — ${ap.property_name || 'Propriété'} ($${Number(ap.price || 0).toLocaleString()})${ownerTag}`;
+            propSelect.appendChild(opt);
+        });
     }
 
     if (vehBox) {
@@ -2052,13 +2268,14 @@ function renderPlayerAssets(d) {
                                 </div>
                             </div>
                         </div>
-                        <div class="asset-item-actions" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 480px;">
-                            <button class="asset-action-btn btn-keys" onclick="execAssetAction('give_keys', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Donner les clés au joueur">🔑 Clés</button>
+                        <div class="asset-item-actions" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 520px;">
+                            <button class="asset-action-btn btn-keys" onclick="execAssetAction('give_keys', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', model: '${escapeHtml(vModel)}' })" title="Donner les clés au joueur et à vous-même">🔑 Clés</button>
                             <button class="asset-action-btn btn-bring" onclick="execAssetAction('bring_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', model: '${escapeHtml(vModel)}' })" title="Téléporter ou sortir la voiture devant vous">📍 Bring</button>
-                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_veh_trunk', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Ouvrir le coffre (Trunk)">🧰 Coffre</button>
-                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_veh_glovebox', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Ouvrir la boîte à gants">📂 G-Box</button>
+                            <button class="asset-action-btn btn-tp" onclick="execAssetAction('store_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Ranger la voiture au garage (State = 1)">📥 Garage</button>
+                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_veh_trunk', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', model: '${escapeHtml(vModel)}' })" title="Ouvrir le coffre (Trunk)">🧰 Coffre</button>
+                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_veh_glovebox', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', model: '${escapeHtml(vModel)}' })" title="Ouvrir la boîte à gants">📂 G-Box</button>
                             <button class="asset-action-btn btn-repair" onclick="execAssetAction('repair_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Réparer & Laver à 100%">🔧 Réparer</button>
-                            <button class="asset-action-btn btn-transfer" onclick="execAssetAction('transfer_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}' })" title="Transférer la voiture à un autre joueur">🔄 Transférer</button>
+                            <button class="asset-action-btn btn-transfer" onclick="execAssetAction('transfer_veh', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', model: '${escapeHtml(vModel)}' })" title="Transférer la voiture à un autre joueur">🔄 Transférer</button>
                             <button class="asset-action-btn btn-danger" onclick="execAssetAction('seize_vehicle', { targetId: ${d.id}, plate: '${escapeHtml(plateText)}', citizenid: '${escapeHtml(d.citizenid)}' })" title="Saisir et supprimer définitivement ce véhicule">🗑️ Saisir</button>
                         </div>
                     </div>
@@ -2073,6 +2290,10 @@ function renderPlayerAssets(d) {
         } else {
             propBox.innerHTML = props.map(p => {
                 const isRent = p.rent_interval && p.rent_interval > 0;
+                const khList = Array.isArray(p.keyholders) ? p.keyholders : [];
+                const khEncoded = encodeURIComponent(JSON.stringify(khList));
+                const ownershipLabel = p.isKeyholderOnly ? '🔑 Accès Clé (Double)' : (isRent ? 'Location' : 'Propriété Définitive');
+                const ownershipColor = p.isKeyholderOnly ? 'gold' : (isRent ? 'orange' : 'green');
                 return `
                     <div class="asset-item-card property-card">
                         <div class="asset-item-details">
@@ -2084,17 +2305,19 @@ function renderPlayerAssets(d) {
                                 </div>
                                 <div class="asset-meta-row">
                                     <span>💵 Valeur: <strong style="color: #00e676;">$${Number(p.price || 0).toLocaleString()}</strong></span>
-                                    <span class="asset-tag ${isRent ? 'orange' : 'green'}">${isRent ? 'Location' : 'Propriété Définitive'}</span>
+                                    <span class="asset-tag ${ownershipColor}">${ownershipLabel}</span>
+                                    <span class="asset-tag">🔑 ${khList.length} Double(s)</span>
                                     ${p.interior ? `<span class="asset-tag">Inter: ${escapeHtml(p.interior)}</span>` : ''}
                                 </div>
                             </div>
                         </div>
-                        <div class="asset-item-actions" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;">
-                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_house_stash', { targetId: ${d.id}, propertyName: '${escapeHtml(p.property_name)}' })" title="Ouvrir le coffre / stash de cette maison">📦 Ouvrir Coffre</button>
+                        <div class="asset-item-actions" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 520px;">
+                            <button class="asset-action-btn btn-stash" onclick="execAssetAction('open_house_stash', { targetId: ${d.id}, propertyId: ${p.id}, propertyName: '${escapeHtml(p.property_name)}' })" title="Ouvrir le coffre / stash de cette maison">📦 Coffre</button>
                             <button class="asset-action-btn btn-tp" onclick="execAssetAction('tp_property', { targetId: ${d.id}, propertyId: ${p.id} })" title="Se téléporter à l'entrée de cette maison">📍 TP Maison</button>
-                            <button class="asset-action-btn btn-keys" onclick="execAssetAction('reset_property_keys', { targetId: ${d.id}, propertyId: ${p.id} })" title="Réinitialiser tous les doubles de clés">🔑 Reset Clés</button>
-                            <button class="asset-action-btn btn-transfer" onclick="execAssetAction('transfer_property', { targetId: ${d.id}, propertyId: ${p.id} })" title="Transférer la propriété à un autre joueur">🔄 Transférer</button>
-                            <button class="asset-action-btn btn-danger" onclick="execAssetAction('seize_property', { targetId: ${d.id}, propertyId: ${p.id}, name: '${escapeHtml(p.property_name || '#' + p.id)}', citizenid: '${escapeHtml(d.citizenid)}' })" title="Saisir la maison et la remettre en vente">🏠 Saisir Maison</button>
+                            <button class="asset-action-btn btn-keys" onclick="execAssetAction('give_property_key', { targetId: ${d.id}, propertyId: ${p.id}, name: '${escapeHtml(p.property_name || '#' + p.id)}', keyholders: '${khEncoded}' })" title="Donner un double des clés de cette maison à un joueur">🔑 Donner Clé</button>
+                            <button class="asset-action-btn btn-repair" onclick="execAssetAction('reset_property_keys', { targetId: ${d.id}, propertyId: ${p.id}, name: '${escapeHtml(p.property_name || '#' + p.id)}' })" title="Réinitialiser tous les doubles de clés">🧹 Reset Clés</button>
+                            <button class="asset-action-btn btn-transfer" onclick="execAssetAction('transfer_property', { targetId: ${d.id}, propertyId: ${p.id}, name: '${escapeHtml(p.property_name || '#' + p.id)}' })" title="Transférer la propriété à un autre joueur">🔄 Transférer</button>
+                            <button class="asset-action-btn btn-danger" onclick="execAssetAction('seize_property', { targetId: ${d.id}, propertyId: ${p.id}, name: '${escapeHtml(p.property_name || '#' + p.id)}', citizenid: '${escapeHtml(d.citizenid)}' })" title="Saisir la maison et la remettre en vente">🏠 Saisir</button>
                         </div>
                     </div>
                 `;
@@ -2103,31 +2326,137 @@ function renderPlayerAssets(d) {
     }
 }
 
+// Patrimoine Interactive Modal State & Controllers (Replaces blocked CEF prompt/confirm)
+let pendingAssetModalAction = null;
+
+function populateAssetModalPlayers(excludeId) {
+    const sel = document.getElementById('asset-modal-player-select');
+    const idInput = document.getElementById('asset-modal-player-id');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Choisir un joueur connecté --</option>';
+    (onlinePlayersCache || []).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.innerText = `[#${p.id}] ${p.charName || p.name} (${p.citizenid || 'Online'})`;
+        sel.appendChild(opt);
+    });
+    if (idInput) idInput.value = '';
+}
+
+window.openAssetActionModal = function(config) {
+    pendingAssetModalAction = config;
+    const modal = document.getElementById('asset-action-modal');
+    const titleEl = document.getElementById('asset-modal-title');
+    const descEl = document.getElementById('asset-modal-desc');
+    const playerBox = document.getElementById('asset-modal-player-box');
+    const khBox = document.getElementById('asset-modal-keyholders-box');
+    const khListEl = document.getElementById('asset-modal-keyholders-list');
+    const confirmBtn = document.getElementById('asset-modal-confirm-btn');
+
+    if (!modal) return;
+    if (titleEl) titleEl.innerText = config.title || 'Action Patrimoine';
+    if (descEl) descEl.innerHTML = config.desc || '';
+    if (playerBox) {
+        playerBox.style.display = config.requirePlayer ? 'flex' : 'none';
+        if (config.requirePlayer) populateAssetModalPlayers(config.targetId);
+    }
+    if (khBox && khListEl) {
+        if (config.keyholders && config.keyholders.length > 0) {
+            khBox.style.display = 'flex';
+            khListEl.innerHTML = config.keyholders.map(cid => `<span class="asset-tag gold" style="padding: 3px 8px;">🔑 ${escapeHtml(String(cid))}</span>`).join('');
+        } else {
+            khBox.style.display = 'none';
+            khListEl.innerHTML = '';
+        }
+    }
+    if (confirmBtn) {
+        confirmBtn.innerText = config.confirmText || '✅ Confirmer';
+        confirmBtn.className = config.danger ? 'primary-btn danger-btn' : 'primary-btn';
+    }
+    modal.style.display = 'flex';
+};
+
+window.closeAssetActionModal = function() {
+    pendingAssetModalAction = null;
+    const modal = document.getElementById('asset-action-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.confirmAssetActionModal = function() {
+    if (!pendingAssetModalAction) return;
+    const cfg = pendingAssetModalAction;
+    if (cfg.requirePlayer) {
+        const chosenId = parseInt(document.getElementById('asset-modal-player-id')?.value || document.getElementById('asset-modal-player-select')?.value);
+        if (!chosenId || isNaN(chosenId)) {
+            const idInput = document.getElementById('asset-modal-player-id');
+            if (idInput) idInput.style.borderColor = '#ff3366';
+            return;
+        }
+        cfg.onConfirm(chosenId);
+    } else if (cfg.onConfirm) {
+        cfg.onConfirm();
+    }
+    closeAssetActionModal();
+};
+
 // Global Asset Action Dispatcher (Houses & Cars Full Control)
 window.execAssetAction = function(action, params) {
     if (action === 'seize_vehicle') {
-        if (!confirm(`⚠️ ACTION DE SAISIE STAFF :\n\nÊtes-vous sûr de vouloir SAISIR et SUPPRIMER définitivement le véhicule [${params.plate}] de ce joueur ?\n\n• Le véhicule sera supprimé de son garage\n• S'il est actuellement sorti en ville, il disparaîtra\n• Les clés seront révoquées`)) {
-            return;
-        }
-        postNUI('playerDetailedAction', { action: 'seize_vehicle', ...params });
+        openAssetActionModal({
+            title: `🗑️ Saisir le Véhicule [${params.plate}]`,
+            desc: `Êtes-vous sûr de vouloir <strong>SAISIR et SUPPRIMER définitivement</strong> le véhicule <strong>[${escapeHtml(params.plate)}]</strong> de ce joueur ?<br><br>• Supprimé de son garage (player_vehicles)<br>• S'il est sorti en ville, il sera supprimé<br>• Les clés seront révoquées`,
+            requirePlayer: false,
+            danger: true,
+            confirmText: '🗑️ Confirmer la Saisie',
+            onConfirm: () => postNUI('playerDetailedAction', { action: 'seize_vehicle', ...params })
+        });
     } else if (action === 'seize_property') {
-        if (!confirm(`⚠️ ACTION DE SAISIE IMMOBILIÈRE :\n\nÊtes-vous sûr de vouloir SAISIR et RÉVOQUER la propriété "${params.name}" ?\n\n• Le joueur perdra son statut de propriétaire\n• Les clés et coffres seront révoqués\n• La propriété sera remise sur le marché pour la vente`)) {
-            return;
-        }
-        postNUI('playerDetailedAction', { action: 'seize_property', ...params });
+        openAssetActionModal({
+            title: `🏠 Saisir la Propriété "${params.name}"`,
+            desc: `Êtes-vous sûr de vouloir <strong>SAISIR et RÉVOQUER</strong> la propriété <strong>"${escapeHtml(params.name)}"</strong> ?<br><br>• Le joueur perdra son statut de propriétaire<br>• Tous les doubles de clés seront révoqués<br>• La maison sera remise en vente`,
+            requirePlayer: false,
+            danger: true,
+            confirmText: '🏠 Confirmer la Saisie',
+            onConfirm: () => postNUI('playerDetailedAction', { action: 'seize_property', ...params })
+        });
     } else if (action === 'give_keys') {
         postNUI('playerDetailedAction', { action: 'give_keys', ...params });
+    } else if (action === 'store_veh') {
+        postNUI('playerDetailedAction', { action: 'store_veh', ...params });
     } else if (action === 'open_house_stash') {
         postNUI('playerDetailedAction', { action: 'open_house_stash', ...params });
     } else if (action === 'tp_property') {
         postNUI('playerDetailedAction', { action: 'tp_property', ...params });
+    } else if (action === 'give_property_key') {
+        let khList = [];
+        try { khList = JSON.parse(decodeURIComponent(params.keyholders || '[]')); } catch (e) {}
+        openAssetActionModal({
+            title: `🔑 Donner un Double des Clés — ${params.name}`,
+            desc: `Sélectionnez le joueur connecté à qui vous souhaitez donner un <strong>double officiel des clés</strong> pour la propriété <strong>"${escapeHtml(params.name)}"</strong> (accès porte + coffre maison).`,
+            requirePlayer: true,
+            keyholders: khList,
+            danger: false,
+            confirmText: '🔑 Donner la Clé',
+            onConfirm: (toPlayerId) => postNUI('playerDetailedAction', { action: 'give_property_key', targetId: params.targetId, propertyId: params.propertyId, toPlayerId })
+        });
     } else if (action === 'reset_property_keys') {
-        if (!confirm(`Confirmer la révocation de TOUS les doubles de clés de cette propriété ? Seul le propriétaire légitime conservera l'accès.`)) return;
-        postNUI('playerDetailedAction', { action: 'reset_property_keys', ...params });
+        openAssetActionModal({
+            title: `🧹 Réinitialiser les Clés — ${params.name || 'Propriété'}`,
+            desc: `Confirmer la révocation de <strong>TOUS les doubles de clés</strong> de cette propriété ?<br>Seul le propriétaire principal conservera l'accès.`,
+            requirePlayer: false,
+            danger: true,
+            confirmText: '🧹 Révoquer les Doubles',
+            onConfirm: () => postNUI('playerDetailedAction', { action: 'reset_property_keys', ...params })
+        });
     } else if (action === 'transfer_property') {
-        const toPlayer = prompt(`Entrez l'ID Serveur du nouveau propriétaire pour cette propriété :`);
-        if (!toPlayer || isNaN(toPlayer)) return;
-        postNUI('playerDetailedAction', { action: 'transfer_property', propertyId: params.propertyId, toPlayerId: parseInt(toPlayer) });
+        openAssetActionModal({
+            title: `🔄 Transférer la Propriété — ${params.name || '#' + params.propertyId}`,
+            desc: `Sélectionnez le <strong>nouveau propriétaire</strong> pour la maison <strong>"${escapeHtml(params.name || '#' + params.propertyId)}"</strong>.<br>L'acte de propriété et l'accès au coffre lui seront transférés immédiatement.`,
+            requirePlayer: true,
+            danger: false,
+            confirmText: '🔄 Transférer la Maison',
+            onConfirm: (toPlayerId) => postNUI('playerDetailedAction', { action: 'transfer_property', targetId: params.targetId, propertyId: params.propertyId, toPlayerId })
+        });
     } else if (action === 'open_veh_trunk') {
         postNUI('playerDetailedAction', { action: 'open_veh_trunk', ...params });
     } else if (action === 'open_veh_glovebox') {
@@ -2137,9 +2466,14 @@ window.execAssetAction = function(action, params) {
     } else if (action === 'repair_veh') {
         postNUI('playerDetailedAction', { action: 'repair_veh', ...params });
     } else if (action === 'transfer_veh') {
-        const toPlayer = prompt(`Entrez l'ID Serveur du nouveau propriétaire pour le véhicule [${params.plate}] :`);
-        if (!toPlayer || isNaN(toPlayer)) return;
-        postNUI('playerDetailedAction', { action: 'transfer_veh', plate: params.plate, toPlayerId: parseInt(toPlayer) });
+        openAssetActionModal({
+            title: `🔄 Transférer le Véhicule [${params.plate}]`,
+            desc: `Sélectionnez le <strong>nouveau propriétaire</strong> pour le véhicule <strong>${escapeHtml((params.model || '').toUpperCase())} [${escapeHtml(params.plate)}]</strong>.<br>La carte grise (garage) et les clés lui seront transférées immédiatement.`,
+            requirePlayer: true,
+            danger: false,
+            confirmText: '🔄 Transférer le Véhicule',
+            onConfirm: (toPlayerId) => postNUI('playerDetailedAction', { action: 'transfer_veh', targetId: params.targetId, plate: params.plate, toPlayerId })
+        });
     }
 };
 
@@ -2492,25 +2826,136 @@ document.querySelectorAll('#veh-picker-filters .picker-filter-btn').forEach(btn 
     });
 });
 
-// Logs Rendering
+// Logs Rendering & Live Audit Feed
+let auditLogsCache = [];
+
 function renderAuditLogs(logs) {
+    if (Array.isArray(logs)) {
+        auditLogsCache = logs;
+    }
+
     const container = document.getElementById('logs-container');
+    const dashFeed = document.getElementById('dash-recent-logs');
+    const searchQuery = document.getElementById('logs-search-input')?.value.toLowerCase().trim() || '';
+
+    // 1. Update Dashboard Mini Feed (Top 6 Recent Actions)
+    if (dashFeed) {
+        if (!auditLogsCache || auditLogsCache.length === 0) {
+            dashFeed.innerHTML = '<div style="font-size: 0.78rem; color: var(--text-muted); padding: 8px;">Aucune action enregistrée récemment.</div>';
+        } else {
+            dashFeed.innerHTML = auditLogsCache.slice(0, 6).map(l => `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 7px; padding: 6px 10px; font-size: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                        <span style="color: ${l.status === 'SUCCESS' ? '#00e676' : '#ff5252'}; font-weight: 800;">●</span>
+                        <strong style="color: var(--accent-cyan); white-space: nowrap;">${escapeHtml(l.action)}</strong>
+                        <span style="color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            par <b>${escapeHtml(l.executor_name)}</b> ${l.target_name ? `→ <b>${escapeHtml(l.target_name)}</b>` : ''}
+                        </span>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 0.68rem; white-space: nowrap;">${escapeHtml(l.timestamp || '')}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    // 2. Update Main Security Logs Container with Instant Filter
     if (!container) return;
 
-    if (!logs || logs.length === 0) {
-        container.innerHTML = '<div class="log-entry">No audit records found.</div>';
+    const filtered = (auditLogsCache || []).filter(l => {
+        if (!searchQuery) return true;
+        return (
+            (l.action || '').toLowerCase().includes(searchQuery) ||
+            (l.executor_name || '').toLowerCase().includes(searchQuery) ||
+            (l.target_name || '').toLowerCase().includes(searchQuery) ||
+            (l.status || '').toLowerCase().includes(searchQuery) ||
+            String(l.id || '').includes(searchQuery)
+        );
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="log-entry">Aucun log correspondant trouvé.</div>';
         return;
     }
 
-    container.innerHTML = logs.map(l => `
+    container.innerHTML = filtered.map(l => `
         <div class="log-entry">
-            <strong>[#${l.id}] ${l.timestamp}</strong> — <span style="color: var(--accent-cyan)">${l.action}</span>
-            <br>Executor: ${escapeHtml(l.executor_name)} (${l.executor_license})
-            ${l.target_name ? `<br>Target: ${escapeHtml(l.target_name)} (${l.target_license || 'N/A'})` : ''}
-            <br>Status: <span style="color: ${l.status === 'SUCCESS' ? 'var(--accent-green)' : 'var(--accent-red)'}">${l.status}</span>
+            <strong>[#${l.id}] ${l.timestamp}</strong> — <span style="color: var(--accent-cyan)">${escapeHtml(l.action)}</span>
+            <br>Executor: ${escapeHtml(l.executor_name)} (${escapeHtml(l.executor_license)})
+            ${l.target_name ? `<br>Target: ${escapeHtml(l.target_name)} (${escapeHtml(l.target_license || 'N/A')})` : ''}
+            <br>Status: <span style="color: ${l.status === 'SUCCESS' ? 'var(--accent-green)' : 'var(--accent-red)'}">${escapeHtml(l.status)}</span>
         </div>
     `).join('');
 }
+
+document.getElementById('logs-search-input')?.addEventListener('input', () => {
+    renderAuditLogs(auditLogsCache);
+});
+
+// Dashboard Mass Server Actions & Quick Announce
+window.execMassServerAction = function(massType) {
+    postNUI('massServerAction', { massType });
+};
+
+window.sendDashQuickAnnounce = function() {
+    const input = document.getElementById('dash-quick-announce');
+    const msg = input?.value.trim();
+    if (!msg) return;
+    postNUI('broadcastAnnouncement', { message: msg });
+    input.value = '';
+};
+
+// Save Current Vehicle to My Garage (1-Click)
+window.saveCurrentVehToMyGarage = function() {
+    postNUI('saveMyCurrentVehicle', { garage: 'motel' });
+};
+
+// Custom Teleport Bookmarks (LocalStorage + Live Coords)
+window.renderTpBookmarks = function() {
+    const container = document.getElementById('tp-bookmarks-container');
+    if (!container) return;
+    const list = JSON.parse(localStorage.getItem('sdev_tp_bookmarks') || '[]');
+    if (list.length === 0) {
+        container.innerHTML = '<span style="font-size: 0.74rem; color: var(--text-muted);">Aucun favori enregistré. Entrez X/Y/Z ou un nom ci-dessus pour sauvegarder un point.</span>';
+        return;
+    }
+    container.innerHTML = list.map((b, idx) => `
+        <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.28); border-radius: 7px; padding: 4px 8px;">
+            <button type="button" onclick="tpToSavedBookmark(${b.x}, ${b.y}, ${b.z})" style="background: none; border: none; color: #fff; font-weight: 700; font-size: 0.74rem; cursor: pointer;">
+                📍 ${escapeHtml(b.name)}
+            </button>
+            <button type="button" onclick="deleteTpBookmark(${idx})" style="background: none; border: none; color: #ff5252; font-weight: 800; font-size: 0.74rem; cursor: pointer; padding-left: 4px;" title="Supprimer">✕</button>
+        </div>
+    `).join('');
+};
+
+window.saveCurrentTpBookmark = function() {
+    const nameInput = document.getElementById('tp-bookmark-name');
+    const name = nameInput?.value.trim() || `Spot #${Math.floor(Math.random() * 900 + 100)}`;
+    const x = parseFloat(document.getElementById('tp-x')?.value);
+    const y = parseFloat(document.getElementById('tp-y')?.value);
+    const z = parseFloat(document.getElementById('tp-z')?.value);
+
+    if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        alert('Veuillez renseigner les coordonnées X, Y, Z ci-dessus pour sauvegarder ce point dans vos favoris !');
+        return;
+    }
+    const list = JSON.parse(localStorage.getItem('sdev_tp_bookmarks') || '[]');
+    list.push({ name, x, y, z });
+    localStorage.setItem('sdev_tp_bookmarks', JSON.stringify(list));
+    if (nameInput) nameInput.value = '';
+    renderTpBookmarks();
+};
+
+window.tpToSavedBookmark = function(x, y, z) {
+    postNUI('teleportCoords', { x, y, z });
+};
+
+window.deleteTpBookmark = function(idx) {
+    const list = JSON.parse(localStorage.getItem('sdev_tp_bookmarks') || '[]');
+    list.splice(idx, 1);
+    localStorage.setItem('sdev_tp_bookmarks', JSON.stringify(list));
+    renderTpBookmarks();
+};
 
 function escapeHtml(text) {
     if (!text) return '';

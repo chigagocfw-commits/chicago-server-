@@ -175,5 +175,50 @@
     "permissions": [
       "all_permissions"
     ]
+  },
+  {
+    "$schema": 1,
+    "name": "nicetryy",
+    "master": false,
+    "password_hash": "$2a$11$v/oWnN2.VU5zaT0MLDuzL.8SV9Q6XbOpwRb.kOzvofNT9NoYIxfOi",
+    "providers": {
+      "discord": {
+        "id": "1328837629168451669",
+        "identifier": "discord:1328837629168451669",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "all_permissions"
+    ]
+  },
+  {
+    "$schema": 1,
+    "name": "zizoulmrakchi",
+    "master": false,
+    "password_hash": "$2a$11$5MTb2h0v0JrGvdW987pl2uSl8W4hn3k4jaqw9wbCHtidXSPzMICP6",
+    "password_temporary": true,
+    "providers": {
+      "discord": {
+        "id": "1035657567919153186",
+        "identifier": "discord:1035657567919153186",
+        "data": {}
+      }
+    },
+    "permissions": [
+      "console.view",
+      "announcement",
+      "server.log.view",
+      "menu.viewids",
+      "players.direct_message",
+      "players.whitelist",
+      "players.warn",
+      "players.kick",
+      "players.ban",
+      "players.heal",
+      "players.playermode",
+      "players.spectate",
+      "players.teleport"
+    ]
   }
 ]

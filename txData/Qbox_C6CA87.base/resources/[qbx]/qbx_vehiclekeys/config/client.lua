@@ -89,6 +89,13 @@ return {
             vehicles = {
                 [`towtruck`] = true,
             }
+        },
+        taxi = {
+            requireOnDuty = false,
+            vehicles = {
+                [`taxi`] = true,
+                [`stretch`] = true,
+            }
         }
     },
 

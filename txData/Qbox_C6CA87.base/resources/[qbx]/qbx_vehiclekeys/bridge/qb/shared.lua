@@ -10,10 +10,12 @@ function GetVehiclesFromPlate(plate)
     Wait(500) -- delay needed to give client spawned vehicles time to be known to the server
     local vehicles = GetGamePool('CVehicle')
     local vehEntityFromPlate = {}
+    local trimmedPlate = type(plate) == 'string' and qbx.string.trim(plate) or plate
 
     for i = 1, #vehicles do
         local vehicle = vehicles[i]
-        if plate == (qbx.getVehiclePlate(vehicle) or GetVehicleNumberPlateText(vehicle)) then
+        local vehPlate = qbx.getVehiclePlate(vehicle) or GetVehicleNumberPlateText(vehicle)
+        if plate == vehPlate or (trimmedPlate and vehPlate and trimmedPlate == qbx.string.trim(vehPlate)) then
             vehEntityFromPlate[#vehEntityFromPlate + 1] = vehicle
         end
     end

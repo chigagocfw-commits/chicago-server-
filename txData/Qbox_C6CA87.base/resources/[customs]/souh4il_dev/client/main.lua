@@ -1012,47 +1012,140 @@ RegisterNUICallback('clearPlayerInventory', function(data, cb)
     cb('ok')
 end)
 
--- Player Management: Spectate
+-- Player Management: Full Long-Range OneSync Spectate
+local spectateSavedCoords = nil
+local spectateSavedHeading = nil
+
+local function StopSpectatingPlayer()
+    if not isSpectating then return end
+    local myPed = PlayerPedId()
+    NetworkSetInSpectatorMode(false, myPed)
+    isSpectating = false
+    spectateTarget = nil
+    if spectateSavedCoords then
+        RequestCollisionAtCoord(spectateSavedCoords.x, spectateSavedCoords.y, spectateSavedCoords.z)
+        SetEntityCoords(myPed, spectateSavedCoords.x, spectateSavedCoords.y, spectateSavedCoords.z, false, false, false, false)
+        if spectateSavedHeading then SetEntityHeading(myPed, spectateSavedHeading) end
+        spectateSavedCoords = nil
+        spectateSavedHeading = nil
+    end
+    FreezeEntityPosition(myPed, false)
+    SetEntityCollision(myPed, true, true)
+    if not isInvis then
+        SetEntityVisible(myPed, true, false)
+        ResetEntityAlpha(myPed)
+    end
+    if not isGodmode then
+        SetEntityInvincible(myPed, false)
+    end
+    lib.notify({ title = SharedConfig.PanelName, description = "Mode Spectate désactivé.", type = 'inform' })
+end
+
 RegisterNUICallback('spectatePlayer', function(data, cb)
     local targetId = tonumber(data.targetId)
-    local myPed = PlayerPedId()
+    local myServerId = GetPlayerServerId(PlayerId())
+
+    if targetId == myServerId and not isSpectating then
+        lib.notify({ title = SharedConfig.PanelName, description = "Vous ne pouvez pas vous spectate vous-même.", type = 'error' })
+        cb('ok')
+        return
+    end
 
     if isSpectating then
-            NetworkSetInSpectatorMode(false, myPed)
-            isSpectating = false
-            spectateTarget = nil
-            lib.notify({ title = SharedConfig.PanelName, description = "Spectate mode disabled.", type = 'inform' })
-        else
-            local targetPed = GetPlayerPed(GetPlayerFromServerId(targetId))
-            if DoesEntityExist(targetPed) then
-                NetworkSetInSpectatorMode(true, targetPed)
-                isSpectating = true
-                spectateTarget = targetId
-                lib.notify({ title = SharedConfig.PanelName, description = "Spectating player #" .. targetId, type = 'success' })
-            else
-                lib.notify({ title = SharedConfig.PanelName, description = "Target ped is not within streaming distance.", type = 'error' })
-            end
+        StopSpectatingPlayer()
+        cb('ok')
+        return
+    end
+
+    lib.callback('souh4il_dev:server:getSpectateCoords', false, function(res)
+        if not res or not res.success or not res.coords then
+            lib.notify({ title = SharedConfig.PanelName, description = (res and res.error) or "Joueur introuvable.", type = 'error' })
+            return
         end
-        cb('ok')
-    end)
 
-    -- Teleport to Map Waypoint (from Teleport Tab)
-    RegisterNUICallback('teleportWaypoint', function(_, cb)
-        lib.callback('souh4il_dev:server:requestQuickAction', false, function(response)
-            if not response or not response.success then
-                lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Rejected", type = 'error' })
-                return
-            end
-            TeleportToWaypoint()
-        end, 'tpm')
-        cb('ok')
-    end)
+        -- Hide panel so admin can see the player
+        if isPanelOpen then
+            isPanelOpen = false
+            SetNuiFocus(false, false)
+            SendNUIMessage({ action = "setVisible", visible = false })
+        end
 
-    -- Teleport Preset
-    RegisterNUICallback('teleportPreset', function(data, cb)
-        local locKey = data.location
-        local dest = TELEPORT_LOCATIONS[locKey]
-        if dest then
+        local myPed = PlayerPedId()
+        spectateSavedCoords = GetEntityCoords(myPed)
+        spectateSavedHeading = GetEntityHeading(myPed)
+
+        SetEntityVisible(myPed, false, false)
+        SetEntityAlpha(myPed, 0, false)
+        SetEntityInvincible(myPed, true)
+        SetEntityCollision(myPed, false, false)
+        FreezeEntityPosition(myPed, true)
+
+        -- Move invisibly above target so OneSync streams the target ped
+        RequestCollisionAtCoord(res.coords.x, res.coords.y, res.coords.z)
+        SetEntityCoords(myPed, res.coords.x, res.coords.y, res.coords.z + 15.0, false, false, false, false)
+
+        local tries = 0
+        local targetPlayerIdx = GetPlayerFromServerId(targetId)
+        local targetPed = targetPlayerIdx ~= -1 and GetPlayerPed(targetPlayerIdx) or 0
+
+        while (targetPlayerIdx == -1 or targetPed == 0 or not DoesEntityExist(targetPed)) and tries < 40 do
+            Wait(100)
+            targetPlayerIdx = GetPlayerFromServerId(targetId)
+            targetPed = targetPlayerIdx ~= -1 and GetPlayerPed(targetPlayerIdx) or 0
+            tries = tries + 1
+        end
+
+        if targetPed ~= 0 and DoesEntityExist(targetPed) then
+            NetworkSetInSpectatorMode(true, targetPed)
+            isSpectating = true
+            spectateTarget = targetId
+            lib.notify({ title = SharedConfig.PanelName, description = ("Spectate de [#%d] %s — Appuyez sur [BACKSPACE] ou [E] pour quitter."):format(targetId, res.name or "Joueur"), type = 'success', duration = 6000 })
+
+            CreateThread(function()
+                while isSpectating do
+                    Wait(0)
+                    if IsControlJustPressed(0, 177) or IsControlJustPressed(0, 38) then -- BACKSPACE or E
+                        StopSpectatingPlayer()
+                        break
+                    end
+                end
+            end)
+        else
+            StopSpectatingPlayer()
+            lib.notify({ title = SharedConfig.PanelName, description = "Impossible de charger le flux vidéo du joueur.", type = 'error' })
+        end
+    end, targetId)
+
+    cb('ok')
+end)
+
+-- Teleport to Map Waypoint (from Teleport Tab)
+RegisterNUICallback('teleportWaypoint', function(_, cb)
+    lib.callback('souh4il_dev:server:requestQuickAction', false, function(response)
+        if not response or not response.success then
+            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Rejected", type = 'error' })
+            return
+        end
+        TeleportToWaypoint()
+    end, 'tpm')
+    cb('ok')
+end)
+
+-- Teleport Preset (Self or Target Player)
+RegisterNUICallback('teleportPreset', function(data, cb)
+    local locKey = data.location
+    local dest = TELEPORT_LOCATIONS[locKey]
+    local targetId = tonumber(data.targetId)
+    if dest then
+        if targetId and targetId ~= GetPlayerServerId(PlayerId()) then
+            lib.callback('souh4il_dev:server:teleportAction', false, function(res)
+                if res and res.success then
+                    lib.notify({ title = SharedConfig.PanelName, description = ("Joueur #%d téléporté vers %s !"):format(targetId, locKey:upper()), type = 'success' })
+                else
+                    lib.notify({ title = SharedConfig.PanelName, description = (res and res.error) or "Échec de téléportation.", type = 'error' })
+                end
+            end, 'preset', targetId, { x = dest.x, y = dest.y, z = dest.z, w = dest.w })
+        else
             local ped = PlayerPedId()
             DoScreenFadeOut(200)
             Wait(250)
@@ -1062,60 +1155,81 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
             DoScreenFadeIn(200)
             lib.notify({ title = SharedConfig.PanelName, description = "Teleported to " .. locKey:upper(), type = 'success' })
         end
-        cb('ok')
-    end)
-
-    -- Teleport Coords
-    RegisterNUICallback('teleportCoords', function(data, cb)
-        local ped = PlayerPedId()
-        local x = tonumber(data.x)
-        local y = tonumber(data.y)
-        local z = tonumber(data.z)
-        if x and y and z then
-            DoScreenFadeOut(200)
-            Wait(250)
-            SetPedCoordsKeepVehicle(ped, x, y, z)
-            Wait(200)
-            DoScreenFadeIn(200)
-            lib.notify({ title = SharedConfig.PanelName, description = ("Teleported to (%.1f, %.1f, %.1f)"):format(x, y, z), type = 'success' })
-        end
-        cb('ok')
-    end)
-
-    -- Fetch Online Players
-    RegisterNUICallback('fetchPlayers', function(_, cb)
-        lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(response)
-            if response and response.success then
-                SendNUIMessage({ action = "updatePlayers", players = response.players })
-            end
-        end)
-        cb('ok')
-    end)
-
--- Player Teleport Actions (Goto / Bring)
-RegisterNUICallback('teleportAction', function(data, cb)
-    lib.callback('souh4il_dev:server:teleportAction', false, function(response)
-        if response and response.success then
-            lib.notify({ title = SharedConfig.PanelName, description = ("Action '%s' completed."):format(data.action), type = 'success' })
-        else
-            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
-        end
-    end, data.action, data.targetId)
+    end
     cb('ok')
 end)
 
--- Freeze Player
-RegisterNUICallback('freezePlayer', function(data, cb)
-    local targetId = data.targetId
-    isFrozen = not isFrozen
-    lib.callback('souh4il_dev:server:freezePlayer', false, function(response)
+-- Teleport Coords
+RegisterNUICallback('teleportCoords', function(data, cb)
+    local ped = PlayerPedId()
+    local x = tonumber(data.x)
+    local y = tonumber(data.y)
+    local z = tonumber(data.z)
+    if x and y and z then
+        DoScreenFadeOut(200)
+        Wait(250)
+        SetPedCoordsKeepVehicle(ped, x, y, z)
+        Wait(200)
+        DoScreenFadeIn(200)
+        lib.notify({ title = SharedConfig.PanelName, description = ("Teleported to (%.1f, %.1f, %.1f)"):format(x, y, z), type = 'success' })
+    end
+    cb('ok')
+end)
+
+-- Fetch Online Players
+RegisterNUICallback('fetchPlayers', function(_, cb)
+    lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(response)
         if response and response.success then
-            lib.notify({ title = SharedConfig.PanelName, description = "Player freeze state toggled.", type = 'inform' })
+            SendNUIMessage({ action = "updatePlayers", players = response.players })
+        end
+    end)
+    cb('ok')
+end)
+
+-- Player Teleport Actions (Goto / Bring)
+RegisterNUICallback('teleportAction', function(data, cb)
+    local act = data.action or data.type
+    local tgt = tonumber(data.targetId or data.target)
+    lib.callback('souh4il_dev:server:teleportAction', false, function(response)
+        if response and response.success then
+            lib.notify({ title = SharedConfig.PanelName, description = ("Téléportation '%s' vers #%s effectuée !"):format(tostring(act):upper(), tostring(tgt)), type = 'success' })
         else
             lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
         end
-    end, targetId, isFrozen)
+    end, act, tgt)
     cb('ok')
+end)
+
+-- Freeze Player (Per-Target Toggle)
+RegisterNUICallback('freezePlayer', function(data, cb)
+    local targetId = tonumber(data.targetId or data.target)
+    lib.callback('souh4il_dev:server:freezePlayer', false, function(response)
+        if response and response.success then
+            local statusTxt = response.frozen and "FREEZÉ (Immobilisé) ❄️" or "DÉFREEZÉ (Libéré) ✅"
+            lib.notify({ title = SharedConfig.PanelName, description = ("Joueur #%d %s"):format(targetId or 0, statusTxt), type = response.frozen and 'inform' or 'success' })
+            lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(res)
+                if res and res.success then SendNUIMessage({ action = "updatePlayers", players = res.players }) end
+            end)
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
+        end
+    end, targetId, data.state)
+    cb('ok')
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveFreeze', function(state)
+    isFrozen = (state == true)
+    local ped = PlayerPedId()
+    FreezeEntityPosition(ped, isFrozen)
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 then
+        FreezeEntityPosition(veh, isFrozen)
+    end
+    lib.notify({
+        title = SharedConfig.PanelName,
+        description = isFrozen and "❄️ Vous avez été immobilisé (Freeze) par le Staff." or "✅ Vous avez été libéré (Unfreeze) par le Staff.",
+        type = isFrozen and 'warning' or 'success'
+    })
 end)
 
 -- Kick Player
@@ -2006,7 +2120,9 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
             end
         end, data)
     elseif action == 'open_house_stash' then
+        isPanelOpen = false
         SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
         lib.callback('souh4il_dev:server:openHouseStash', false, function(res)
             if res and res.success then
                 lib.notify({ title = SharedConfig.PanelName, description = "Coffre de la propriété ouvert.", type = 'success' })
@@ -2022,10 +2138,28 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
                 lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de la téléportation.", type = 'error' })
             end
         end, data)
+    elseif action == 'give_property_key' then
+        lib.callback('souh4il_dev:server:givePropertyKey', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Double des clés donné à %s !"):format(res.holderName or ("#" .. tostring(data.toPlayerId))), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec de l'ajout de la clé.", type = 'error' })
+            end
+        end, data)
     elseif action == 'reset_property_keys' then
         lib.callback('souh4il_dev:server:resetPropertyKeyholders', false, function(res)
             if res and res.success then
                 lib.notify({ title = SharedConfig.PanelName, description = "Tous les doubles de clés révoqués avec succès.", type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
             else
                 lib.notify({ title = SharedConfig.PanelName, description = "Erreur de réinitialisation des clés.", type = 'error' })
             end
@@ -2044,26 +2178,50 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
             end
         end, data)
     elseif action == 'open_veh_trunk' then
+        isPanelOpen = false
         SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
         lib.callback('souh4il_dev:server:openVehicleTrunk', false, function(res)
             if res and res.success then
                 lib.notify({ title = SharedConfig.PanelName, description = ("Coffre [%s] ouvert."):format(data.plate), type = 'success' })
             else
-                lib.notify({ title = SharedConfig.PanelName, description = "Échec d'ouverture du coffre.", type = 'error' })
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec d'ouverture du coffre.", type = 'error' })
             end
         end, data)
     elseif action == 'open_veh_glovebox' then
+        isPanelOpen = false
         SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
         lib.callback('souh4il_dev:server:openVehicleGlovebox', false, function(res)
             if res and res.success then
                 lib.notify({ title = SharedConfig.PanelName, description = ("Boîte à gants [%s] ouverte."):format(data.plate), type = 'success' })
             else
-                lib.notify({ title = SharedConfig.PanelName, description = "Échec d'ouverture de la boîte à gants.", type = 'error' })
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec d'ouverture de la boîte à gants.", type = 'error' })
+            end
+        end, data)
+    elseif action == 'store_veh' then
+        lib.callback('souh4il_dev:server:storePlayerVehicle', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] rangé au garage !"):format(data.plate), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Échec du rangement au garage.", type = 'error' })
             end
         end, data)
     elseif action == 'bring_veh' then
         lib.callback('souh4il_dev:server:bringPlayerVehicle', false, function(res)
             if res and res.success then
+                if res.netId and res.mods then
+                    Wait(200)
+                    local ent = NetworkGetEntityFromNetworkId(res.netId)
+                    if DoesEntityExist(ent) and lib.setVehicleProperties then
+                        pcall(function() lib.setVehicleProperties(ent, res.mods) end)
+                    end
+                end
                 lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] rapatrié à votre position (%s) !"):format(data.plate, res.action == 'spawned' and 'Sorti du Garage' or 'Téléporté'), type = 'success' })
                 lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
                     if detailsRes and detailsRes.success then
@@ -2078,6 +2236,11 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
         lib.callback('souh4il_dev:server:repairPlayerVehicle', false, function(res)
             if res and res.success then
                 lib.notify({ title = SharedConfig.PanelName, description = ("Véhicule [%s] réparé & lavé à 100%% !"):format(data.plate), type = 'success' })
+                lib.callback('souh4il_dev:server:getPlayerDetails', false, function(detailsRes)
+                    if detailsRes and detailsRes.success then
+                        SendNUIMessage({ action = "showPlayerDetails", details = detailsRes.details })
+                    end
+                end, tId)
             else
                 lib.notify({ title = SharedConfig.PanelName, description = "Erreur de réparation.", type = 'error' })
             end
@@ -2104,8 +2267,14 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
             lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Permissions updated." or "Failed", type = res and res.success and 'success' or 'error' })
         end, { targetId = tId, role = data.role or 'admin', action = action == 'give_perm' and 'add' or 'remove' })
     elseif action == 'open_inv' then
+        isPanelOpen = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
         lib.callback('souh4il_dev:server:openInventory', false, function() end, { type = 'player', target = tId })
     elseif action == 'open_trunk' or action == 'open_glovebox' then
+        isPanelOpen = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({ action = "setVisible", visible = false })
         local veh = GetVehiclePedIsIn(PlayerPedId(), false)
         local plate = veh ~= 0 and GetVehicleNumberPlateText(veh) or "CHICAGO"
         lib.callback('souh4il_dev:server:openInventory', false, function() end, { type = action == 'open_trunk' and 'trunk' or 'glovebox', target = plate })

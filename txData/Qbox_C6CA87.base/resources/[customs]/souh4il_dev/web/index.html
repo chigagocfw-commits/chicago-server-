@@ -1717,6 +1717,31 @@
             </div>
         </div>
 
+        <!-- Kick Player Modal -->
+        <div id="kick-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>🚪 Expulser le Joueur (Kick)</h3>
+                    <button class="modal-close" id="kick-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="kick-target-id">
+                    <div class="form-group">
+                        <label>Joueur Ciblé :</label>
+                        <span id="kick-target-info" class="target-badge">ID: --</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Raison de l'expulsion :</label>
+                        <input type="text" id="kick-reason" class="search-input" placeholder="Raison du kick (ex: HRP, Troll, Non-respect RP)..." value="Non-respect des règles du serveur">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn" id="btn-cancel-kick">Annuler</button>
+                    <button class="primary-btn danger-btn" id="btn-confirm-kick">🚪 Confirmer Kick</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Set Job Modal -->
         <div id="job-modal" class="modal-overlay" style="display: none;">
             <div class="modal-box">
@@ -2033,6 +2058,37 @@
                 </div>
                 <div class="modal-footer" style="padding: 12px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
                     <button class="secondary-btn" id="veh-picker-close-btn">Fermer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patrimoine Action Modal (Transfert Voiture/Maison, Donner Clés Maison, Saisie) -->
+        <div id="asset-action-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+            <div class="modal-box" style="max-width: 520px; width: 92vw;">
+                <div class="modal-header">
+                    <h3 id="asset-modal-title">🔄 Action Patrimoine</h3>
+                    <button class="modal-close" id="asset-modal-close" onclick="closeAssetActionModal()">&times;</button>
+                </div>
+                <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                    <div id="asset-modal-desc" style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.2); padding: 12px; border-radius: 8px;"></div>
+
+                    <div id="asset-modal-player-box" class="form-group" style="display: none; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase;">👤 Sélectionner le Joueur Cible (En Ligne) :</label>
+                        <select id="asset-modal-player-select" class="search-input" onchange="document.getElementById('asset-modal-player-id').value = this.value">
+                            <option value="">-- Choisir un joueur connecté --</option>
+                        </select>
+                        <label style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Ou entrer l'ID Serveur manuellement :</label>
+                        <input type="number" id="asset-modal-player-id" class="search-input" placeholder="Ex: 1, 2, 5..." min="1">
+                    </div>
+
+                    <div id="asset-modal-keyholders-box" style="display: none; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: #ffd700; text-transform: uppercase;">🔑 Détenteurs Actuels des Clés :</label>
+                        <div id="asset-modal-keyholders-list" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; color: var(--text-secondary);"></div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="secondary-btn" onclick="closeAssetActionModal()">Annuler</button>
+                    <button class="primary-btn" id="asset-modal-confirm-btn" onclick="confirmAssetActionModal()">✅ Confirmer</button>
                 </div>
             </div>
         </div>

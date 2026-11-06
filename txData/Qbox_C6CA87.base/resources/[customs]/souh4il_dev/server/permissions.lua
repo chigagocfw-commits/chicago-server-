@@ -9,84 +9,159 @@ Permissions.StaffCache = {}
 
 Permissions.DEFAULT_ROLE_PERMS = {
     ['owner'] = {
-        god = true,
-        teleport = true,
-        items = true,
-        vehicles = true,
-        characters = true,
-        jobs = true,
-        arsenal = true,
-        players = true,
-        punishments = true,
+        -- Cat 1: Sécurité & Économie
+        manage_money = true,
+        manage_wipes = true,
+        manage_assets = true,
+        punish_bans = true,
+        punish_kicks = true,
+        manage_trolls = true,
+        -- Cat 2: Modération Joueurs
+        view_players = true,
+        player_spectate = true,
+        player_freeze = true,
+        player_teleport = true,
+        player_heal = true,
+        player_inventory = true,
+        -- Cat 3: Serveur & Véhicules
+        spawn_vehicles = true,
+        spawn_items = true,
+        manage_jobs = true,
+        manage_skins = true,
+        world_teleport = true,
+        world_control = true,
+        -- Cat 4: Master & Administration
+        god_powers = true,
+        staff_management = true,
         devtools = true,
-        world = true,
         logs = true,
-        staff = true,
         events = true,
+        arsenal = true,
+        -- Legacy Aliases
+        god = true, teleport = true, items = true, vehicles = true, characters = true, jobs = true, players = true, punishments = true, world = true, staff = true,
     },
     ['developer'] = {
-        god = false,
-        teleport = true,
-        items = false,
-        vehicles = true,
-        characters = true,
-        jobs = false,
-        arsenal = false,
-        players = true,
-        punishments = false,
+        -- Cat 1: Sécurité & Économie
+        manage_money = false,
+        manage_wipes = false,
+        manage_assets = false,
+        punish_bans = false,
+        punish_kicks = false,
+        manage_trolls = false,
+        -- Cat 2: Modération Joueurs
+        view_players = true,
+        player_spectate = true,
+        player_freeze = false,
+        player_teleport = true,
+        player_heal = false,
+        player_inventory = false,
+        -- Cat 3: Serveur & Véhicules
+        spawn_vehicles = true,
+        spawn_items = false,
+        manage_jobs = false,
+        manage_skins = true,
+        world_teleport = true,
+        world_control = true,
+        -- Cat 4: Master & Administration
+        god_powers = false,
+        staff_management = false,
         devtools = true,
-        world = true,
         logs = true,
-        staff = false,
         events = true,
+        arsenal = false,
+        -- Legacy Aliases
+        god = false, teleport = true, items = false, vehicles = true, characters = true, jobs = false, players = true, punishments = false, world = true, staff = false,
     },
     ['admin'] = {
-        god = false,
-        teleport = true,
-        items = true,
-        vehicles = true,
-        characters = true,
-        jobs = true,
-        arsenal = false,
-        players = true,
-        punishments = true,
+        -- Cat 1: Sécurité & Économie
+        manage_money = false, -- Default protected against accidental money injection
+        manage_wipes = false, -- Protected against accidental wipe
+        manage_assets = true,
+        punish_bans = true,
+        punish_kicks = true,
+        manage_trolls = false,
+        -- Cat 2: Modération Joueurs
+        view_players = true,
+        player_spectate = true,
+        player_freeze = true,
+        player_teleport = true,
+        player_heal = true,
+        player_inventory = true,
+        -- Cat 3: Serveur & Véhicules
+        spawn_vehicles = true,
+        spawn_items = true,
+        manage_jobs = true,
+        manage_skins = true,
+        world_teleport = true,
+        world_control = true,
+        -- Cat 4: Master & Administration
+        god_powers = false,
+        staff_management = false,
         devtools = false,
-        world = true,
         logs = true,
-        staff = false,
         events = true,
+        arsenal = false,
+        -- Legacy Aliases
+        god = false, teleport = true, items = true, vehicles = true, characters = true, jobs = true, players = true, punishments = true, world = true, staff = false,
     },
     ['moderator'] = {
-        god = false,
-        teleport = true,
-        items = false,
-        vehicles = true,
-        characters = false,
-        jobs = false,
-        arsenal = false,
-        players = true,
-        punishments = false,
+        -- Cat 1: Sécurité & Économie
+        manage_money = false,
+        manage_wipes = false,
+        manage_assets = false,
+        punish_bans = false, -- Moderators cannot ban by default
+        punish_kicks = true, -- Can kick/warn
+        manage_trolls = false,
+        -- Cat 2: Modération Joueurs
+        view_players = true,
+        player_spectate = true,
+        player_freeze = true,
+        player_teleport = true,
+        player_heal = true,
+        player_inventory = false,
+        -- Cat 3: Serveur & Véhicules
+        spawn_vehicles = true, -- Personal vehicle spawn
+        spawn_items = false,
+        manage_jobs = false,
+        manage_skins = false,
+        world_teleport = false,
+        world_control = false,
+        -- Cat 4: Master & Administration
+        god_powers = false,
+        staff_management = false,
         devtools = false,
-        world = false,
         logs = false,
-        staff = false,
         events = false,
+        arsenal = false,
+        -- Legacy Aliases
+        god = false, teleport = true, items = false, vehicles = true, characters = false, jobs = false, players = true, punishments = false, world = false, staff = false,
     },
     ['custom'] = {
-        god = false,
-        teleport = true,
-        items = false,
-        vehicles = false,
-        characters = false,
-        jobs = false,
-        arsenal = false,
-        players = true,
-        punishments = false,
+        manage_money = false,
+        manage_wipes = false,
+        manage_assets = false,
+        punish_bans = false,
+        punish_kicks = false,
+        manage_trolls = false,
+        view_players = true,
+        player_spectate = false,
+        player_freeze = false,
+        player_teleport = true,
+        player_heal = false,
+        player_inventory = false,
+        spawn_vehicles = false,
+        spawn_items = false,
+        manage_jobs = false,
+        manage_skins = false,
+        world_teleport = false,
+        world_control = false,
+        god_powers = false,
+        staff_management = false,
         devtools = false,
-        world = false,
         logs = false,
-        staff = false,
         events = false,
+        arsenal = false,
+        god = false, teleport = true, items = false, vehicles = false, characters = false, jobs = false, players = true, punishments = false, world = false, staff = false,
     }
 }
 
@@ -173,7 +248,22 @@ function Permissions.CanExecute(source, requiredPermission)
 
     local lic = Identifiers.GetLicense(source)
     if lic and Permissions.StaffCache[lic] then
-        return true
+        -- Base panel access
+        if requiredPermission == Config.ACES.ACCESS then
+            return true
+        end
+
+        local staffRole = string.upper(Permissions.StaffCache[lic].role or "MODERATOR")
+        if requiredPermission == Config.ACES.ADMIN then
+            return staffRole == "OWNER" or staffRole == "ADMIN"
+        elseif requiredPermission == Config.ACES.DEVELOPER then
+            return staffRole == "OWNER" or staffRole == "DEVELOPER"
+        elseif requiredPermission == Config.ACES.MODERATOR then
+            return staffRole == "OWNER" or staffRole == "ADMIN" or staffRole == "DEVELOPER" or staffRole == "MODERATOR"
+        end
+
+        -- Module/Action permission check
+        return Permissions.HasModulePermission(source, requiredPermission)
     end
 
     return IsPlayerAceAllowed(source, requiredPermission)
@@ -228,8 +318,53 @@ function Permissions.HasModulePermission(source, moduleName)
     end
 
     local perms = Permissions.GetPermissions(source)
-    if perms and perms[moduleName] == true then
+    if not perms then return false end
+
+    -- Direct granular check
+    if perms[moduleName] == true then
         return true
+    end
+
+    -- Explicit security isolation: Money and Wipes NEVER inherit from generic broad permissions!
+    if moduleName == 'manage_money' or moduleName == 'manage_wipes' then
+        return false
+    end
+
+    -- Legacy & Granular mapping fallbacks
+    if moduleName == 'player_teleport' then
+        return perms.teleport == true or perms.players == true
+    elseif moduleName == 'player_heal' or moduleName == 'player_freeze' or moduleName == 'player_spectate' or moduleName == 'view_players' then
+        return perms.players == true
+    elseif moduleName == 'player_inventory' then
+        return perms.items == true
+    elseif moduleName == 'spawn_items' then
+        return perms.items == true
+    elseif moduleName == 'spawn_vehicles' then
+        return perms.vehicles == true
+    elseif moduleName == 'manage_assets' then
+        local lic = Identifiers.GetLicense(source)
+        local role = (lic and Permissions.StaffCache[lic] and Permissions.StaffCache[lic].role) or "MODERATOR"
+        return (perms.vehicles == true or perms.characters == true) and (role == "OWNER" or role == "ADMIN")
+    elseif moduleName == 'manage_skins' then
+        return perms.characters == true
+    elseif moduleName == 'manage_jobs' then
+        return perms.jobs == true
+    elseif moduleName == 'manage_trolls' then
+        return perms.god == true
+    elseif moduleName == 'punish_bans' then
+        local lic = Identifiers.GetLicense(source)
+        local role = (lic and Permissions.StaffCache[lic] and Permissions.StaffCache[lic].role) or "MODERATOR"
+        return perms.punishments == true and role ~= "MODERATOR"
+    elseif moduleName == 'punish_kicks' then
+        return perms.punishments == true
+    elseif moduleName == 'world_teleport' then
+        return perms.teleport == true
+    elseif moduleName == 'world_control' then
+        return perms.world == true
+    elseif moduleName == 'god_powers' then
+        return perms.god == true
+    elseif moduleName == 'staff_management' then
+        return perms.staff == true
     end
 
     return false

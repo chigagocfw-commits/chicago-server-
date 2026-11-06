@@ -177,6 +177,34 @@ local function IsAuthorizedTaxiVehicle(veh)
   return model == `taxi` or model == `stretch`
 end
 
+-- Event: Give vehicle keys to taxi driver on server
+RegisterServerEvent("codem-taxijob:GiveKeys")
+AddEventHandler("codem-taxijob:GiveKeys", function(netId, plate)
+  local playerId = source
+  if not HasTaxiJob(playerId) then return end
+
+  local veh = 0
+  for _ = 1, 15 do
+    veh = netId and NetworkGetEntityFromNetworkId(netId) or 0
+    if not veh or veh == 0 or not DoesEntityExist(veh) then
+      local ped = GetPlayerPed(playerId)
+      veh = GetVehiclePedIsIn(ped, false)
+    end
+    if veh and veh ~= 0 and DoesEntityExist(veh) then
+      break
+    end
+    Wait(100)
+  end
+
+  if veh and veh ~= 0 and DoesEntityExist(veh) and IsAuthorizedTaxiVehicle(veh) then
+    if GetResourceState("qbx_vehiclekeys") == "started" then
+      exports.qbx_vehiclekeys:GiveKeys(playerId, veh)
+    elseif GetResourceState("qb-vehiclekeys") == "started" then
+      exports["qb-vehiclekeys"]:GiveKeys(playerId, plate)
+    end
+  end
+end)
+
 -- Event: Set fare for player & initialize server ride session
 RegisterServerEvent("codem-taxijob:SetFare")
 AddEventHandler("codem-taxijob:SetFare", function(fareAmount)

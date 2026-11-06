@@ -770,7 +770,6 @@ RegisterNUICallback("startVip", function(data, cb)
   vipMissionActive = true
   setMissionsActive()
   NuiMessage("openTaxiMeter")
-  TriggerServerEvent("codem-taxijob:SetFare", selectedMission.payment)
   
   -- Initialize taximeter for VIP mission
   taximeter = {
@@ -797,6 +796,7 @@ RegisterNUICallback("startVip", function(data, cb)
   setTaximeterData("billPlayers", taximeter.billPlayers)
   -- Spawn vehicle and customers
   spawnedVeh = SpawnVehicle(vehicleConfig.spawnCode, Config.VehicleSpawnLocation)
+  TriggerServerEvent("codem-taxijob:SetFare", selectedMission.payment)
   customerped = SpawnPed(selectedMission.ped, vector3(selectedMission.spawnLocation.x, selectedMission.spawnLocation.y, selectedMission.spawnLocation.z), false)
   
   -- Spawn additional customers if configured
@@ -1241,17 +1241,21 @@ function SpawnVehicle(modelHash, spawnLocation)
   -- Create vehicle
   local vehicle = CreateVehicle(modelHash, spawnLocation.x, spawnLocation.y, spawnLocation.z, true, true)
   
-  -- Set vehicle heading
+  -- Set vehicle heading and unlock doors
   SetEntityHeading(vehicle, spawnLocation.w)
-  
-  -- Give vehicle key to player
-  Config.GiveVehicleKey(GetVehicleNumberPlateText(vehicle), modelHash, vehicle)
+  SetVehicleDoorsLocked(vehicle, 1)
+  SetVehicleNeedsToBeHotwired(vehicle, false)
   
   -- Set vehicle fuel to full
   Config.SetVehicleFuel(vehicle, 100.0)
   
-  -- Warp player into driver seat
+  -- Warp player into driver seat first so proximity/seat checks succeed
   TaskWarpPedIntoVehicle(PlayerPedId(), vehicle, -1)
+  
+  -- Give vehicle key to player and start engine
+  local plate = GetVehicleNumberPlateText(vehicle)
+  Config.GiveVehicleKey(plate, modelHash, vehicle)
+  SetVehicleEngineOn(vehicle, true, true, false)
   
   return vehicle
 end

