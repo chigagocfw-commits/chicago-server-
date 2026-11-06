@@ -113,7 +113,7 @@ body:not(.ls-page):not(.editing) #enterHint { display: none !important; }
 }
 
 .bg-video-wrap { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
-.bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: -webkit-optimize-contrast; transform: translateZ(0); backface-visibility: hidden; }
 
 /* the music player's hidden YouTube host. ⚠ NOT display:none: a hidden
    YouTube player refuses to start; it has to exist, just out of sight. */

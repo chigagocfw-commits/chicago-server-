@@ -1,320 +1,316 @@
 {
-    "rev":  1,
-    "theme":  {
-                  "accent":  "#E32636",
-                  "radius":  14,
-                  "glass":  true,
-                  "font":  "geist",
-                  "uiScale":  1,
-                  "surface":  0.8,
-                  "shadow":  1.2,
-                  "textColor":  "#FFFFFF",
-                  "mutedColor":  "#A5A5A5",
-                  "entrance":  "rise",
-                  "entranceSpeed":  1
-              },
-    "background":  {
-                       "mode":  "video",
-                       "images":  [
-
-                                  ],
-                       "interval":  9,
-                       "kenburns":  true,
-                       "transition":  "fade",
-                       "video":  {
-                                     "url":  "media/chicago.video.mp4",
-                                     "loop":  true,
-                                     "audio":  false,
-                                     "volume":  0.35
-                                 },
-                       "gradient":  {
-                                        "from":  "#090909",
-                                        "to":  "#8B101D",
-                                        "angle":  160,
-                                        "animated":  true
-                                    },
-                       "solid":  "#090909",
-                       "overlay":  {
-                                       "dim":  0.35,
-                                       "vignette":  0.65,
-                                       "grain":  true,
-                                       "scanlines":  false,
-                                       "bars":  false,
-                                       "tint":  {
-                                                    "color":  "#E32636",
-                                                    "amount":  0.06
-                                                },
-                                       "sweep":  true
-                                   },
-                       "particles":  {
-                                         "mode":  "shapes",
-                                         "density":  0.6,
-                                         "speed":  0.8,
-                                         "color":  "accent"
-                                     }
-                   },
-    "music":  {
-                  "enabled":  true,
-                  "tracks":  [
-                                 {
-                                     "title":  "Lil Durk - AHHH HA (Official Music Video)",
-                                     "url":  "https://www.youtube.com/watch?v=_q6go0G49A0"
-                                 }
-                             ],
-                  "volume":  0.35,
-                  "shuffle":  false,
-                  "visualizer":  true,
-                  "keys":  true,
-                  "osd":  true
-              },
-    "exit":  {
-                 "hold":  true,
-                 "minSeconds":  0
-             },
-    "text":  {
-                 "enterHint":  "PRESS ENTER TO JOIN CHICAGO RP",
-                 "tipCap":  "COMMUNITY RULES",
-                 "nowPlaying":  "NOW PLAYING",
-                 "noMusic":  "No music",
-                 "online":  "online",
-                 "consoleCap":  "LOADING CHICAGO RP",
-                 "stages":  {
-                                "connecting":  "Connecting to Chicago Roleplay...",
-                                "core":  "Starting core services...",
-                                "beforeMap":  "Preparing Chicago environment...",
-                                "afterMap":  "Finalising street data...",
-                                "session":  "Joining Chicago session...",
-                                "map":  "Loading map...",
-                                "streaming":  "Streaming assets..."
-                            }
-             },
-    "widgets":  {
-                    "logo":  {
-                                 "on":  true,
-                                 "pos":  {
-                                             "ax":  0.5,
-                                             "ay":  0.2
-                                         },
-                                 "scale":  1,
-                                 "archetype":  "glow",
-                                 "url":  "assets/Logo.png",
-                                 "accent":  null,
-                                 "opacity":  1,
-                                 "width":  9.5
-                             },
-                    "title":  {
-                                  "on":  true,
-                                  "pos":  {
-                                              "ax":  0.5,
-                                              "ay":  0.36
-                                          },
-                                  "scale":  1,
-                                  "archetype":  "gradient",
-                                  "text":  "CHICAGO ROLEPLAY",
-                                  "sub":  "WELCOME TO CHICAGO CITY",
-                                  "accent":  null,
-                                  "opacity":  1,
-                                  "size":  3.4,
-                                  "tracking":  0.14,
-                                  "weight":  800,
-                                  "upper":  true
-                              },
-                    "progress":  {
-                                     "on":  true,
-                                     "pos":  {
-                                                 "ax":  0.5,
-                                                 "ay":  0.88
-                                             },
-                                     "scale":  1,
-                                     "archetype":  "bar",
-                                     "showPercent":  true,
-                                     "showStage":  true,
-                                     "accent":  null,
-                                     "opacity":  1,
-                                     "width":  46,
-                                     "thickness":  0.65,
-                                     "sheen":  true
-                                 },
-                    "tips":  {
-                                 "on":  true,
-                                 "pos":  {
-                                             "ax":  0.5,
-                                             "ay":  0.77
-                                         },
-                                 "scale":  1,
-                                 "archetype":  "card",
-                                 "interval":  6,
-                                 "items":  [
-                                               "STAY IN CHARACTER: Roleplay is mandatory at all times. Breaking character ruins immersion for everyone. Use /ooc for out-of-character communication.",
-                                               "NO RDM / VDM: Attacking or running over players without justifiable roleplay initiation is strictly bannable.",
-                                               "VALUE YOUR LIFE: Fear roleplay is required — value your character\u0027s life realistically during armed conflict.",
-                                               "NO METAGAMING: Information gained outside the city (Discord, streams, OOC) cannot be used in character.",
-                                               "COMMUNITY RESPECT: Toxicity, discrimination, and disrespect are not tolerated under any circumstances."
-                                           ]
-                             },
-                    "music":  {
-                                  "on":  true,
-                                  "pos":  {
-                                              "ax":  0.045,
-                                              "ay":  0.93
-                                          },
-                                  "scale":  1,
-                                  "archetype":  "pill"
-                              },
-                    "socials":  {
-                                    "on":  true,
-                                    "pos":  {
-                                                "ax":  0.955,
-                                                "ay":  0.93
-                                            },
-                                    "scale":  1,
-                                    "archetype":  "chips",
-                                    "items":  [
-                                                  {
-                                                      "icon":  "discord",
-                                                      "label":  "discord.gg/chicago-rp"
-                                                  },
-                                                  {
-                                                      "icon":  "globe",
-                                                      "label":  "chicagoroleplay.net"
-                                                  }
-                                              ]
-                                },
-                    "greeting":  {
-                                     "on":  true,
-                                     "pos":  {
-                                                 "ax":  0.045,
-                                                 "ay":  0.06
-                                             },
-                                     "scale":  1,
-                                     "archetype":  "chip",
-                                     "text":  "Welcome to Chicago"
-                                 },
-                    "stats":  {
-                                  "on":  true,
-                                  "pos":  {
-                                              "ax":  0.955,
-                                              "ay":  0.06
-                                          },
-                                  "scale":  1,
-                                  "archetype":  "duo"
-                              },
-                    "keybinds":  {
-                                     "on":  true,
-                                     "pos":  {
-                                                 "ax":  0.5,
-                                                 "ay":  0.65
-                                             },
-                                     "scale":  1,
-                                     "archetype":  "row",
-                                     "items":  [
-                                                   {
-                                                       "key":  "M",
-                                                       "label":  "Mute Music"
-                                                   },
-                                                   {
-                                                       "key":  "↑ ↓",
-                                                       "label":  "Volume"
-                                                   },
-                                                   {
-                                                       "key":  "N",
-                                                       "label":  "Next Track"
-                                                   },
-                                                   {
-                                                       "key":  "ENTER",
-                                                       "label":  "Join City"
-                                                   }
-                                               ]
-                                 },
-                    "news":  {
-                                 "on":  false,
-                                 "pos":  {
-                                             "ax":  0.045,
-                                             "ay":  0.48
-                                         },
-                                 "scale":  1,
-                                 "archetype":  "list",
-                                 "title":  "LATEST UPDATES",
-                                 "items":  [
-
-                                           ]
-                             },
-                    "staff":  {
-                                  "on":  true,
-                                  "pos":  {
-                                              "ax":  0.955,
-                                              "ay":  0.48
-                                          },
-                                  "scale":  1,
-                                  "archetype":  "cards",
-                                  "title":  "CHICAGO ROLEPLAY TEAM",
-                                  "categories":  [
-                                                     {
-                                                         "category":  "OWNER",
-                                                         "badge":  "OWNER",
-                                                         "color":  "#E32636",
-                                                         "members":  [
-                                                                         {
-                                                                             "name":  "BLACK GHOST",
-                                                                             "role":  "OWNER"
-                                                                         }
-                                                                     ]
-                                                     },
-                                                     {
-                                                         "category":  "CO-OWNER",
-                                                         "badge":  "CO-OWNER",
-                                                         "color":  "#D12030",
-                                                         "members":  [
-                                                                         {
-                                                                             "name":  "MR ALPHA",
-                                                                             "role":  "CO OWNER"
-                                                                         }
-                                                                     ]
-                                                     },
-                                                     {
-                                                         "category":  "DEVELOPER",
-                                                         "badge":  "DEVELOPER",
-                                                         "color":  "#B51B2A",
-                                                         "members":  [
-                                                                         {
-                                                                             "name":  "SOUH4IL",
-                                                                             "role":  "Developer"
-                                                                         }
-                                                                     ]
-                                                     }
-                                                 ],
-                                  "items":  [
-                                                {
-                                                    "name":  "BLACK GHOST",
-                                                    "role":  "OWNER"
-                                                },
-                                                {
-                                                    "name":  "MR ALPHA",
-                                                    "role":  "CO OWNER"
-                                                },
-                                                {
-                                                    "name":  "SOUH4IL",
-                                                    "role":  "Developer"
-                                                }
-                                            ]
-                              },
-                    "log":  {
-                                "on":  false,
-                                "pos":  {
-                                            "ax":  0.045,
-                                            "ay":  0.78
-                                        },
-                                "scale":  1,
-                                "archetype":  "console"
-                            },
-                    "clock":  {
-                                  "on":  false,
-                                  "pos":  {
-                                              "ax":  0.5,
-                                              "ay":  0.06
-                                          },
-                                  "scale":  1,
-                                  "archetype":  "mono"
-                              }
-                }
+  "rev": 1,
+  "theme": {
+    "accent": "#E32636",
+    "radius": 14,
+    "glass": true,
+    "font": "geist",
+    "uiScale": 1,
+    "surface": 0.8,
+    "shadow": 1.2,
+    "textColor": "#FFFFFF",
+    "mutedColor": "#A5A5A5",
+    "entrance": "rise",
+    "entranceSpeed": 1
+  },
+  "background": {
+    "mode": "video",
+    "images": [],
+    "interval": 9,
+    "kenburns": true,
+    "transition": "fade",
+    "video": {
+      "url": "media/chicago.video.mp4",
+      "loop": true,
+      "audio": false,
+      "volume": 0.35
+    },
+    "gradient": {
+      "from": "#090909",
+      "to": "#8B101D",
+      "angle": 160,
+      "animated": true
+    },
+    "solid": "#090909",
+    "overlay": {
+      "dim": 0.05,
+      "vignette": 0.15,
+      "grain": false,
+      "scanlines": false,
+      "bars": false,
+      "tint": {
+        "color": "#E32636",
+        "amount": 0.0
+      },
+      "sweep": false
+    },
+    "particles": {
+      "mode": "none",
+      "density": 0.6,
+      "speed": 0.8,
+      "color": "accent"
+    }
+  },
+  "music": {
+    "enabled": true,
+    "tracks": [
+      {
+        "title": "Lil Durk - AHHH HA (Official Music Video)",
+        "url": "https://www.youtube.com/watch?v=_q6go0G49A0"
+      }
+    ],
+    "volume": 0.35,
+    "shuffle": false,
+    "visualizer": true,
+    "keys": true,
+    "osd": true
+  },
+  "exit": {
+    "hold": true,
+    "minSeconds": 0
+  },
+  "text": {
+    "enterHint": "PRESS ENTER TO JOIN CHICAGO RP",
+    "tipCap": "COMMUNITY RULES",
+    "nowPlaying": "NOW PLAYING",
+    "noMusic": "No music",
+    "online": "online",
+    "consoleCap": "LOADING CHICAGO RP",
+    "stages": {
+      "connecting": "Connecting to Chicago Roleplay...",
+      "core": "Starting core services...",
+      "beforeMap": "Preparing Chicago environment...",
+      "afterMap": "Finalising street data...",
+      "session": "Joining Chicago session...",
+      "map": "Loading map...",
+      "streaming": "Streaming assets..."
+    }
+  },
+  "widgets": {
+    "logo": {
+      "on": false,
+      "pos": {
+        "ax": 0.5,
+        "ay": 0.2
+      },
+      "scale": 1,
+      "archetype": "glow",
+      "url": "assets/Logo.png",
+      "accent": null,
+      "opacity": 1,
+      "width": 9.5
+    },
+    "title": {
+      "on": false,
+      "pos": {
+        "ax": 0.5,
+        "ay": 0.36
+      },
+      "scale": 1,
+      "archetype": "gradient",
+      "text": "CHICAGO ROLEPLAY",
+      "sub": "WELCOME TO CHICAGO CITY",
+      "accent": null,
+      "opacity": 1,
+      "size": 3.4,
+      "tracking": 0.14,
+      "weight": 800,
+      "upper": true
+    },
+    "progress": {
+      "on": true,
+      "pos": {
+        "ax": 0.5,
+        "ay": 0.88
+      },
+      "scale": 1,
+      "archetype": "bar",
+      "showPercent": true,
+      "showStage": true,
+      "accent": null,
+      "opacity": 1,
+      "width": 46,
+      "thickness": 0.65,
+      "sheen": true
+    },
+    "tips": {
+      "on": true,
+      "pos": {
+        "ax": 0.5,
+        "ay": 0.77
+      },
+      "scale": 1,
+      "archetype": "card",
+      "interval": 6,
+      "items": [
+        "STAY IN CHARACTER: Roleplay is mandatory at all times. Breaking character ruins immersion for everyone. Use /ooc for out-of-character communication.",
+        "NO RDM / VDM: Attacking or running over players without justifiable roleplay initiation is strictly bannable.",
+        "VALUE YOUR LIFE: Fear roleplay is required \u2014 value your character's life realistically during armed conflict.",
+        "NO METAGAMING: Information gained outside the city (Discord, streams, OOC) cannot be used in character.",
+        "COMMUNITY RESPECT: Toxicity, discrimination, and disrespect are not tolerated under any circumstances."
+      ]
+    },
+    "music": {
+      "on": true,
+      "pos": {
+        "ax": 0.045,
+        "ay": 0.93
+      },
+      "scale": 1,
+      "archetype": "pill"
+    },
+    "socials": {
+      "on": true,
+      "pos": {
+        "ax": 0.955,
+        "ay": 0.93
+      },
+      "scale": 1,
+      "archetype": "chips",
+      "items": [
+        {
+          "icon": "discord",
+          "label": "discord.gg/chicago-rp"
+        },
+        {
+          "icon": "globe",
+          "label": "chicagoroleplay.net"
+        }
+      ]
+    },
+    "greeting": {
+      "on": true,
+      "pos": {
+        "ax": 0.045,
+        "ay": 0.06
+      },
+      "scale": 1,
+      "archetype": "chip",
+      "text": "Welcome to Chicago"
+    },
+    "stats": {
+      "on": true,
+      "pos": {
+        "ax": 0.955,
+        "ay": 0.06
+      },
+      "scale": 1,
+      "archetype": "duo"
+    },
+    "keybinds": {
+      "on": true,
+      "pos": {
+        "ax": 0.5,
+        "ay": 0.65
+      },
+      "scale": 1,
+      "archetype": "row",
+      "items": [
+        {
+          "key": "M",
+          "label": "Mute Music"
+        },
+        {
+          "key": "\u2191 \u2193",
+          "label": "Volume"
+        },
+        {
+          "key": "N",
+          "label": "Next Track"
+        },
+        {
+          "key": "ENTER",
+          "label": "Join City"
+        }
+      ]
+    },
+    "news": {
+      "on": false,
+      "pos": {
+        "ax": 0.045,
+        "ay": 0.48
+      },
+      "scale": 1,
+      "archetype": "list",
+      "title": "LATEST UPDATES",
+      "items": []
+    },
+    "staff": {
+      "on": true,
+      "pos": {
+        "ax": 0.955,
+        "ay": 0.48
+      },
+      "scale": 1,
+      "archetype": "cards",
+      "title": "CHICAGO ROLEPLAY TEAM",
+      "categories": [
+        {
+          "category": "OWNER",
+          "badge": "OWNER",
+          "color": "#E32636",
+          "members": [
+            {
+              "name": "BLACK GHOST",
+              "role": "OWNER"
+            }
+          ]
+        },
+        {
+          "category": "CO-OWNER",
+          "badge": "CO-OWNER",
+          "color": "#D12030",
+          "members": [
+            {
+              "name": "MR ALPHA",
+              "role": "CO OWNER"
+            }
+          ]
+        },
+        {
+          "category": "DEVELOPER",
+          "badge": "DEVELOPER",
+          "color": "#B51B2A",
+          "members": [
+            {
+              "name": "SOUH4IL",
+              "role": "Developer"
+            }
+          ]
+        }
+      ],
+      "items": [
+        {
+          "name": "BLACK GHOST",
+          "role": "OWNER"
+        },
+        {
+          "name": "MR ALPHA",
+          "role": "CO OWNER"
+        },
+        {
+          "name": "SOUH4IL",
+          "role": "Developer"
+        }
+      ]
+    },
+    "log": {
+      "on": false,
+      "pos": {
+        "ax": 0.045,
+        "ay": 0.78
+      },
+      "scale": 1,
+      "archetype": "console"
+    },
+    "clock": {
+      "on": false,
+      "pos": {
+        "ax": 0.5,
+        "ay": 0.06
+      },
+      "scale": 1,
+      "archetype": "mono"
+    }
+  }
 }
