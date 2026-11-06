@@ -460,6 +460,199 @@ lib.callback.register('souh4il_dev:server:giveVehicleKeys', function(source, net
     return { success = false, error = "VEHICLE_ENTITY_NOT_FOUND" }
 end)
 
+---Callback 13: Set Player Job & Grade (Qbox Integrated)
+lib.callback.register('souh4il_dev:server:setPlayerJob', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_job')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local targetId = tonumber(data.targetId)
+    local jobName = tostring(data.job or "unemployed"):lower():gsub("%s+", "")
+    local gradeLevel = tonumber(data.grade) or 0
+
+    local targetPlayer = exports.qbx_core:GetPlayer(targetId)
+    if not targetPlayer then
+        return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    local success, err = targetPlayer.Functions.SetJob(jobName, gradeLevel)
+    if success ~= false then
+        Logger.Write("SET_PLAYER_JOB", source, targetId, { job = jobName, grade = gradeLevel }, "SUCCESS")
+        return { success = true }
+    else
+        return { success = false, error = tostring(err or "Failed to set job") }
+    end
+end)
+
+---Callback 14: Clear Player Inventory (ox_inventory Integrated)
+lib.callback.register('souh4il_dev:server:clearPlayerInventory', function(source, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'clear_inventory')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local target = tonumber(targetId)
+    if not target or not DoesPlayerExist(tostring(target)) then
+        return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    exports.ox_inventory:ClearInventory(target)
+    Logger.Write("CLEAR_INVENTORY", source, target, {}, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback 15: Broadcast Server Announcement
+lib.callback.register('souh4il_dev:server:broadcastAnnouncement', function(source, message)
+    local allowed, reason = Security.CheckRateLimit(source, 'broadcast')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local cleanMsg = Security.SanitizeString(message, 300)
+    if #cleanMsg == 0 then return { success = false, error = "EMPTY_MESSAGE" } end
+
+    TriggerClientEvent('ox_lib:notify', -1, {
+        title = "SERVER ANNOUNCEMENT",
+        description = cleanMsg,
+        type = 'inform',
+        duration = 10000
+    })
+
+    Logger.Write("BROADCAST_ANNOUNCEMENT", source, nil, { message = cleanMsg }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback 16: Set World Time
+lib.callback.register('souh4il_dev:server:setTime', function(source, hour, minute)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_time')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local h = math.max(0, math.min(23, tonumber(hour) or 12))
+    local m = math.max(0, math.min(59, tonumber(minute) or 0))
+
+    GlobalState.time = { hour = h, minute = m }
+    TriggerClientEvent('souh4il_dev:client:syncTime', -1, h, m)
+    Logger.Write("SET_WORLD_TIME", source, nil, { hour = h, minute = m }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback 17: Set City Blackout
+lib.callback.register('souh4il_dev:server:setBlackout', function(source, state)
+    local allowed, reason = Security.CheckRateLimit(source, 'weather_control')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    GlobalState.blackout = (state == true)
+    TriggerClientEvent('souh4il_dev:client:syncBlackout', -1, state == true)
+    Logger.Write("SET_CITY_BLACKOUT", source, nil, { blackout = state == true }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback 18: Set Vehicle Custom Plate
+lib.callback.register('souh4il_dev:server:setVehiclePlate', function(source, netId, newPlate)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_plate')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local plateClean = tostring(newPlate or ""):upper():sub(1, 8)
+    local entity = NetworkGetEntityFromNetworkId(netId)
+    if DoesEntityExist(entity) then
+        SetVehicleNumberPlateText(entity, plateClean)
+        pcall(function()
+            exports.qbx_vehiclekeys:GiveKeys(source, entity)
+        end)
+        Logger.Write("SET_VEHICLE_PLATE", source, nil, { netId = netId, plate = plateClean }, "SUCCESS")
+        return { success = true, plate = plateClean }
+    end
+    return { success = false, error = "VEHICLE_NOT_FOUND" }
+end)
+
+---Callback 19: Get All Registered Items (ox_inventory Dynamic Catalog)
+local cachedGameItems = nil
+lib.callback.register('souh4il_dev:server:getAllGameItems', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not cachedGameItems then
+        local rawItems = exports.ox_inventory:Items() or {}
+        local list = {}
+        for name, data in pairs(rawItems) do
+            local cleanName = tostring(name):lower()
+            local cat = 'tool'
+            if cleanName:find('weapon_') then
+                cat = 'weapon'
+            elseif cleanName:find('ammo') then
+                cat = 'ammo'
+            elseif cleanName:find('burger') or cleanName:find('water') or cleanName:find('sandwich') or cleanName:find('drink') or cleanName:find('food') or cleanName:find('coffee') or cleanName:find('cola') or cleanName:find('sprunk') or cleanName:find('tea') or cleanName:find('taco') or cleanName:find('donut') or cleanName:find('hotdog') then
+                cat = 'food'
+            elseif cleanName:find('bandage') or cleanName:find('medikit') or cleanName:find('firstaid') or cleanName:find('armor') or cleanName:find('pill') or cleanName:find('painkiller') then
+                cat = 'medical'
+            end
+
+            table.insert(list, {
+                name = cleanName,
+                label = data.label or cleanName,
+                category = cat,
+                description = data.description or ''
+            })
+        end
+        table.sort(list, function(a, b) return tostring(a.label) < tostring(b.label) end)
+        cachedGameItems = list
+    end
+
+    return { success = true, items = cachedGameItems }
+end)
+
+---Callback 20: Get All Registered Vehicles (Qbox Dynamic Catalog)
+local cachedGameVehicles = nil
+lib.callback.register('souh4il_dev:server:getAllGameVehicles', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not cachedGameVehicles then
+        local rawVehs = exports.qbx_core:GetVehiclesByName() or {}
+        local list = {}
+        for model, v in pairs(rawVehs) do
+            table.insert(list, {
+                model = tostring(model):lower(),
+                name = v.name or model,
+                brand = v.brand or '',
+                category = v.category or 'sports',
+                type = v.type or 'automobile'
+            })
+        end
+        table.sort(list, function(a, b) return tostring(a.name) < tostring(b.name) end)
+        cachedGameVehicles = list
+    end
+
+    return { success = true, vehicles = cachedGameVehicles }
+end)
+
 -- Clean shutdown handler
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= cache.resource then return end

@@ -308,17 +308,23 @@ body {
 }
 
 .close-btn {
-    background: rgba(255, 51, 102, 0.1);
-    border: 1px solid rgba(255, 51, 102, 0.3);
+    background: rgba(255, 51, 102, 0.15);
+    border: 1px solid rgba(255, 51, 102, 0.4);
     color: var(--accent-red);
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.15s ease;
+    pointer-events: auto !important;
+    z-index: 1000;
+}
+
+.close-btn svg {
+    pointer-events: none;
 }
 
 .close-btn:hover {
@@ -843,8 +849,36 @@ input:checked + .slider:before {
 .p-btn.goto { background: #0088ff; color: #fff; }
 .p-btn.bring { background: #9d4edd; color: #fff; }
 .p-btn.freeze { background: #00e5ff; color: #000; }
+.p-btn.setjob { background: #00b4d8; color: #000; }
+.p-btn.spectate { background: #7209b7; color: #fff; }
+.p-btn.clearinv { background: #e63946; color: #fff; }
 .p-btn.kick { background: #ffaa00; color: #000; }
 .p-btn.ban { background: #ff3366; color: #fff; }
+
+.vehicle-color-presets {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.color-chip {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.color-chip:hover {
+    transform: scale(1.05);
+}
+
+.font-mono {
+    font-family: var(--font-mono) !important;
+}
 
 /* Modal */
 .modal-overlay {
@@ -939,5 +973,318 @@ input:checked + .slider:before {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
+}
+
+/* Online Players in Teleport Tab */
+.tp-players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.tp-player-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.tp-player-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-cyan);
+}
+
+.tp-player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tp-player-id {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent-cyan);
+    font-weight: 700;
+}
+
+.tp-player-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.tp-player-char {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.tp-player-btns {
+    display: flex;
+    gap: 6px;
+}
+
+/* Item Filter Chips */
+.item-filter-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-chip.active,
+.filter-chip:hover {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+/* Visual Item Spawner Grid */
+.visual-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.visual-item-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.visual-item-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.15);
+}
+
+.item-thumb-wrapper {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.item-thumb {
+    max-width: 54px;
+    max-height: 54px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.item-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.item-name-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.item-qty-row {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+}
+
+.qty-btn {
+    flex: 1;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--accent-cyan);
+    border-radius: 3px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 0;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.qty-btn:hover {
+    background: var(--accent-cyan);
+    color: #000;
+}
+
+/* Vehicle Filter Chips */
+.veh-filter-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-chip-veh {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-chip-veh.active,
+.filter-chip-veh:hover {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+/* Visual Vehicles Grid */
+.visual-vehicles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.visual-veh-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.visual-veh-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.15);
+}
+
+.veh-thumb-wrapper {
+    width: 100%;
+    height: 105px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    position: relative;
+}
+
+.veh-thumb {
+    max-width: 92%;
+    max-height: 90px;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
+    transition: transform 0.25s ease;
+}
+
+.visual-veh-card:hover .veh-thumb {
+    transform: scale(1.08);
+}
+
+.veh-brand-tag {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    background: rgba(0, 0, 0, 0.65);
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+}
+
+.veh-cat-tag {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.veh-title {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+}
+
+.veh-model-sub {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.veh-spawn-btn {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 136, 255, 0.2));
+    border: 1px solid var(--accent-cyan);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 0;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.veh-spawn-btn:hover {
+    background: var(--accent-cyan);
+    color: #000;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
 }
 

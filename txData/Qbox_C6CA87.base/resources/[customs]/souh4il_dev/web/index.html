@@ -52,10 +52,6 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                         <span>God Powers</span>
                     </button>
-                    <button class="nav-item" data-tab="players">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        <span>Players</span>
-                    </button>
                     <button class="nav-item" data-tab="teleport">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
                         <span>Teleport</span>
@@ -67,6 +63,14 @@
                     <button class="nav-item" data-tab="vehicles">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H7.5a1 1 0 0 0-.8.4L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3m14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>
                         <span>Vehicles</span>
+                    </button>
+                    <button class="nav-item" data-tab="players">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>Players</span>
+                    </button>
+                    <button class="nav-item" data-tab="devtools">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        <span>Dev Tools</span>
                     </button>
                     <button class="nav-item" data-tab="world">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -80,7 +84,7 @@
 
                 <div class="sidebar-footer">
                     <span class="version-tag">CORE v1.0.0</span>
-                    <span class="status-tag">SECURE</span>
+                    <span class="status-tag">PRO MASTER</span>
                 </div>
             </aside>
 
@@ -100,7 +104,7 @@
                             <span class="telemetry-value active" id="telemetry-auth">DUAL-KEY ACTIVE</span>
                         </div>
                         <button class="close-btn" id="close-btn" title="Close Panel (ESC)">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
@@ -115,7 +119,7 @@
                         <div class="metrics-grid">
                             <div class="metric-card">
                                 <div class="metric-header"><span>SYSTEM STATUS</span><div class="metric-icon cyan">●</div></div>
-                                <div class="metric-body"><h3>OPERATIONAL</h3><p>Security Core Active</p></div>
+                                <div class="metric-body"><h3>OPERATIONAL</h3><p>Master Core Active</p></div>
                             </div>
                             <div class="metric-card">
                                 <div class="metric-header"><span>VERIFIED ROLE</span><div class="metric-icon blue">★</div></div>
@@ -123,7 +127,7 @@
                             </div>
                             <div class="metric-card">
                                 <div class="metric-header"><span>ONLINE PLAYERS</span><div class="metric-icon green">👥</div></div>
-                                <div class="metric-body"><h3 id="dash-player-count">--</h3><p>Active on server</p></div>
+                                <div class="metric-body"><h3 id="dash-player-count">--</h3><p>Connected to server</p></div>
                             </div>
                             <div class="metric-card">
                                 <div class="metric-header"><span>AUDIT ENGINE</span><div class="metric-icon purple">🔒</div></div>
@@ -134,42 +138,18 @@
                         <!-- Quick Actions Section -->
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>QUICK ACTIONS</h4>
-                                <span>Instant Master Controls</span>
+                                <h4>QUICK MASTER ACTIONS</h4>
+                                <span>Immediate One-Click Controls</span>
                             </div>
                             <div class="quick-actions-grid">
-                                <button class="action-btn" id="qa-revive">
-                                    <span class="btn-icon">✚</span>
-                                    <span class="btn-text">Revive Self</span>
-                                </button>
-                                <button class="action-btn" id="qa-heal">
-                                    <span class="btn-icon">♥</span>
-                                    <span class="btn-text">Heal & Feed</span>
-                                </button>
-                                <button class="action-btn" id="qa-repair">
-                                    <span class="btn-icon">🔧</span>
-                                    <span class="btn-text">Repair Vehicle</span>
-                                </button>
-                                <button class="action-btn" id="qa-clean">
-                                    <span class="btn-icon">✨</span>
-                                    <span class="btn-text">Clean Vehicle</span>
-                                </button>
-                                <button class="action-btn" id="qa-tpm">
-                                    <span class="btn-icon">📍</span>
-                                    <span class="btn-text">TP to Waypoint</span>
-                                </button>
-                                <button class="action-btn danger" id="qa-dv">
-                                    <span class="btn-icon">🗑</span>
-                                    <span class="btn-text">Delete Vehicle</span>
-                                </button>
-                                <button class="action-btn" id="qa-cash">
-                                    <span class="btn-icon">💵</span>
-                                    <span class="btn-text">Give $50,000 Cash</span>
-                                </button>
-                                <button class="action-btn" id="qa-armor">
-                                    <span class="btn-icon">🛡</span>
-                                    <span class="btn-text">Max Armor</span>
-                                </button>
+                                <button class="action-btn" id="qa-revive"><span class="btn-icon">✚</span><span class="btn-text">Revive Self</span></button>
+                                <button class="action-btn" id="qa-heal"><span class="btn-icon">♥</span><span class="btn-text">Heal & Feed</span></button>
+                                <button class="action-btn" id="qa-armor"><span class="btn-icon">🛡</span><span class="btn-text">Max Armor (100)</span></button>
+                                <button class="action-btn" id="qa-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair Vehicle</span></button>
+                                <button class="action-btn" id="qa-clean"><span class="btn-icon">✨</span><span class="btn-text">Clean Vehicle</span></button>
+                                <button class="action-btn" id="qa-tpm"><span class="btn-icon">📍</span><span class="btn-text">TP to Waypoint</span></button>
+                                <button class="action-btn danger" id="qa-dv"><span class="btn-icon">🗑</span><span class="btn-text">Delete Vehicle</span></button>
+                                <button class="action-btn" id="qa-cash"><span class="btn-icon">💵</span><span class="btn-text">Give $50,000 Cash</span></button>
                             </div>
                         </div>
                     </section>
@@ -178,65 +158,215 @@
                     <section class="tab-pane" id="pane-god">
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>DIVINE CAPABILITIES (GOD MODE)</h4>
-                                <span>Absolute Character Immunity & Movement</span>
+                                <h4>DIVINE CAPABILITIES & GOD SUITE</h4>
+                                <span>Complete Immunity, Weapon Boosts, and Physical Exploits</span>
                             </div>
                             <div class="toggles-grid">
                                 <div class="toggle-card">
-                                    <div class="toggle-info">
-                                        <span class="toggle-title">God Mode (Invincibility)</span>
-                                        <span class="toggle-desc">Zero damage, infinite health & armor, no ragdoll</span>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-godmode">
-                                        <span class="slider"></span>
-                                    </label>
+                                    <div class="toggle-info"><span class="toggle-title">God Mode (Invincibility)</span><span class="toggle-desc">Immune to bullets, explosions, fire, drowning, ragdoll</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-godmode"><span class="slider"></span></label>
                                 </div>
                                 <div class="toggle-card">
-                                    <div class="toggle-info">
-                                        <span class="toggle-title">NoClip (Free Flight)</span>
-                                        <span class="toggle-desc">Fly through walls with W/A/S/D + Space/Ctrl</span>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-noclip">
-                                        <span class="slider"></span>
-                                    </label>
+                                    <div class="toggle-info"><span class="toggle-title">NoClip (Free Flight)</span><span class="toggle-desc">Fly through walls & terrain with WASD + Space/Ctrl/Shift</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-noclip"><span class="slider"></span></label>
                                 </div>
                                 <div class="toggle-card">
-                                    <div class="toggle-info">
-                                        <span class="toggle-title">Ghost Invisibility</span>
-                                        <span class="toggle-desc">Completely hidden from all network players</span>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-invis">
-                                        <span class="slider"></span>
-                                    </label>
+                                    <div class="toggle-info"><span class="toggle-title">Ghost Invisibility</span><span class="toggle-desc">100% invisible to all players in the server</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-invis"><span class="slider"></span></label>
                                 </div>
                                 <div class="toggle-card">
-                                    <div class="toggle-info">
-                                        <span class="toggle-title">Super Sprint & Unlimited Stamina</span>
-                                        <span class="toggle-desc">Run and swim at maximum velocity forever</span>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-sprint">
-                                        <span class="slider"></span>
-                                    </label>
+                                    <div class="toggle-info"><span class="toggle-title">Infinite Ammo & No Reload</span><span class="toggle-desc">All weapons have endless magazines with zero reload</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-ammo"><span class="slider"></span></label>
                                 </div>
                                 <div class="toggle-card">
-                                    <div class="toggle-info">
-                                        <span class="toggle-title">Super Jump</span>
-                                        <span class="toggle-desc">Leap over buildings and high barriers</span>
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-jump">
-                                        <span class="slider"></span>
-                                    </label>
+                                    <div class="toggle-info"><span class="toggle-title">One-Punch / 1000x Melee</span><span class="toggle-desc">One hit kill for any ped, player, or vehicle</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-damage"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Never Wanted (Police Immunity)</span><span class="toggle-desc">Police ignore all crimes and never dispatch stars</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-wanted"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Thermal Vision (Heat Cam)</span><span class="toggle-desc">Thermal detection through walls and foliage</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-thermal"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Night Vision (Military Cam)</span><span class="toggle-desc">Crystal clear green tactical vision in pitch black</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-nightvision"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Super Sprint & Unlimited Stamina</span><span class="toggle-desc">Maximum run & swim velocity with zero fatigue</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-sprint"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Super Jump</span><span class="toggle-desc">High altitude jumps over buildings and obstacles</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-jump"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Vehicle God Mode</span><span class="toggle-desc">Current vehicle cannot be damaged, wheels cannot burst</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-vehgod"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Vehicle Rocket Boost</span><span class="toggle-desc">Hold Left Shift inside vehicle for instant rocket thrust</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-vehboost"><span class="slider"></span></label>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    <!-- Tab: Player Management -->
+                    <!-- Tab: Teleportation -->
+                    <section class="tab-pane" id="pane-teleport">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>TELEPORT TO ONLINE PLAYERS</h4>
+                                <div class="header-tools">
+                                    <input type="text" id="tp-player-search" class="search-input" placeholder="Filter player to warp to...">
+                                    <button class="secondary-btn" id="btn-tp-refresh-players">Refresh Players</button>
+                                </div>
+                            </div>
+                            <div class="tp-players-grid" id="tp-players-container">
+                                <div class="table-empty">Loading active players...</div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>POPULAR DESTINATIONS</h4>
+                                <span>Fast Warp to Key Locations in Chicago</span>
+                            </div>
+                            <div class="teleport-grid">
+                                <button class="teleport-btn" data-loc="legion"><span>Legion Square</span><small>City Center</small></button>
+                                <button class="teleport-btn" data-loc="pillbox"><span>Pillbox Hospital</span><small>Medical HQ</small></button>
+                                <button class="teleport-btn" data-loc="mrpd"><span>Mission Row PD</span><small>Police Station</small></button>
+                                <button class="teleport-btn" data-loc="sandy"><span>Sandy Shores Airfield</span><small>Desert Runway</small></button>
+                                <button class="teleport-btn" data-loc="paleto"><span>Paleto Bay</span><small>North Coast</small></button>
+                                <button class="teleport-btn" data-loc="mazebank"><span>Maze Bank Tower</span><small>Rooftop Helipad</small></button>
+                                <button class="teleport-btn" data-loc="casino"><span>Diamond Casino</span><small>Luxury Resort</small></button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM COORDINATES</h4>
+                                <span>Teleport to exact Vector3</span>
+                            </div>
+                            <div class="form-row coords-row">
+                                <input type="number" step="0.01" id="tp-x" class="search-input" placeholder="X Coord">
+                                <input type="number" step="0.01" id="tp-y" class="search-input" placeholder="Y Coord">
+                                <input type="number" step="0.01" id="tp-z" class="search-input" placeholder="Z Coord">
+                                <button class="primary-btn" id="btn-tp-coords">Teleport to Coords</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Visual Items & Weapons -->
+                    <section class="tab-pane" id="pane-items">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>VISUAL ITEM SPAWNER (WITH PICTURES)</h4>
+                                <div class="header-tools">
+                                    <div class="item-filter-tabs">
+                                        <button class="filter-chip active" data-cat="all">All</button>
+                                        <button class="filter-chip" data-cat="weapon">Weapons</button>
+                                        <button class="filter-chip" data-cat="ammo">Ammo</button>
+                                        <button class="filter-chip" data-cat="food">Food & Drink</button>
+                                        <button class="filter-chip" data-cat="medical">Medical</button>
+                                        <button class="filter-chip" data-cat="tool">Tools & Gear</button>
+                                    </div>
+                                    <input type="text" id="item-search-input" class="search-input" placeholder="Search item...">
+                                </div>
+                            </div>
+                            <div class="visual-items-grid" id="visual-items-container"></div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM ITEM DIRECT SPAWN</h4>
+                                <span>Spawn any raw item from ox_inventory</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="custom-item-name" class="search-input" placeholder="Item name (e.g. water, burger, weapon_pistol)...">
+                                <input type="number" id="custom-item-count" class="search-input count-input" value="1" min="1" max="1000">
+                                <button class="primary-btn" id="btn-spawn-item">Give Item</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Vehicles & Custom Workshop -->
+                    <section class="tab-pane" id="pane-vehicles">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>VISUAL VEHICLE SHOWCASE (WITH PICTURES)</h4>
+                                <div class="header-tools">
+                                    <div class="veh-filter-tabs">
+                                        <button class="filter-chip-veh active" data-cat="all">All</button>
+                                        <button class="filter-chip-veh" data-cat="super">Super</button>
+                                        <button class="filter-chip-veh" data-cat="sports">Sports</button>
+                                        <button class="filter-chip-veh" data-cat="muscle">Muscle</button>
+                                        <button class="filter-chip-veh" data-cat="suvs">SUVs</button>
+                                        <button class="filter-chip-veh" data-cat="sedans">Sedans</button>
+                                        <button class="filter-chip-veh" data-cat="emergency">Emergency</button>
+                                        <button class="filter-chip-veh" data-cat="motorcycles">Bikes</button>
+                                        <button class="filter-chip-veh" data-cat="offroad">Off-Road</button>
+                                        <button class="filter-chip-veh" data-cat="vans">Vans</button>
+                                    </div>
+                                    <input type="text" id="veh-search-input" class="search-input" placeholder="Search vehicle by name or model...">
+                                </div>
+                            </div>
+                            <div class="visual-vehicles-grid" id="visual-vehicles-container"></div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>MANUAL VEHICLE SPAWNER</h4>
+                                <span>Spawn vehicle directly into driver seat with keys & max tune</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="veh-model-input" class="search-input" placeholder="Enter vehicle model (e.g. nero, sultan, a19police)...">
+                                <label class="checkbox-label"><input type="checkbox" id="veh-max-tune" checked> Max Tune</label>
+                                <button class="primary-btn" id="btn-spawn-veh">Spawn Vehicle</button>
+                            </div>
+                            <div class="quick-vehicles-row">
+                                <span>Quick Spawns:</span>
+                                <button class="quick-veh-btn" data-model="nero">Nero</button>
+                                <button class="quick-veh-btn" data-model="sultan">Sultan</button>
+                                <button class="quick-veh-btn" data-model="zentorno">Zentorno</button>
+                                <button class="quick-veh-btn" data-model="a19police">A19 Police</button>
+                                <button class="quick-veh-btn" data-model="bf400">BF400 (Bike)</button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM PLATE & WORKSHOP CONTROLS</h4>
+                                <span>Modify current occupied vehicle</span>
+                            </div>
+                            <div class="form-row" style="margin-bottom: 14px;">
+                                <input type="text" id="veh-plate-input" class="search-input" placeholder="Enter custom plate text (max 8 chars)..." maxlength="8">
+                                <button class="primary-btn" id="btn-set-plate">Set Custom Plate</button>
+                                <button class="secondary-btn" id="btn-flip-veh">Flip Upright</button>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="action-btn" id="veh-action-tune"><span class="btn-icon">⚡</span><span class="btn-text">Apply Max Tune</span></button>
+                                <button class="action-btn" id="veh-action-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair & Clean</span></button>
+                                <button class="action-btn" id="veh-doors-all"><span class="btn-icon">🚪</span><span class="btn-text">Toggle All Doors</span></button>
+                                <button class="action-btn" id="veh-doors-hood"><span class="btn-icon">🚘</span><span class="btn-text">Toggle Hood</span></button>
+                                <button class="action-btn" id="veh-doors-trunk"><span class="btn-icon">📦</span><span class="btn-text">Toggle Trunk</span></button>
+                                <button class="action-btn danger" id="veh-action-delete"><span class="btn-icon">🗑</span><span class="btn-text">Delete Vehicle</span></button>
+                            </div>
+                            <div class="vehicle-color-presets" style="margin-top: 14px;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 8px;">Colors:</span>
+                                <button class="color-chip" data-color="0" style="background:#000; color:#fff;">Matte Black</button>
+                                <button class="color-chip" data-color="111" style="background:#fff; color:#000;">Pure White</button>
+                                <button class="color-chip" data-color="27" style="background:#d90429; color:#fff;">Crimson Red</button>
+                                <button class="color-chip" data-color="64" style="background:#0077b6; color:#fff;">Ultra Blue</button>
+                                <button class="color-chip" data-color="158" style="background:#ffd700; color:#000;">Pure Gold</button>
+                                <button class="color-chip" data-color="120" style="background:#c0c0c0; color:#000;">Chrome</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Players Management -->
                     <section class="tab-pane" id="pane-players">
                         <div class="section-card">
                             <div class="section-header">
@@ -266,115 +396,108 @@
                         </div>
                     </section>
 
-                    <!-- Tab: Teleportation -->
-                    <section class="tab-pane" id="pane-teleport">
+                    <!-- Tab: Developer Tools (NEW) -->
+                    <section class="tab-pane" id="pane-devtools">
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>POPULAR DESTINATIONS</h4>
-                                <span>Instant Waypoint Warp</span>
+                                <h4>COORDINATE INSPECTOR & CLIPBOARD</h4>
+                                <span>Copy exact vector format directly for Lua coding</span>
                             </div>
-                            <div class="teleport-grid">
-                                <button class="teleport-btn" data-loc="legion"><span>Legion Square</span><small>City Center</small></button>
-                                <button class="teleport-btn" data-loc="pillbox"><span>Pillbox Hospital</span><small>Medical HQ</small></button>
-                                <button class="teleport-btn" data-loc="mrpd"><span>Mission Row PD</span><small>Police Station</small></button>
-                                <button class="teleport-btn" data-loc="sandy"><span>Sandy Shores Airfield</span><small>Desert Runway</small></button>
-                                <button class="teleport-btn" data-loc="paleto"><span>Paleto Bay</span><small>North Coast</small></button>
-                                <button class="teleport-btn" data-loc="mazebank"><span>Maze Bank Tower</span><small>Rooftop Helipad</small></button>
-                                <button class="teleport-btn" data-loc="casino"><span>Diamond Casino</span><small>Luxury Resort</small></button>
+                            <div class="form-row coords-row" style="margin-bottom: 12px;">
+                                <button class="primary-btn" id="btn-copy-vec3">Copy Vector3(x, y, z)</button>
+                                <button class="primary-btn" id="btn-copy-vec4">Copy Vector4(x, y, z, h)</button>
+                                <button class="secondary-btn" id="btn-copy-heading">Copy Heading</button>
+                            </div>
+                            <div class="status-row">
+                                <span class="row-label">Current Location:</span>
+                                <span class="row-val highlight font-mono" id="current-coords-display">Click copy or refresh to inspect</span>
                             </div>
                         </div>
 
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>CUSTOM COORDINATES</h4>
-                                <span>Teleport to exact Vector3</span>
-                            </div>
-                            <div class="form-row coords-row">
-                                <input type="number" step="0.01" id="tp-x" class="search-input" placeholder="X Coord">
-                                <input type="number" step="0.01" id="tp-y" class="search-input" placeholder="Y Coord">
-                                <input type="number" step="0.01" id="tp-z" class="search-input" placeholder="Z Coord">
-                                <button class="primary-btn" id="btn-tp-coords">Teleport to Coords</button>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Tab: Items & Weapons -->
-                    <section class="tab-pane" id="pane-items">
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>INSTANT EQUIPMENT PACKS</h4>
-                                <span>Added directly to ox_inventory</span>
-                            </div>
-                            <div class="loadout-grid">
-                                <div class="loadout-card">
-                                    <h5>TACTICAL ARSENAL</h5>
-                                    <p>Carbine Rifle, Combat Pistol, Heavy SMG + Ammo</p>
-                                    <button class="primary-btn item-pack-btn" data-pack="tactical_weapons">Claim Weapons</button>
-                                </div>
-                                <div class="loadout-card">
-                                    <h5>SURVIVAL PACK</h5>
-                                    <p>5x Burger, 5x Water, 5x Medikit, 5x Bandage</p>
-                                    <button class="primary-btn item-pack-btn" data-pack="survival_food">Claim Food & Medical</button>
-                                </div>
-                                <div class="loadout-card">
-                                    <h5>SPECIAL OPS</h5>
-                                    <p>Special Carbine, AP Pistol, Heavy Sniper + Ammo</p>
-                                    <button class="primary-btn item-pack-btn" data-pack="special_ops">Claim Special Ops</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>CUSTOM ITEM SPAWNER</h4>
-                                <span>Spawn any item from ox_inventory</span>
-                            </div>
-                            <div class="form-row">
-                                <input type="text" id="custom-item-name" class="search-input" placeholder="Item name (e.g. water, testburger, weapon_pistol)...">
-                                <input type="number" id="custom-item-count" class="search-input count-input" value="1" min="1" max="1000">
-                                <button class="primary-btn" id="btn-spawn-item">Give Item</button>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Tab: Vehicles -->
-                    <section class="tab-pane" id="pane-vehicles">
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>VEHICLE SPAWNER</h4>
-                                <span>Spawn vehicle directly into driver seat with keys & max tune</span>
-                            </div>
-                            <div class="form-row">
-                                <input type="text" id="veh-model-input" class="search-input" placeholder="Enter vehicle model (e.g. nero, sultan, a19police)...">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="veh-max-tune" checked> Max Tune
-                                </label>
-                                <button class="primary-btn" id="btn-spawn-veh">Spawn Vehicle</button>
-                            </div>
-                            <div class="quick-vehicles-row">
-                                <span>Quick Spawns:</span>
-                                <button class="quick-veh-btn" data-model="nero">Nero</button>
-                                <button class="quick-veh-btn" data-model="sultan">Sultan</button>
-                                <button class="quick-veh-btn" data-model="zentorno">Zentorno</button>
-                                <button class="quick-veh-btn" data-model="a19police">A19 Police</button>
-                                <button class="quick-veh-btn" data-model="bf400">BF400 (Bike)</button>
-                            </div>
-                        </div>
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>VEHICLE MODIFICATIONS</h4>
-                                <span>Modify current occupied vehicle</span>
+                                <h4>AREA CLEANING TOOLS</h4>
+                                <span>Purge abandoned entities within a 50m radius</span>
                             </div>
                             <div class="quick-actions-grid">
-                                <button class="action-btn" id="veh-action-tune"><span class="btn-icon">⚡</span><span class="btn-text">Apply Max Tune</span></button>
-                                <button class="action-btn" id="veh-action-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair & Clean</span></button>
-                                <button class="action-btn danger" id="veh-action-delete"><span class="btn-icon">🗑</span><span class="btn-text">Delete Vehicle</span></button>
+                                <button class="action-btn" id="btn-clear-veh"><span class="btn-icon">🚗</span><span class="btn-text">Clear Vehicles (50m)</span></button>
+                                <button class="action-btn" id="btn-clear-peds"><span class="btn-icon">🚶</span><span class="btn-text">Clear Peds (50m)</span></button>
+                                <button class="action-btn" id="btn-clear-props"><span class="btn-icon">📦</span><span class="btn-text">Clear Props (50m)</span></button>
+                                <button class="action-btn danger" id="btn-clear-all"><span class="btn-icon">🧹</span><span class="btn-text">Purge Area (Everything)</span></button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>PED MODEL CHANGER (SKINS)</h4>
+                                <span>Switch character skin model instantly</span>
+                            </div>
+                            <div class="quick-vehicles-row" style="margin-bottom: 14px;">
+                                <button class="quick-veh-btn" data-skin="mp_m_freemode_01">Male MP</button>
+                                <button class="quick-veh-btn" data-skin="mp_f_freemode_01">Female MP</button>
+                                <button class="quick-veh-btn" data-skin="s_m_y_cop_01">Chicago Police</button>
+                                <button class="quick-veh-btn" data-skin="s_m_m_paramedic_01">Paramedic</button>
+                                <button class="quick-veh-btn" data-skin="s_m_m_security_01">Security</button>
+                                <button class="quick-veh-btn" data-skin="ig_bankman">Banker</button>
+                                <button class="quick-veh-btn" data-skin="player_zero">Michael</button>
+                                <button class="quick-veh-btn" data-skin="player_one">Franklin</button>
+                                <button class="quick-veh-btn" data-skin="player_two">Trevor</button>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="custom-skin-input" class="search-input" placeholder="Enter custom ped model hash (e.g. s_m_y_sheriff_01)...">
+                                <button class="primary-btn" id="btn-apply-skin">Apply Custom Skin</button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CINEMATIC & DISPLAY TOGGLES</h4>
+                            </div>
+                            <div class="toggles-grid">
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Entity Raycast Inspector</span><span class="toggle-desc">Draws laser line and target model/netID on screen</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-inspector"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Cinematic Mode (Hide HUD)</span><span class="toggle-desc">Hides chat, radar, and all game UI for clean recording</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-hidehud"><span class="slider"></span></label>
+                                </div>
                             </div>
                         </div>
                     </section>
 
-                    <!-- Tab: World -->
+                    <!-- Tab: World & Weather -->
                     <section class="tab-pane" id="pane-world">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>WORLD TIME MASTER</h4>
+                                <span>Change or freeze server time of day</span>
+                            </div>
+                            <div class="quick-actions-grid" style="margin-bottom: 14px;">
+                                <button class="action-btn" data-time-h="8" data-time-m="0"><span class="btn-icon">🌅</span><span class="btn-text">Morning (08:00)</span></button>
+                                <button class="action-btn" data-time-h="12" data-time-m="0"><span class="btn-icon">☀️</span><span class="btn-text">Noon (12:00)</span></button>
+                                <button class="action-btn" data-time-h="18" data-time-m="0"><span class="btn-icon">🌇</span><span class="btn-text">Evening (18:00)</span></button>
+                                <button class="action-btn" data-time-h="0" data-time-m="0"><span class="btn-icon">🌙</span><span class="btn-text">Midnight (00:00)</span></button>
+                            </div>
+                            <div class="toggles-grid">
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">City Power Outage (Blackout)</span><span class="toggle-desc">Turn off all city streetlights and building power</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-blackout"><span class="slider"></span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>SERVER BROADCAST ANNOUNCEMENT</h4>
+                                <span>Send urgent notification to all players</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="broadcast-msg-input" class="search-input" placeholder="Type server announcement message...">
+                                <button class="primary-btn" id="btn-send-broadcast">Broadcast to All</button>
+                            </div>
+                        </div>
+
                         <div class="section-card">
                             <div class="section-header">
                                 <h4>WEATHER & ENVIRONMENT</h4>
@@ -438,6 +561,49 @@
                 <div class="modal-footer">
                     <button class="secondary-btn" id="btn-cancel-ban">Cancel</button>
                     <button class="primary-btn danger-btn" id="btn-confirm-ban">Confirm Ban</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Set Job Modal -->
+        <div id="job-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Set Player Job & Grade</h3>
+                    <button class="modal-close" id="job-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="job-target-id">
+                    <div class="form-group">
+                        <label>Target Player:</label>
+                        <span id="job-target-info" class="target-badge">ID: --</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Job:</label>
+                        <select id="job-select" class="search-input">
+                            <option value="police">Police (CPD)</option>
+                            <option value="ambulance">EMS / Ambulance (Hospital)</option>
+                            <option value="mechanic">Mechanic</option>
+                            <option value="taxi">Taxi Driver</option>
+                            <option value="realestate">Real Estate</option>
+                            <option value="cardealer">Car Dealer</option>
+                            <option value="unemployed">Unemployed (Civilian)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Grade Level:</label>
+                        <select id="job-grade-select" class="search-input">
+                            <option value="0">Grade 0 (Recruit / Entry)</option>
+                            <option value="1">Grade 1 (Officer / Standard)</option>
+                            <option value="2">Grade 2 (Senior / Specialist)</option>
+                            <option value="3">Grade 3 (Lieutenant / Supervisor)</option>
+                            <option value="4">Grade 4 (Chief / Boss / Director)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn" id="btn-cancel-job">Cancel</button>
+                    <button class="primary-btn" id="btn-confirm-job">Set Job & Grade</button>
                 </div>
             </div>
         </div>

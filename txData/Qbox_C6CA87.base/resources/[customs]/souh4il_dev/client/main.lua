@@ -1,17 +1,30 @@
--- SOUH4IL-DEV — Client Master Controller & God Mode Engine
+-- SOUH4IL-DEV — Client Master Controller & Pro Developer Suite
 -- Author: SOUH4IL / Antigravity
 -- Framework: Qbox / ox_lib
 
 local SharedConfig = require 'config.shared'
 local isPanelOpen = false
 
--- God Powers State
+-- Full Super Powers State
 local isGodmode = false
 local isInvis = false
 local isNoclip = false
+local isInfiniteAmmo = false
+local isSuperDamage = false
+local isNeverWanted = false
+local isThermalVision = false
+local isNightVision = false
 local isSuperSprint = false
 local isSuperJump = false
+local isVehGodmode = false
+local isVehBoost = false
 local isFrozen = false
+
+-- Dev Tools State
+local isInspectorActive = false
+local isCinematicHUD = false
+local isSpectating = false
+local spectateTarget = nil
 
 -- Popular Teleport Destinations (Vector4: x, y, z, heading)
 local TELEPORT_LOCATIONS = {
@@ -22,30 +35,6 @@ local TELEPORT_LOCATIONS = {
     ['paleto']   = vector4(-103.73, 6467.89, 31.63, 45.0),
     ['mazebank'] = vector4(-75.0, -818.0, 326.0, 0.0),
     ['casino']   = vector4(925.33, 47.11, 81.11, 60.0),
-}
-
--- Item Pack Definitions
-local ITEM_PACKS = {
-    ['tactical_weapons'] = {
-        { item = 'weapon_carbinerifle', count = 1 },
-        { item = 'weapon_combatpistol', count = 1 },
-        { item = 'weapon_smg', count = 1 },
-        { item = 'ammo-rifle', count = 100 },
-        { item = 'ammo-9', count = 100 },
-    },
-    ['survival_food'] = {
-        { item = 'burger', count = 5 },
-        { item = 'water', count = 5 },
-        { item = 'medikit', count = 5 },
-        { item = 'bandage', count = 5 },
-    },
-    ['special_ops'] = {
-        { item = 'weapon_specialcarbine', count = 1 },
-        { item = 'weapon_appistol', count = 1 },
-        { item = 'weapon_heavysniper', count = 1 },
-        { item = 'ammo-rifle', count = 150 },
-        { item = 'ammo-sniper', count = 50 },
-    }
 }
 
 ---Toggles the SOUH4IL-DEV Control Panel
@@ -93,8 +82,18 @@ local function TogglePanel()
                 godmode = isGodmode,
                 noclip = isNoclip,
                 invis = isInvis,
+                ammo = isInfiniteAmmo,
+                damage = isSuperDamage,
+                wanted = isNeverWanted,
+                thermal = isThermalVision,
+                nightvision = isNightVision,
                 sprint = isSuperSprint,
-                jump = isSuperJump
+                jump = isSuperJump,
+                vehgod = isVehGodmode,
+                vehboost = isVehBoost,
+                inspector = isInspectorActive,
+                hidehud = isCinematicHUD,
+                blackout = GlobalState.blackout == true
             }
         })
     end)
@@ -148,12 +147,14 @@ CreateThread(function()
     end
 end)
 
--- Super Powers Engine (Sprint & Jump)
+-- Super Physical Powers Engine (Sprint, Jump, Damage, Wanted, Ammo)
 CreateThread(function()
     while true do
         local sleep = 500
         local player = PlayerId()
+        local ped = PlayerPedId()
 
+        -- Super Sprint
         if isSuperSprint then
             sleep = 0
             SetRunSprintMultiplierForPlayer(player, 1.49)
@@ -161,12 +162,64 @@ CreateThread(function()
             RestorePlayerStamina(player, 1.0)
         end
 
+        -- Super Jump
         if isSuperJump then
             sleep = 0
             SetSuperJumpThisFrame(player)
         end
 
+        -- Infinite Ammo & No Reload
+        if isInfiniteAmmo then
+            sleep = 0
+            local weapon = GetSelectedPedWeapon(ped)
+            if weapon ~= `WEAPON_UNARMED` then
+                SetPedInfiniteAmmoClip(ped, true)
+                SetPedInfiniteAmmo(ped, true, weapon)
+            end
+        end
+
+        -- Super Damage
+        if isSuperDamage then
+            SetPlayerMeleeWeaponDamageModifier(player, 1000.0)
+            SetPlayerWeaponDamageModifier(player, 10.0)
+        end
+
+        -- Never Wanted
+        if isNeverWanted then
+            ClearPlayerWantedLevel(player)
+            SetPlayerWantedLevel(player, 0, false)
+            SetPlayerWantedLevelNow(player, false)
+            SetPoliceIgnorePlayer(player, true)
+            SetDispatchCopsForPlayer(player, false)
+        end
+
         Wait(sleep)
+    end
+end)
+
+-- Vehicle Powers Engine (God Mode & Shift Rocket Boost)
+CreateThread(function()
+    while true do
+        local ped = PlayerPedId()
+        local veh = GetVehiclePedIsIn(ped, false)
+        if veh ~= 0 then
+            if isVehGodmode then
+                SetEntityInvincible(veh, true)
+                SetVehicleFixed(veh)
+                SetVehicleDirtLevel(veh, 0.0)
+                SetVehicleTyresCanBurst(veh, false)
+                SetVehicleWheelsCanBreak(veh, false)
+            end
+
+            if isVehBoost and IsControlJustPressed(0, 21) then -- Left Shift
+                local curSpeed = GetEntitySpeed(veh)
+                SetVehicleForwardSpeed(veh, curSpeed + 20.0)
+                StartScreenEffect("RaceTurbo", 400, false)
+            end
+            Wait(0)
+        else
+            Wait(1000)
+        end
     end
 end)
 
@@ -225,6 +278,72 @@ CreateThread(function()
             Wait(0)
         else
             Wait(500)
+        end
+    end
+end)
+
+-- =========================================================================
+-- DEV TOOLS: ENTITY INSPECTOR & RAYCAST
+-- =========================================================================
+local function RotationToDirection(rotation)
+    local z = math.rad(rotation.z)
+    local x = math.rad(rotation.x)
+    local num = math.abs(math.cos(x))
+    return vector3(-math.sin(z) * num, math.cos(z) * num, math.sin(x))
+end
+
+CreateThread(function()
+    while true do
+        if isInspectorActive then
+            local camCoords = GetGameplayCamCoord()
+            local camRot = GetGameplayCamRot(2)
+            local forward = RotationToDirection(camRot)
+            local endCoords = camCoords + (forward * 30.0)
+
+            local ray = StartShapeTestRay(camCoords.x, camCoords.y, camCoords.z, endCoords.x, endCoords.y, endCoords.z, -1, PlayerPedId(), 0)
+            local retval, hit, hitCoords, surfaceNormal, entityHit = GetShapeTestResult(ray)
+
+            DrawLine(camCoords.x, camCoords.y, camCoords.z, hitCoords.x, hitCoords.y, hitCoords.z, 0, 229, 255, 200)
+
+            if hit and entityHit ~= 0 and DoesEntityExist(entityHit) then
+                local modelHash = GetEntityModel(entityHit)
+                local entityType = "Unknown"
+                if IsEntityAVehicle(entityHit) then entityType = "Vehicle"
+                elseif IsEntityAPed(entityHit) then entityType = "Ped"
+                elseif IsEntityAnObject(entityHit) then entityType = "Object/Prop"
+                end
+
+                local coords = GetEntityCoords(entityHit)
+                local dist = #(camCoords - coords)
+                local netId = NetworkGetEntityIsNetworked(entityHit) and NetworkGetNetworkIdFromEntity(entityHit) or "N/A"
+
+                SetTextScale(0.35, 0.35)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(0, 229, 255, 255)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                AddTextComponentString(("[INSPECTOR] Type: %s | Hash: %d | NetID: %s\nDist: %.1fm | Coords: (%.2f, %.2f, %.2f)"):format(
+                    entityType, modelHash, tostring(netId), dist, coords.x, coords.y, coords.z
+                ))
+                DrawText(0.4, 0.85)
+            end
+            Wait(0)
+        else
+            Wait(600)
+        end
+    end
+end)
+
+-- Cinematic HUD Toggle Thread
+CreateThread(function()
+    while true do
+        if isCinematicHUD then
+            DisplayRadar(false)
+            DisplayHud(false)
+            Wait(0)
+        else
+            Wait(1000)
         end
     end
 end)
@@ -291,10 +410,11 @@ end
 -- NUI CALLBACKS
 -- =========================================================================
 
--- Close
+-- Guaranteed Clean Close Callback
 RegisterNUICallback('close', function(_, cb)
     isPanelOpen = false
     SetNuiFocus(false, false)
+    SendNUIMessage({ action = "setVisible", visible = false })
     cb('ok')
 end)
 
@@ -365,16 +485,17 @@ RegisterNUICallback('quickAction', function(data, cb)
     cb('ok')
 end)
 
--- God Powers Toggle
+-- Full Super Powers Toggle Callback
 RegisterNUICallback('togglePower', function(data, cb)
     local ped = PlayerPedId()
+    local player = PlayerId()
     local power = data.power
     local state = data.state
 
     if power == 'godmode' then
         isGodmode = state
         SetEntityInvincible(ped, state)
-        SetPlayerInvincible(PlayerId(), state)
+        SetPlayerInvincible(player, state)
         SetPedCanRagdoll(ped, not state)
         SetPedDiesInWater(ped, not state)
         if state then
@@ -397,18 +518,300 @@ RegisterNUICallback('togglePower', function(data, cb)
         SetEntityVisible(ped, not state, false)
         SetLocalPlayerVisibleLocally(true)
         lib.notify({ title = SharedConfig.PanelName, description = "Invisibility " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'ammo' then
+        isInfiniteAmmo = state
+        if not state then
+            SetPedInfiniteAmmoClip(ped, false)
+            local weapon = GetSelectedPedWeapon(ped)
+            if weapon ~= `WEAPON_UNARMED` then
+                SetPedInfiniteAmmo(ped, false, weapon)
+            end
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Infinite Ammo " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'damage' then
+        isSuperDamage = state
+        if not state then
+            SetPlayerMeleeWeaponDamageModifier(player, 1.0)
+            SetPlayerWeaponDamageModifier(player, 1.0)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "One-Punch Super Damage " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'wanted' then
+        isNeverWanted = state
+        if not state then
+            SetPoliceIgnorePlayer(player, false)
+            SetDispatchCopsForPlayer(player, true)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Never Wanted " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'thermal' then
+        isThermalVision = state
+        SetSeethrough(state)
+        lib.notify({ title = SharedConfig.PanelName, description = "Thermal Vision " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'nightvision' then
+        isNightVision = state
+        SetNightvision(state)
+        lib.notify({ title = SharedConfig.PanelName, description = "Night Vision " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
     elseif power == 'sprint' then
         isSuperSprint = state
         if not state then
-            SetRunSprintMultiplierForPlayer(PlayerId(), 1.0)
-            SetSwimMultiplierForPlayer(PlayerId(), 1.0)
+            SetRunSprintMultiplierForPlayer(player, 1.0)
+            SetSwimMultiplierForPlayer(player, 1.0)
         end
         lib.notify({ title = SharedConfig.PanelName, description = "Super Sprint " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
     elseif power == 'jump' then
         isSuperJump = state
         lib.notify({ title = SharedConfig.PanelName, description = "Super Jump " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'vehgod' then
+        isVehGodmode = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Vehicle God Mode " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'vehboost' then
+        isVehBoost = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Vehicle Rocket Boost " .. (state and "ENABLED (Press Left Shift in car)" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'inspector' then
+        isInspectorActive = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Entity Inspector " .. (state and "ACTIVE" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'hidehud' then
+        isCinematicHUD = state
+        if not state then
+            DisplayRadar(true)
+            DisplayHud(true)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Cinematic HUD " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'blackout' then
+        lib.callback('souh4il_dev:server:setBlackout', false, function() end, state)
     end
 
+    cb('ok')
+end)
+
+-- Developer Tools: Coords
+local function FormatCoords(formatType)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+
+    if formatType == 'vec3' then
+        return ("vector3(%.2f, %.2f, %.2f)"):format(coords.x, coords.y, coords.z)
+    elseif formatType == 'vec4' then
+        return ("vector4(%.2f, %.2f, %.2f, %.2f)"):format(coords.x, coords.y, coords.z, heading)
+    elseif formatType == 'heading' then
+        return ("%.2f"):format(heading)
+    end
+    return ("%.2f, %.2f, %.2f"):format(coords.x, coords.y, coords.z)
+end
+
+RegisterNUICallback('copyCoords', function(data, cb)
+    local text = FormatCoords(data.format)
+    lib.setClipboard(text)
+    print(("[SOUH4IL-DEV COORDS] %s"):format(text))
+    lib.notify({ title = SharedConfig.PanelName, description = "Copied to clipboard: " .. text, type = 'success' })
+    SendNUIMessage({ action = "updateCoordsDisplay", text = text })
+    cb('ok')
+end)
+
+RegisterNUICallback('requestCoordsDisplay', function(_, cb)
+    local text = FormatCoords('vec4')
+    SendNUIMessage({ action = "updateCoordsDisplay", text = text })
+    cb('ok')
+end)
+
+-- Developer Tools: Clear Area
+RegisterNUICallback('clearArea', function(data, cb)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local radius = 50.0
+    local pType = data.type
+
+    if pType == 'vehicles' or pType == 'all' then
+        local vehs = GetGamePool('CVehicle')
+        local myVeh = GetVehiclePedIsIn(ped, false)
+        for _, veh in ipairs(vehs) do
+            if veh ~= myVeh and #(coords - GetEntityCoords(veh)) <= radius then
+                SetEntityAsMissionEntity(veh, true, true)
+                DeleteVehicle(veh)
+            end
+        end
+    end
+
+    if pType == 'peds' or pType == 'all' then
+        local peds = GetGamePool('CPed')
+        for _, p in ipairs(peds) do
+            if p ~= ped and not IsPedAPlayer(p) and #(coords - GetEntityCoords(p)) <= radius then
+                SetEntityAsMissionEntity(p, true, true)
+                DeletePed(p)
+            end
+        end
+    end
+
+    if pType == 'props' or pType == 'all' then
+        local objs = GetGamePool('CObject')
+        for _, obj in ipairs(objs) do
+            if #(coords - GetEntityCoords(obj)) <= radius then
+                SetEntityAsMissionEntity(obj, true, true)
+                DeleteObject(obj)
+            end
+        end
+    end
+
+    lib.notify({ title = SharedConfig.PanelName, description = ("Area cleared (Radius: 50m, Type: %s)"):format(pType:upper()), type = 'success' })
+    cb('ok')
+end)
+
+-- Developer Tools: Ped Model Changer
+RegisterNUICallback('setPedModel', function(data, cb)
+    local modelName = data.model
+    local hash = joaat(modelName)
+
+    if not IsModelInCdimage(hash) or not IsModelValid(hash) then
+        lib.notify({ title = SharedConfig.PanelName, description = "Invalid skin model: " .. modelName, type = 'error' })
+        cb('ok')
+        return
+    end
+
+    RequestModel(hash)
+    while not HasModelLoaded(hash) do
+        Wait(50)
+    end
+
+    SetPlayerModel(PlayerId(), hash)
+    SetPedDefaultComponentVariation(PlayerPedId())
+    SetModelAsNoLongerNeeded(hash)
+    lib.notify({ title = SharedConfig.PanelName, description = "Skin changed to: " .. modelName, type = 'success' })
+    cb('ok')
+end)
+
+-- Vehicle Workshop Additions
+RegisterNUICallback('setVehiclePlate', function(data, cb)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 then
+        local netId = NetworkGetNetworkIdFromEntity(veh)
+        lib.callback('souh4il_dev:server:setVehiclePlate', false, function(res)
+            if res and res.success then
+                SetVehicleNumberPlateText(veh, res.plate)
+                lib.notify({ title = SharedConfig.PanelName, description = "License plate set to: " .. res.plate, type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Failed to set plate", type = 'error' })
+            end
+        end, netId, data.plate)
+    else
+        lib.notify({ title = SharedConfig.PanelName, description = "Must be inside a vehicle.", type = 'error' })
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('flipVehicle', function(_, cb)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 then
+        local coords = GetEntityCoords(veh)
+        SetEntityCoords(veh, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
+        SetVehicleOnGroundProperly(veh)
+        lib.notify({ title = SharedConfig.PanelName, description = "Vehicle flipped upright.", type = 'success' })
+    else
+        lib.notify({ title = SharedConfig.PanelName, description = "Must be inside a vehicle.", type = 'error' })
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('toggleDoors', function(data, cb)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 then
+        local d = data.door
+        if d == 'all' then
+            for i = 0, 5 do
+                if GetVehicleDoorAngleRatio(veh, i) > 0.0 then
+                    SetVehicleDoorShut(veh, i, false)
+                else
+                    SetVehicleDoorOpen(veh, i, false, false)
+                end
+            end
+        elseif d == 'hood' then
+            if GetVehicleDoorAngleRatio(veh, 4) > 0.0 then SetVehicleDoorShut(veh, 4, false) else SetVehicleDoorOpen(veh, 4, false, false) end
+        elseif d == 'trunk' then
+            if GetVehicleDoorAngleRatio(veh, 5) > 0.0 then SetVehicleDoorShut(veh, 5, false) else SetVehicleDoorOpen(veh, 5, false, false) end
+        end
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('setVehicleColor', function(data, cb)
+    local ped = PlayerPedId()
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 and data.color then
+        SetVehicleColours(veh, data.color, data.color)
+        lib.notify({ title = SharedConfig.PanelName, description = "Vehicle color applied.", type = 'success' })
+    else
+        lib.notify({ title = SharedConfig.PanelName, description = "Must be inside a vehicle.", type = 'error' })
+    end
+    cb('ok')
+end)
+
+-- World Time & Announcements
+RegisterNUICallback('setTime', function(data, cb)
+    lib.callback('souh4il_dev:server:setTime', false, function() end, data.hour, data.minute)
+    NetworkOverrideClockTime(data.hour, data.minute, 0)
+    lib.notify({ title = SharedConfig.PanelName, description = ("Time set to %02d:%02d"):format(data.hour, data.minute), type = 'success' })
+    cb('ok')
+end)
+
+RegisterNUICallback('broadcastAnnouncement', function(data, cb)
+    lib.callback('souh4il_dev:server:broadcastAnnouncement', false, function(res)
+        if res and res.success then
+            lib.notify({ title = SharedConfig.PanelName, description = "Announcement broadcasted to server.", type = 'success' })
+        end
+    end, data.message)
+    cb('ok')
+end)
+
+-- Player Management: Set Job
+RegisterNUICallback('setPlayerJob', function(data, cb)
+    lib.callback('souh4il_dev:server:setPlayerJob', false, function(response)
+        if response and response.success then
+            lib.notify({ title = SharedConfig.PanelName, description = "Player job & grade updated.", type = 'success' })
+            lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(res)
+                if res and res.success then SendNUIMessage({ action = "updatePlayers", players = res.players }) end
+            end)
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
+        end
+    end, data)
+    cb('ok')
+end)
+
+-- Player Management: Clear Inventory
+RegisterNUICallback('clearPlayerInventory', function(data, cb)
+    lib.callback('souh4il_dev:server:clearPlayerInventory', false, function(response)
+        if response and response.success then
+            lib.notify({ title = SharedConfig.PanelName, description = "Target inventory wiped.", type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
+        end
+    end, data.targetId)
+    cb('ok')
+end)
+
+-- Player Management: Spectate
+RegisterNUICallback('spectatePlayer', function(data, cb)
+    local targetId = tonumber(data.targetId)
+    local myPed = PlayerPedId()
+
+    if isSpectating then
+        NetworkSetInSpectatorMode(false, myPed)
+        isSpectating = false
+        spectateTarget = nil
+        lib.notify({ title = SharedConfig.PanelName, description = "Spectate mode disabled.", type = 'inform' })
+    else
+        local targetPed = GetPlayerPed(GetPlayerFromServerId(targetId))
+        if DoesEntityExist(targetPed) then
+            NetworkSetInSpectatorMode(true, targetPed)
+            isSpectating = true
+            spectateTarget = targetId
+            lib.notify({ title = SharedConfig.PanelName, description = "Spectating player #" .. targetId, type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = "Target ped is not within streaming distance.", type = 'error' })
+        end
+    end
     cb('ok')
 end)
 
@@ -487,7 +890,6 @@ RegisterNUICallback('kickPlayer', function(data, cb)
     lib.callback('souh4il_dev:server:kickPlayer', false, function(response)
         if response and response.success then
             lib.notify({ title = SharedConfig.PanelName, description = "Player kicked from server.", type = 'success' })
-            -- Refresh list
             lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(res)
                 if res and res.success then SendNUIMessage({ action = "updatePlayers", players = res.players }) end
             end)
@@ -503,7 +905,6 @@ RegisterNUICallback('banPlayer', function(data, cb)
     lib.callback('souh4il_dev:server:banPlayer', false, function(response)
         if response and response.success then
             lib.notify({ title = SharedConfig.PanelName, description = "Player successfully banned.", type = 'success' })
-            -- Refresh list
             lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(res)
                 if res and res.success then SendNUIMessage({ action = "updatePlayers", players = res.players }) end
             end)
@@ -514,19 +915,7 @@ RegisterNUICallback('banPlayer', function(data, cb)
     cb('ok')
 end)
 
--- Items: Give Pack
-RegisterNUICallback('giveItemPack', function(data, cb)
-    local pack = ITEM_PACKS[data.pack]
-    if pack then
-        for _, itemData in ipairs(pack) do
-            lib.callback('souh4il_dev:server:giveItem', false, function() end, { item = itemData.item, count = itemData.count })
-        end
-        lib.notify({ title = SharedConfig.PanelName, description = "Equipment pack granted to inventory.", type = 'success' })
-    end
-    cb('ok')
-end)
-
--- Items: Give Custom Item
+-- Items: Give Custom Item / Visual Item
 RegisterNUICallback('giveCustomItem', function(data, cb)
     lib.callback('souh4il_dev:server:giveItem', false, function(response)
         if response and response.success then
@@ -568,13 +957,42 @@ RegisterNUICallback('fetchLogs', function(_, cb)
     cb('ok')
 end)
 
+-- Fetch All Server Items (ox_inventory Dynamic Catalog)
+RegisterNUICallback('fetchAllItems', function(_, cb)
+    lib.callback('souh4il_dev:server:getAllGameItems', false, function(response)
+        if response and response.success then
+            SendNUIMessage({ action = "updateAllItems", items = response.items })
+        end
+    end)
+    cb('ok')
+end)
+
+-- Fetch All Server Vehicles (Qbox Dynamic Catalog)
+RegisterNUICallback('fetchAllVehicles', function(_, cb)
+    lib.callback('souh4il_dev:server:getAllGameVehicles', false, function(response)
+        if response and response.success then
+            SendNUIMessage({ action = "updateAllVehicles", vehicles = response.vehicles })
+        end
+    end)
+    cb('ok')
+end)
+
 -- Weather Set
 RegisterNUICallback('setWeather', function(data, cb)
     TriggerServerEvent('souh4il_dev:server:setWeather', data.weather)
     cb('ok')
 end)
 
--- Cleanup on Stop
+-- Client Event Listeners for World Sync
+RegisterNetEvent('souh4il_dev:client:syncTime', function(h, m)
+    NetworkOverrideClockTime(h, m, 0)
+end)
+
+RegisterNetEvent('souh4il_dev:client:syncBlackout', function(state)
+    SetBlackout(state)
+end)
+
+-- Clean Cleanup on Stop
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= cache.resource then return end
     if isPanelOpen then SetNuiFocus(false, false) end
@@ -587,5 +1005,14 @@ AddEventHandler('onResourceStop', function(resourceName)
         local ped = PlayerPedId()
         SetEntityInvincible(ped, false)
         SetPlayerInvincible(PlayerId(), false)
+    end
+    if isThermalVision then SetSeethrough(false) end
+    if isNightVision then SetNightvision(false) end
+    if isCinematicHUD then
+        DisplayRadar(true)
+        DisplayHud(true)
+    end
+    if isSpectating then
+        NetworkSetInSpectatorMode(false, PlayerPedId())
     end
 end)
