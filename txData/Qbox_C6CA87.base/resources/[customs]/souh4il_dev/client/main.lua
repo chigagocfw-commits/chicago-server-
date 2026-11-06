@@ -977,6 +977,72 @@ RegisterNUICallback('fetchAllVehicles', function(_, cb)
     cb('ok')
 end)
 
+-- Fetch All Server Jobs (Qbox Dynamic Catalog)
+RegisterNUICallback('fetchAllJobs', function(_, cb)
+    lib.callback('souh4il_dev:server:getAllGameJobs', false, function(response)
+        if response and response.success then
+            SendNUIMessage({ action = "updateAllJobs", jobs = response.jobs })
+        end
+    end)
+    cb('ok')
+end)
+
+-- Set Caller Job Direct
+RegisterNUICallback('setMyJob', function(data, cb)
+    lib.callback('souh4il_dev:server:setMyJob', false, function(response)
+        if response and response.success then
+            lib.notify({ title = SharedConfig.PanelName, description = ("Job set to %s (Grade: %d)"):format(data.job:upper(), data.grade), type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
+        end
+    end, data)
+    cb('ok')
+end)
+
+-- Equip Owner Arsenal Preset Loadout
+RegisterNUICallback('equipLoadout', function(data, cb)
+    lib.callback('souh4il_dev:server:giveArsenalLoadout', false, function(response)
+        if response and response.success then
+            lib.notify({ title = SharedConfig.PanelName, description = ("Equipped '%s' Loadout."):format(data.loadout:upper()), type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = response and response.error or "Failed", type = 'error' })
+        end
+    end, data.loadout)
+    cb('ok')
+end)
+
+-- World Density Multiplier
+local currentWorldDensity = 1.0
+RegisterNUICallback('setTrafficDensity', function(data, cb)
+    local density = tonumber(data.density) or 1.0
+    lib.callback('souh4il_dev:server:setTrafficDensity', false, function(res)
+        if res and res.success then
+            currentWorldDensity = density
+            lib.notify({ title = SharedConfig.PanelName, description = ("Traffic & Ped Density set to %.0f%%"):format(density * 100), type = 'success' })
+        end
+    end, density)
+    cb('ok')
+end)
+
+RegisterNetEvent('souh4il_dev:client:syncDensity', function(val)
+    currentWorldDensity = tonumber(val) or 1.0
+end)
+
+CreateThread(function()
+    while true do
+        if currentWorldDensity ~= 1.0 then
+            SetVehicleDensityMultiplierThisFrame(currentWorldDensity)
+            SetPedDensityMultiplierThisFrame(currentWorldDensity)
+            SetRandomVehicleDensityMultiplierThisFrame(currentWorldDensity)
+            SetParkedVehicleDensityMultiplierThisFrame(currentWorldDensity)
+            SetScenarioPedDensityMultiplierThisFrame(currentWorldDensity, currentWorldDensity)
+            Wait(0)
+        else
+            Wait(1000)
+        end
+    end
+end)
+
 -- Weather Set
 RegisterNUICallback('setWeather', function(data, cb)
     TriggerServerEvent('souh4il_dev:server:setWeather', data.weather)

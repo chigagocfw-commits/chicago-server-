@@ -64,6 +64,18 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H7.5a1 1 0 0 0-.8.4L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3m14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>
                         <span>Vehicles</span>
                     </button>
+                    <button class="nav-item" data-tab="characters">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span>Characters</span>
+                    </button>
+                    <button class="nav-item" data-tab="jobs">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                        <span>Jobs & Ranks</span>
+                    </button>
+                    <button class="nav-item" data-tab="arsenal">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        <span>Owner Arsenal</span>
+                    </button>
                     <button class="nav-item" data-tab="players">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                         <span>Players</span>
@@ -366,6 +378,108 @@
                         </div>
                     </section>
 
+                    <!-- Tab: Characters & Skins -->
+                    <section class="tab-pane" id="pane-characters">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>VISUAL CHARACTER & PED SPAWNER</h4>
+                                <div class="header-tools">
+                                    <div class="ped-filter-tabs">
+                                        <button class="filter-chip-ped active" data-cat="all">All</button>
+                                        <button class="filter-chip-ped" data-cat="vip">VIP & Story</button>
+                                        <button class="filter-chip-ped" data-cat="emergency">Police & EMS</button>
+                                        <button class="filter-chip-ped" data-cat="gang">Gangs</button>
+                                        <button class="filter-chip-ped" data-cat="civilian">Civilians</button>
+                                        <button class="filter-chip-ped" data-cat="animal">Animals</button>
+                                        <button class="filter-chip-ped" data-cat="multiplayer">Multiplayer</button>
+                                    </div>
+                                    <input type="text" id="ped-search-input" class="search-input" placeholder="Search character by name or model...">
+                                </div>
+                            </div>
+                            <div class="visual-characters-grid" id="visual-characters-container"></div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM SKIN / PED MODEL HASH</h4>
+                                <div class="header-tools">
+                                    <button class="secondary-btn" id="btn-reset-ped">Reset to MP Character</button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="custom-skin-input" class="search-input" placeholder="Enter ped model name (e.g. s_m_y_cop_01, player_zero)...">
+                                <button class="primary-btn" id="btn-apply-custom-skin">Apply Skin</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Jobs & Ranks -->
+                    <section class="tab-pane" id="pane-jobs">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>VISUAL JOBS & CAREERS CATALOG</h4>
+                                <div class="header-tools">
+                                    <div class="job-filter-tabs">
+                                        <button class="filter-chip-job active" data-cat="all">All</button>
+                                        <button class="filter-chip-job" data-cat="emergency">Police & EMS</button>
+                                        <button class="filter-chip-job" data-cat="public">Public Services</button>
+                                        <button class="filter-chip-job" data-cat="business">Businesses</button>
+                                        <button class="filter-chip-job" data-cat="gang">Gangs & Orgs</button>
+                                    </div>
+                                    <input type="text" id="job-search-input" class="search-input" placeholder="Search job title or ID...">
+                                </div>
+                            </div>
+                            <div class="visual-jobs-grid" id="visual-jobs-container"></div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Owner Arsenal -->
+                    <section class="tab-pane" id="pane-arsenal">
+                        <div class="section-card restricted">
+                            <div class="section-header">
+                                <div>
+                                    <span class="restricted-badge">OWNER ARSENAL</span>
+                                    <h4>TACTICAL COMBAT LOADOUTS</h4>
+                                </div>
+                                <span class="restricted-notice">Instant One-Click Full Weapons & Ammo Kits</span>
+                            </div>
+                            <div class="arsenal-grid">
+                                <div class="loadout-card">
+                                    <h5>SWAT COMMANDER</h5>
+                                    <p>Carbine M4 Rifle, Combat Pistol, Pump Shotgun, 250 Rifle Ammo, Heavy Kevlar Armor, Medikit, Handcuffs.</p>
+                                    <button class="primary-btn" onclick="equipArsenalDirect('swat')">Equip SWAT Loadout</button>
+                                </div>
+                                <div class="loadout-card">
+                                    <h5>HEAVY JUGGERNAUT</h5>
+                                    <p>Special Carbine G36, Heavy Sniper, Combat PDW, 500 Rifle Ammo, 100 Sniper Rounds, 5x Heavy Armor.</p>
+                                    <button class="primary-btn" onclick="equipArsenalDirect('juggernaut')">Equip Juggernaut</button>
+                                </div>
+                                <div class="loadout-card">
+                                    <h5>SILENT ASSASSIN</h5>
+                                    <p>AP Pistol, Military Knife, Katana, 250x 9mm Rounds, Light Body Armor, Lockpicks & Master Keys.</p>
+                                    <button class="primary-btn" onclick="equipArsenalDirect('assassin')">Equip Assassin</button>
+                                </div>
+                                <div class="loadout-card" style="border-color: var(--accent-cyan); background: linear-gradient(180deg, rgba(0,229,255,0.06), rgba(0,0,0,0.4));">
+                                    <h5 style="color: #ffd700;">★ OWNER GOD ARSENAL</h5>
+                                    <p>All Assault Rifles, Heavy Sniper, Combat Pistol, 999x Max Ammo, 10x Heavy Armor, 10x Medikits, Repair Kits.</p>
+                                    <button class="primary-btn" style="background: linear-gradient(135deg, #ffd700, #ff8800); color: #000;" onclick="equipArsenalDirect('god_arsenal')">Equip God Arsenal</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>QUICK OWNER ECONOMY</h4>
+                                <span>Add Cash or Bank balance instantly</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="quick-cash-amount" class="search-input" value="100000" placeholder="Amount ($)">
+                                <button class="primary-btn" id="btn-give-quick-cash">Give Myself Cash ($)</button>
+                                <button class="secondary-btn" id="btn-give-quick-bank">Deposit to Bank ($)</button>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- Tab: Players Management -->
                     <section class="tab-pane" id="pane-players">
                         <div class="section-card">
@@ -495,6 +609,21 @@
                             <div class="form-row">
                                 <input type="text" id="broadcast-msg-input" class="search-input" placeholder="Type server announcement message...">
                                 <button class="primary-btn" id="btn-send-broadcast">Broadcast to All</button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>TRAFFIC & NPC POPULATION DENSITY</h4>
+                                <span>Real-time city density controller</span>
+                            </div>
+                            <div class="quick-vehicles-row" style="margin-bottom: 8px;">
+                                <span>City Traffic Density:</span>
+                                <button class="density-btn" data-density="0.0">0% (Ghost Town)</button>
+                                <button class="density-btn" data-density="0.25">25% (Low)</button>
+                                <button class="density-btn" data-density="0.5">50% (Medium)</button>
+                                <button class="density-btn active" data-density="1.0">100% (Normal)</button>
+                                <button class="density-btn" data-density="1.5">150% (Rush Hour)</button>
                             </div>
                         </div>
 

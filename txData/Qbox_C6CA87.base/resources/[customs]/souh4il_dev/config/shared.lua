@@ -29,6 +29,8 @@ Config.RateLimits = {
     ['set_time'] = { capacity = 3.0, fillRatePerSec = 0.5 },
     ['set_plate'] = { capacity = 3.0, fillRatePerSec = 0.5 },
     ['get_catalog'] = { capacity = 10.0, fillRatePerSec = 2.0 },
+    ['set_traffic'] = { capacity = 5.0, fillRatePerSec = 1.0 },
+    ['arsenal'] = { capacity = 5.0, fillRatePerSec = 1.0 },
 }
 
 -- Return config

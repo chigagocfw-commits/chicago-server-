@@ -653,6 +653,183 @@ lib.callback.register('souh4il_dev:server:getAllGameVehicles', function(source)
     return { success = true, vehicles = cachedGameVehicles }
 end)
 
+---Callback 21: Get All Registered Jobs (Qbox Dynamic Jobs Catalog)
+local cachedGameJobs = nil
+lib.callback.register('souh4il_dev:server:getAllGameJobs', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    if not cachedGameJobs then
+        local rawJobs = exports.qbx_core:GetJobs() or {}
+        local rawGangs = exports.qbx_core:GetGangs() or {}
+        local list = {}
+
+        for jobName, jobData in pairs(rawJobs) do
+            local gradesList = {}
+            if jobData.grades then
+                for gradeIdx, gradeData in pairs(jobData.grades) do
+                    table.insert(gradesList, {
+                        grade = tonumber(gradeIdx) or 0,
+                        name = gradeData.name or ("Grade " .. gradeIdx),
+                        payment = gradeData.payment or 0,
+                        isBoss = gradeData.isboss == true
+                    })
+                end
+                table.sort(gradesList, function(a, b) return a.grade < b.grade end)
+            end
+
+            local cat = 'public'
+            local jn = tostring(jobName):lower()
+            if jn:find('police') or jn:find('sheriff') or jn:find('ambulance') or jn:find('ems') or jn:find('doctor') or jn:find('lawyer') or jn:find('judge') then
+                cat = 'emergency'
+            elseif jn:find('mechanic') or jn:find('cardealer') or jn:find('realestate') or jn:find('taxi') or jn:find('bennys') or jn:find('shop') then
+                cat = 'business'
+            end
+
+            table.insert(list, {
+                name = jobName,
+                label = jobData.label or jobName,
+                category = cat,
+                type = jobData.type or 'default',
+                grades = gradesList
+            })
+        end
+
+        for gangName, gangData in pairs(rawGangs) do
+            local gradesList = {}
+            if gangData.grades then
+                for gradeIdx, gradeData in pairs(gangData.grades) do
+                    table.insert(gradesList, {
+                        grade = tonumber(gradeIdx) or 0,
+                        name = gradeData.name or ("Grade " .. gradeIdx),
+                        payment = 0,
+                        isBoss = gradeData.isboss == true
+                    })
+                end
+                table.sort(gradesList, function(a, b) return a.grade < b.grade end)
+            end
+
+            table.insert(list, {
+                name = gangName,
+                label = gangData.label or gangName,
+                category = 'gang',
+                type = 'gang',
+                grades = gradesList
+            })
+        end
+
+        table.sort(list, function(a, b) return tostring(a.label) < tostring(b.label) end)
+        cachedGameJobs = list
+    end
+
+    return { success = true, jobs = cachedGameJobs }
+end)
+
+---Callback 22: Set Caller Job Direct
+lib.callback.register('souh4il_dev:server:setMyJob', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_job')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local jobName = tostring(data.job or 'unemployed')
+    local grade = tonumber(data.grade) or 0
+    local player = exports.qbx_core:GetPlayer(source)
+
+    if player then
+        player.Functions.SetJob(jobName, grade)
+        Logger.Write("SET_MY_JOB", source, source, { job = jobName, grade = grade }, "SUCCESS")
+        return { success = true, job = jobName, grade = grade }
+    end
+
+    return { success = false, error = "PLAYER_NOT_FOUND" }
+end)
+
+---Callback 23: Equip Owner Arsenal Loadout
+lib.callback.register('souh4il_dev:server:giveArsenalLoadout', function(source, loadoutKey)
+    local allowed, reason = Security.CheckRateLimit(source, 'arsenal')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local loadouts = {
+        swat = {
+            { item = 'weapon_carbinerifle', count = 1 },
+            { item = 'weapon_combatpistol', count = 1 },
+            { item = 'weapon_pumpshotgun', count = 1 },
+            { item = 'ammo-rifle', count = 250 },
+            { item = 'ammo-9', count = 150 },
+            { item = 'ammo-shotgun', count = 50 },
+            { item = 'armor', count = 2 },
+            { item = 'medikit', count = 3 },
+            { item = 'handcuffs', count = 2 },
+        },
+        juggernaut = {
+            { item = 'weapon_specialcarbine', count = 1 },
+            { item = 'weapon_heavysniper', count = 1 },
+            { item = 'weapon_combatpdw', count = 1 },
+            { item = 'ammo-rifle', count = 500 },
+            { item = 'ammo-sniper', count = 100 },
+            { item = 'armor', count = 5 },
+            { item = 'bandage', count = 10 },
+        },
+        assassin = {
+            { item = 'weapon_appistol', count = 1 },
+            { item = 'weapon_knife', count = 1 },
+            { item = 'weapon_katana', count = 1 },
+            { item = 'ammo-9', count = 250 },
+            { item = 'armor', count = 2 },
+            { item = 'lockpick', count = 5 },
+            { item = 'advancedlockpick', count = 2 },
+        },
+        god_arsenal = {
+            { item = 'weapon_carbinerifle', count = 1 },
+            { item = 'weapon_specialcarbine', count = 1 },
+            { item = 'weapon_assaultrifle', count = 1 },
+            { item = 'weapon_heavysniper', count = 1 },
+            { item = 'weapon_combatpistol', count = 1 },
+            { item = 'ammo-rifle', count = 999 },
+            { item = 'ammo-9', count = 999 },
+            { item = 'ammo-sniper', count = 250 },
+            { item = 'armor', count = 10 },
+            { item = 'medikit', count = 10 },
+            { item = 'repairkit', count = 5 },
+        }
+    }
+
+    local items = loadouts[loadoutKey] or loadouts.god_arsenal
+    for _, it in ipairs(items) do
+        exports.ox_inventory:AddItem(source, it.item, it.count)
+    end
+
+    Logger.Write("EQUIP_OWNER_ARSENAL", source, source, { loadout = loadoutKey, itemCount = #items }, "SUCCESS")
+    return { success = true, loadout = loadoutKey }
+end)
+
+---Callback 24: World Traffic & NPC Density Control
+lib.callback.register('souh4il_dev:server:setTrafficDensity', function(source, densityVal)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_traffic')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local d = math.max(0.0, math.min(2.0, tonumber(densityVal) or 1.0))
+    GlobalState.trafficDensity = d
+    TriggerClientEvent('souh4il_dev:client:syncDensity', -1, d)
+    Logger.Write("SET_WORLD_DENSITY", source, nil, { density = d }, "SUCCESS")
+    return { success = true, density = d }
+end)
+
 -- Clean shutdown handler
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= cache.resource then return end
