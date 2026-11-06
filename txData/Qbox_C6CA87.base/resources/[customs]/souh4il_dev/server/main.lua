@@ -1240,6 +1240,162 @@ lib.callback.register('souh4il_dev:server:wipePlayer', function(source, data)
     return { success = true }
 end)
 
+---Callback: Teleport Player to Another Player (Send A to B, or Bring B to A)
+lib.callback.register('souh4il_dev:server:teleportPlayerToPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local fromId = tonumber(data.fromId)
+    local toId = tonumber(data.toId)
+    if not fromId or not DoesPlayerExist(tostring(fromId)) or not toId or not DoesPlayerExist(tostring(toId)) then
+        return { success = false, error = "PLAYER_NOT_ONLINE" }
+    end
+
+    local pedFrom = GetPlayerPed(tostring(fromId))
+    local pedTo = GetPlayerPed(tostring(toId))
+    local coords = GetEntityCoords(pedTo)
+
+    SetEntityCoords(pedFrom, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
+    TriggerClientEvent('souh4il_dev:client:receiveNotify', fromId, { title = "Téléportation", description = "Vous avez été téléporté par le Staff.", type = "inform" })
+    Logger.Write("TELEPORT_PLAYER_TO_PLAYER", source, fromId, { destinationPlayer = toId, coords = coords }, "SUCCESS")
+    return { success = true, from = fromId, to = toId }
+end)
+
+---Callback: Manage Player Money (Give, Set, Remove)
+lib.callback.register('souh4il_dev:server:managePlayerMoney', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'give_money')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    local player = exports.qbx_core:GetPlayer(tId)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local moneyType = data.moneyType == 'bank' and 'bank' or 'cash'
+    local amount = tonumber(data.amount) or 0
+    local action = data.moneyAction -- 'give', 'remove', 'set'
+
+    if action == 'give' then
+        player.Functions.AddMoney(moneyType, math.abs(amount), "souh4il_dev_admin")
+    elseif action == 'remove' then
+        player.Functions.RemoveMoney(moneyType, math.abs(amount), "souh4il_dev_admin")
+    elseif action == 'set' then
+        player.Functions.SetMoney(moneyType, math.max(0, amount), "souh4il_dev_admin")
+    end
+
+    local updatedCash = player.PlayerData.money.cash
+    local updatedBank = player.PlayerData.money.bank
+    Logger.Write("MANAGE_PLAYER_MONEY", source, tId, { action = action, type = moneyType, amount = amount, cash = updatedCash, bank = updatedBank }, "SUCCESS")
+    return { success = true, cash = updatedCash, bank = updatedBank }
+end)
+
+---Callback: Give Custom Item Directly to Player
+lib.callback.register('souh4il_dev:server:giveItemToPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'give_item')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    local item = tostring(data.item or ''):lower():gsub('%s+', '')
+    local count = math.max(1, tonumber(data.count) or 1)
+
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+    if item == '' then return { success = false, error = "INVALID_ITEM" } end
+
+    local success, response = exports.ox_inventory:AddItem(tId, item, count)
+    if success then
+        Logger.Write("GIVE_ITEM_TARGET", source, tId, { item = item, count = count }, "SUCCESS")
+        return { success = true }
+    else
+        return { success = false, error = response or "CANNOT_ADD_ITEM" }
+    end
+end)
+
+---Callback: Control Target Player Vitals (Armor, Hunger, Kill, Godmode)
+lib.callback.register('souh4il_dev:server:controlPlayerVitals', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local vType = data.vitalsType -- 'armor', 'feed', 'kill', 'godmode'
+    TriggerClientEvent('souh4il_dev:client:receiveVitalsControl', tId, { type = vType, value = data.value })
+    Logger.Write("CONTROL_PLAYER_VITALS", source, tId, { type = vType, value = data.value }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Control Target Player Vehicle
+lib.callback.register('souh4il_dev:server:controlPlayerVehicle', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local vAction = data.vehAction -- 'repair', 'max_tune', 'eject', 'damage', 'delete'
+    TriggerClientEvent('souh4il_dev:client:receiveVehicleControl', tId, vAction)
+    Logger.Write("CONTROL_PLAYER_VEHICLE", source, tId, { action = vAction }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Control Target Player Appearance & Ped
+lib.callback.register('souh4il_dev:server:controlPlayerAppearance', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local aType = data.appType -- 'set_ped', 'clothing_menu', 'clean_ped'
+    if aType == 'set_ped' then
+        TriggerClientEvent('souh4il_dev:client:receiveSetPed', tId, data.model)
+    elseif aType == 'clothing_menu' then
+        TriggerClientEvent('illenium-appearance:client:openClothingMenu', tId, true)
+    elseif aType == 'clean_ped' then
+        TriggerClientEvent('souh4il_dev:client:receiveCleanPed', tId)
+    end
+
+    Logger.Write("CONTROL_PLAYER_APPEARANCE", source, tId, { type = aType, model = data.model }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Set Target Player Job Direct
+lib.callback.register('souh4il_dev:server:setPlayerJobDirect', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_job')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    local player = exports.qbx_core:GetPlayer(tId)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local job = tostring(data.job or 'unemployed')
+    local grade = tonumber(data.grade) or 0
+    player.Functions.SetJob(job, grade)
+
+    Logger.Write("SET_PLAYER_JOB", source, tId, { job = job, grade = grade }, "SUCCESS")
+    return { success = true, job = job, grade = grade }
+end)
+
 ---Callback: Ban Offline Player
 lib.callback.register('souh4il_dev:server:banOfflinePlayer', function(source, data)
     if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then

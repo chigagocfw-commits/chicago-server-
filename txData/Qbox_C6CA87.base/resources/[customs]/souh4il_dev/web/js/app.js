@@ -348,6 +348,25 @@ window.addEventListener('message', (event) => {
                 </div>
             `;
         }
+        // Update live stats in player-manage-modal if target matches
+        const currManageId = document.getElementById('manage-target-id')?.value;
+        if (d && currManageId == d.id) {
+            const cashEl = document.getElementById('manage-live-cash');
+            const bankEl = document.getElementById('manage-live-bank');
+            const jobEl = document.getElementById('manage-live-job');
+            const gangEl = document.getElementById('manage-live-gang');
+            const cidEl = document.getElementById('manage-target-cid-display');
+            if (cashEl) cashEl.innerText = `$${Number(d.cash).toLocaleString()}`;
+            if (bankEl) bankEl.innerText = `$${Number(d.bank).toLocaleString()}`;
+            if (jobEl) jobEl.innerText = `${d.job} (${d.jobGrade})`;
+            if (gangEl) gangEl.innerText = `${d.gang} (${d.gangGrade})`;
+            if (cidEl) cidEl.innerText = `CID: ${d.citizenid} • Ping: ${d.ping}ms • IP: ${d.ip}`;
+        }
+    } else if (data.action === 'updateTargetLiveMoney') {
+        const cashEl = document.getElementById('manage-live-cash');
+        const bankEl = document.getElementById('manage-live-bank');
+        if (cashEl && data.cash !== undefined) cashEl.innerText = `$${Number(data.cash).toLocaleString()}`;
+        if (bankEl && data.bank !== undefined) bankEl.innerText = `$${Number(data.bank).toLocaleString()}`;
     }
 });
 
@@ -470,9 +489,11 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             const query = document.getElementById('item-search-input')?.value.toLowerCase().trim() || '';
             renderVisualItems(query);
         } else if (tab === 'vehicles') {
+            if (!allServerVehicles || allServerVehicles.length === 0) postNUI('fetchAllVehicles');
             const query = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
             renderVisualVehicles(query);
         } else if (tab === 'characters') {
+            if (!allServerCharacters || allServerCharacters.length === 0) postNUI('fetchAllCharacters');
             const query = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
             renderVisualCharacters(query);
         } else if (tab === 'jobs') {
@@ -783,7 +804,7 @@ function renderVisualVehicles(searchQuery = '') {
         } else if (currentVehFilter === 'vans') {
             matchesCategory = cat.includes('van') || cat.includes('commercial') || cat.includes('industrial');
         } else if (currentVehFilter === 'air') {
-            matchesCategory = cat.includes('heli') || cat.includes('plane') || cat.includes('boat') || cat.includes('cycle');
+            matchesCategory = cat.includes('heli') || cat.includes('plane') || cat.includes('boat');
         }
 
         const q = searchQuery.toLowerCase().trim();
@@ -800,7 +821,6 @@ function renderVisualVehicles(searchQuery = '') {
         return;
     }
 
-    // Limit to currentVehLimit per page/view for fast rendering
     const renderChunk = filtered.slice(0, currentVehLimit);
 
     let html = renderChunk.map(veh => {
@@ -816,7 +836,7 @@ function renderVisualVehicles(searchQuery = '') {
                 <div class="veh-thumb-wrapper">
                     ${brand ? `<span class="veh-brand-tag">${escapeHtml(brand)}</span>` : ''}
                     <span class="veh-cat-tag">${escapeHtml(cat)}</span>
-                    <img class="veh-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\\'font-size:38px;opacity:0.7;\\'>🚘</span>'; };">
+                    <img class="veh-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\'font-size:38px;opacity:0.7;\'>🚘</span>'; };">
                 </div>
                 <div class="veh-title" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                 <div class="veh-model-sub">${model}</div>
@@ -824,7 +844,19 @@ function renderVisualVehicles(searchQuery = '') {
             </div>
         `;
     }).join('');
+
+    if (filtered.length > currentVehLimit) {
+        html += `<button class="load-more-btn" onclick="loadMoreVehicles()">➕ Afficher plus de véhicules (${currentVehLimit} sur ${filtered.length})</button>`;
+    }
+
+    container.innerHTML = html;
 }
+
+window.loadMoreVehicles = function() {
+    currentVehLimit += 120;
+    const q = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
+    renderVisualVehicles(q);
+};
 
 window.spawnVehicleDirect = function(model) {
     const maxTune = document.getElementById('veh-max-tune')?.checked ?? true;
@@ -845,17 +877,38 @@ document.getElementById('veh-search-input')?.addEventListener('input', (e) => {
     renderVisualVehicles(e.target.value.toLowerCase().trim());
 });
 
-// Characters & Skins Rendering (Visual Peds Catalog)
+// Characters & Skins Rendering (Dynamic illenium-appearance 1,051+ Peds Catalog)
 function renderVisualCharacters(searchQuery = '') {
     const container = document.getElementById('visual-characters-container');
     if (!container) return;
 
-    const filtered = VISUAL_PEDS.filter(ped => {
-        const matchesCategory = (currentPedFilter === 'all' || ped.category === currentPedFilter);
+    const sourceList = (allServerCharacters && allServerCharacters.length > 0) ? allServerCharacters : VISUAL_PEDS;
+
+    const filtered = sourceList.filter(ped => {
+        const cat = (ped.category || '').toLowerCase();
+        let matchesCategory = false;
+        if (currentPedFilter === 'all') {
+            matchesCategory = true;
+        } else if (currentPedFilter === 'story') {
+            matchesCategory = cat === 'story' || cat === 'vip';
+        } else if (currentPedFilter === 'emergency') {
+            matchesCategory = cat === 'emergency';
+        } else if (currentPedFilter === 'gangs') {
+            matchesCategory = cat === 'gangs' || cat === 'gang';
+        } else if (currentPedFilter === 'male') {
+            matchesCategory = cat === 'male' || cat === 'civilian';
+        } else if (currentPedFilter === 'female') {
+            matchesCategory = cat === 'female';
+        } else if (currentPedFilter === 'animals') {
+            matchesCategory = cat === 'animals' || cat === 'animal';
+        } else if (currentPedFilter === 'multiplayer') {
+            matchesCategory = cat === 'multiplayer';
+        }
+
         const q = searchQuery.toLowerCase().trim();
         const matchesSearch = !q || 
             ped.model.toLowerCase().includes(q) || 
-            ped.label.toLowerCase().includes(q);
+            (ped.label && ped.label.toLowerCase().includes(q));
         return matchesCategory && matchesSearch;
     });
 
@@ -864,17 +917,19 @@ function renderVisualCharacters(searchQuery = '') {
         return;
     }
 
-    container.innerHTML = filtered.map(ped => {
+    const renderChunk = filtered.slice(0, currentPedLimit);
+
+    let html = renderChunk.map(ped => {
         const model = ped.model.toLowerCase();
         const label = ped.label || model;
         const imgFiveM = `https://docs.fivem.net/peds/${model}.webp`;
         const imgFallback = `https://raw.githubusercontent.com/root-cause/v-ped-hashes/master/images/${model}.png`;
-        const isAnimal = ped.category === 'animal';
+        const isAnimal = ped.category === 'animals' || ped.category === 'animal';
 
         return `
             <div class="visual-ped-card">
                 <div class="ped-thumb-wrapper">
-                    <img class="ped-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\\'font-size:32px;opacity:0.7;\\'>${isAnimal ? '🐾' : '👤'}</span>'; };">
+                    <img class="ped-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\'font-size:32px;opacity:0.7;\'>${isAnimal ? '🐾' : '👤'}</span>'; };">
                 </div>
                 <div class="ped-title" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
                 <div class="ped-model-sub">${model}</div>
@@ -882,38 +937,19 @@ function renderVisualCharacters(searchQuery = '') {
             </div>
         `;
     }).join('');
+
+    if (filtered.length > currentPedLimit) {
+        html += `<button class="load-more-btn" onclick="loadMorePeds()">➕ Afficher plus de personnages (${currentPedLimit} sur ${filtered.length})</button>`;
+    }
+
+    container.innerHTML = html;
 }
 
-window.applyPedDirect = function(model) {
-    postNUI('setPedModel', { model });
+window.loadMorePeds = function() {
+    currentPedLimit += 120;
+    const q = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
+    renderVisualCharacters(q);
 };
-
-document.querySelectorAll('.filter-chip-ped').forEach(chip => {
-    chip.addEventListener('click', () => {
-        document.querySelectorAll('.filter-chip-ped').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentPedFilter = chip.getAttribute('data-cat');
-        const query = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
-        renderVisualCharacters(query);
-    });
-});
-
-document.getElementById('ped-search-input')?.addEventListener('input', (e) => {
-    renderVisualCharacters(e.target.value.toLowerCase().trim());
-});
-
-document.getElementById('btn-reset-ped')?.addEventListener('click', () => {
-    applyPedDirect('mp_m_freemode_01');
-});
-
-document.getElementById('btn-apply-custom-skin')?.addEventListener('click', () => {
-    const input = document.getElementById('custom-skin-input');
-    const model = input?.value.trim();
-    if (model) {
-        applyPedDirect(model);
-        input.value = '';
-    }
-});
 
 // Jobs & Careers Rendering (Dynamic Qbox Jobs Catalog)
 function renderVisualJobs(searchQuery = '') {
@@ -1316,25 +1352,125 @@ document.getElementById('manage-modal-close-btn')?.addEventListener('click', () 
     document.getElementById('player-manage-modal').style.display = 'none';
 });
 
+window.openPlayerManageModal = function(targetId, targetName) {
+    const modal = document.getElementById('player-manage-modal');
+    if (!modal) return;
+
+    document.getElementById('manage-target-id').value = targetId;
+    document.getElementById('manage-target-name').value = targetName;
+    document.getElementById('manage-target-name-display').innerText = targetName;
+    document.getElementById('manage-target-id-badge').innerText = `ID: #${targetId}`;
+    document.getElementById('manage-target-avatar').innerText = (targetName || 'P').substring(0, 2).toUpperCase();
+    document.getElementById('manage-target-cid-display').innerText = 'Chargement des données joueur...';
+
+    // Populate Friend / Online players dropdown (exclude current target)
+    const select = document.getElementById('manage-friend-select');
+    if (select) {
+        select.innerHTML = '<option value="">-- Choisir un joueur connecté pour le transfert --</option>';
+        onlinePlayersCache.forEach(p => {
+            if (p.id != targetId) {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = `#${p.id} - ${p.name} (${p.charName || p.job || 'Player'})`;
+                select.appendChild(opt);
+            }
+        });
+    }
+
+    // Reset inputs
+    const elIds = ['manage-money-amount', 'manage-item-name', 'manage-item-count', 'manage-job-name', 'manage-job-grade', 'manage-gang-name', 'manage-gang-grade', 'manage-ped-model', 'manage-pm-msg', 'manage-warn-msg'];
+    elIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && id.includes('count')) el.value = '1';
+        else if (el && id.includes('grade')) el.value = '0';
+        else if (el) el.value = '';
+    });
+
+    modal.style.display = 'flex';
+
+    // Fetch live details
+    postNUI('playerDetailedAction', { action: 'get_details', targetId });
+};
+
 window.execPlayerDetailed = function(action, extra = {}) {
     const targetId = document.getElementById('manage-target-id').value;
     const name = document.getElementById('manage-target-name').value;
-    const payload = { action, targetId, ...extra };
+    const friendId = document.getElementById('manage-friend-select')?.value;
 
-    if (action === 'set_gang') {
-        payload.gang = document.getElementById('manage-gang-name')?.value.trim() || 'none';
-        payload.grade = document.getElementById('manage-gang-grade')?.value.trim() || 0;
+    let payload = { action, targetId, ...extra };
+
+    if (action === 'send_to_friend') {
+        if (!friendId) {
+            alert('Veuillez sélectionner un joueur / ami dans la liste déroulante !');
+            return;
+        }
+        payload = { action: 'teleport_to_friend', fromId: targetId, toId: friendId };
+    } else if (action === 'bring_friend_here') {
+        if (!friendId) {
+            alert('Veuillez sélectionner un joueur / ami dans la liste déroulante !');
+            return;
+        }
+        payload = { action: 'teleport_to_friend', fromId: friendId, toId: targetId };
+    } else if (action === 'goto_target') {
+        postNUI('teleportAction', { type: 'goto', target: targetId });
+        return;
+    } else if (action === 'bring_target') {
+        postNUI('teleportAction', { type: 'bring', target: targetId });
+        return;
+    } else if (action === 'tp_preset') {
+        postNUI('teleportPreset', { location: extra.location, targetId });
+        return;
+    } else if (action === 'money_give' || action === 'money_remove' || action === 'money_set') {
+        const amount = parseInt(document.getElementById('manage-money-amount')?.value) || 0;
+        const moneyType = document.getElementById('manage-money-type')?.value || 'cash';
+        if (amount <= 0 && action !== 'money_set') {
+            alert('Veuillez spécifier un montant valide supérieur à 0 !');
+            return;
+        }
+        const mAction = action === 'money_give' ? 'give' : (action === 'money_remove' ? 'remove' : 'set');
+        payload = { action: 'manage_money', targetId, moneyAction: mAction, moneyType, amount };
+    } else if (action === 'give_item_direct') {
+        const item = document.getElementById('manage-item-name')?.value.trim();
+        const count = parseInt(document.getElementById('manage-item-count')?.value) || 1;
+        if (!item) {
+            alert('Veuillez entrer le nom technique de l\'item ox_inventory (ex: bandage, burger, weapon_pistol) !');
+            return;
+        }
+        payload = { action: 'give_item_target', targetId, item, count };
+    } else if (action === 'set_job') {
+        const job = document.getElementById('manage-job-name')?.value.trim() || 'unemployed';
+        const grade = parseInt(document.getElementById('manage-job-grade')?.value) || 0;
+        payload = { action: 'set_job_direct', targetId, job, grade };
+    } else if (action === 'set_gang') {
+        const gang = document.getElementById('manage-gang-name')?.value.trim() || 'none';
+        const grade = parseInt(document.getElementById('manage-gang-grade')?.value) || 0;
+        payload = { action: 'set_gang', targetId, gang, grade };
+    } else if (action === 'vitals_control') {
+        payload = { action: 'vitals', targetId, vitalsType: extra.vitalsType };
+    } else if (action === 'vehicle_action') {
+        payload = { action: 'vehicle_control', targetId, vehAction: extra.vehAction };
+    } else if (action === 'apply_ped_target') {
+        const model = document.getElementById('manage-ped-model')?.value.trim();
+        if (!model) {
+            alert('Veuillez saisir un modèle de ped valide (ex: s_m_y_cop_01, player_zero, a_c_chop) !');
+            return;
+        }
+        payload = { action: 'appearance_control', targetId, appType: 'set_ped', model };
+    } else if (action === 'clothing_menu') {
+        payload = { action: 'appearance_control', targetId, appType: 'clothing_menu' };
+    } else if (action === 'clean_ped') {
+        payload = { action: 'appearance_control', targetId, appType: 'clean_ped' };
     } else if (action === 'message') {
         payload.message = document.getElementById('manage-pm-msg')?.value.trim();
         if (!payload.message) return;
     } else if (action === 'warn') {
         payload.reason = document.getElementById('manage-warn-msg')?.value.trim() || 'Official staff warning';
     } else if (action === 'wipe') {
-        if (!confirm(`Are you SURE you want to execute ${extra.wipeType.toUpperCase()} wipe on [#${targetId}] ${name}? This cannot be undone!`)) {
+        if (!confirm(`Êtes-vous sûr de vouloir effectuer un WIPE ${extra.wipeType.toUpperCase()} sur [#${targetId}] ${name} ? Cette action est irréversible !`)) {
             return;
         }
     } else if (action === 'clear_inv') {
-        if (!confirm(`Are you sure you want to completely clear inventory of [#${targetId}] ${name}?`)) {
+        if (!confirm(`Êtes-vous sûr de vouloir vider complètement l'inventaire de [#${targetId}] ${name} ?`)) {
             return;
         }
     }

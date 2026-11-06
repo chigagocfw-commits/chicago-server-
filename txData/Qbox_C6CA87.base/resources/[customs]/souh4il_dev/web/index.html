@@ -1061,86 +1061,174 @@
 
         <!-- Master Player Manage Modal -->
         <div id="player-manage-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-box" style="max-width: 650px;">
+            <div class="modal-box modal-large" style="width: 960px; max-width: 95vw;">
                 <div class="modal-header">
-                    <h3 id="manage-modal-title">⚡ Player Controls & Punishments</h3>
+                    <div>
+                        <h3 id="manage-modal-title">⚡ CONTRÔLE INTÉGRAL DU JOUEUR (MASTER REMOTE)</h3>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Prenez le contrôle total : transfert chez son ami, argent, inventaire, job, santé, voiture, skin et sanctions.</p>
+                    </div>
                     <button class="modal-close" id="manage-modal-close">&times;</button>
                 </div>
-                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="modal-body" style="max-height: 78vh; overflow-y: auto; padding: 18px 24px;">
                     <input type="hidden" id="manage-target-id">
                     <input type="hidden" id="manage-target-name">
-                    <div class="form-group" style="margin-bottom: 12px;">
-                        <span id="manage-target-info" class="target-badge" style="font-size: 13px; font-weight: 600;">ID: --</span>
+
+                    <!-- Live Target Dossier Bar -->
+                    <div style="background: rgba(0, 229, 255, 0.06); border: 1px solid var(--accent-cyan); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(0, 229, 255, 0.15); border: 1px solid var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan);" id="manage-target-avatar">P</div>
+                            <div>
+                                <div style="font-size: 1.05rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <span id="manage-target-name-display">Player</span>
+                                    <span style="font-size: 0.78rem; padding: 2px 8px; background: rgba(0, 255, 136, 0.15); color: var(--accent-green); border-radius: 10px; font-weight: 700;" id="manage-target-id-badge">ID: #--</span>
+                                </div>
+                                <div style="font-size: 0.74rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;" id="manage-target-cid-display">CID: -- • Ping: --ms</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 0.8rem; align-items: center;">
+                            <div>💵 Cash : <b style="color: var(--accent-green);" id="manage-live-cash">$0</b></div>
+                            <div>🏦 Banque : <b style="color: var(--accent-green);" id="manage-live-bank">$0</b></div>
+                            <div>💼 Job : <b style="color: var(--text-secondary);" id="manage-live-job">Civilian</b></div>
+                            <div>🔥 Gang : <b style="color: var(--text-secondary);" id="manage-live-gang">None</b></div>
+                        </div>
                     </div>
 
-                    <!-- Category: Core Health & Vehicles -->
-                    <div class="control-group-title">CORE ACTIONS & VEHICLES</div>
-                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
-                        <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Give Car Keys</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Clear Stress</span></button>
+                    <!-- Category 1: Transfert & Téléportation (Nmofih 3nd sa7bo) -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px; border-color: rgba(0, 229, 255, 0.3);">
+                        <div class="perm-cat-header">🚀 1. TRANSFERT & TÉLÉPORTATION JOUEUR (NMOFIH 3ND SA7BO)</div>
+                        <div style="background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-color);">
+                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan); display: block; margin-bottom: 6px; text-transform: uppercase;">Sélectionner un ami / joueur connecté :</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <select id="manage-friend-select" class="search-input" style="flex: 1; min-width: 250px;">
+                                    <option value="">-- Choisir un joueur connecté pour le transfert --</option>
+                                </select>
+                                <button class="primary-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700;" onclick="execPlayerDetailed('send_to_friend')">🚀 Envoyer ce joueur chez son ami</button>
+                                <button class="secondary-btn" onclick="execPlayerDetailed('bring_friend_here')">🧲 Ramener cet ami vers ce joueur</button>
+                            </div>
+                        </div>
+                        <div class="quick-actions-grid">
+                            <button class="action-btn" onclick="execPlayerDetailed('goto_target')"><span class="btn-icon">📍</span><span class="btn-text">Se TP sur lui (Goto)</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('bring_target')"><span class="btn-icon">🧲</span><span class="btn-text">Le TP sur moi (Bring)</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">Envoyer Hôpital</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">Envoyer Legion</span></button>
+                            <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">JailBox Cage</span></button>
+                        </div>
                     </div>
 
-                    <!-- Category: Permissions & Access -->
-                    <div class="control-group-title">PERMISSIONS & ACE RANKS</div>
-                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
-                        <button class="action-btn" onclick="execPlayerDetailed('give_perm', { role: 'admin' })"><span class="btn-icon">⭐</span><span class="btn-text">Give Admin</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('give_perm', { role: 'mod' })"><span class="btn-icon">🛡️</span><span class="btn-text">Give Mod</span></button>
-                        <button class="action-btn danger" onclick="execPlayerDetailed('remove_perm', { role: 'admin' })"><span class="btn-icon">❌</span><span class="btn-text">Revoke Perms</span></button>
+                    <!-- Category 2: Argent & Économie (Nt7km b flousso) -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">💰 2. CONTRÔLE DE L'ARGENT & ÉCONOMIE</div>
+                        <div class="form-row">
+                            <input type="number" id="manage-money-amount" class="search-input" placeholder="Montant (ex: 50000)" min="1">
+                            <select id="manage-money-type" class="search-input" style="max-width: 130px;">
+                                <option value="cash">💵 Cash</option>
+                                <option value="bank">🏦 Banque</option>
+                            </select>
+                            <button class="primary-btn" onclick="execPlayerDetailed('money_give')">➕ Donner</button>
+                            <button class="secondary-btn" onclick="execPlayerDetailed('money_remove')">➖ Retirer</button>
+                            <button class="secondary-btn" style="border-color: #ffd700; color: #ffd700;" onclick="execPlayerDetailed('money_set')">✏️ Définir Exact</button>
+                        </div>
                     </div>
 
-                    <!-- Category: Inventory & Storage Access -->
-                    <div class="control-group-title">INVENTORY & CONTAINER INSPECTION</div>
-                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
-                        <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Open Inventory</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Open Trunk</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Open Glovebox</span></button>
-                        <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Wipe Inventory</span></button>
+                    <!-- Category 3: Inventaire ox_inventory & Objets -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">🎒 3. CONTRÔLE DE L'INVENTAIRE & STASHES</div>
+                        <div class="quick-actions-grid" style="margin-bottom: 12px;">
+                            <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Ouvrir son Inventaire</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Ouvrir son Coffre</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Ouvrir Boîte à Gants</span></button>
+                            <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Vider l'Inventaire</span></button>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" id="manage-item-name" class="search-input" placeholder="Nom de l'item à lui donner (ex: burger, bandage, weapon_pistol)...">
+                            <input type="number" id="manage-item-count" class="search-input count-input" value="1" min="1" max="500">
+                            <button class="primary-btn" onclick="execPlayerDetailed('give_item_direct')">Donner l'Item</button>
+                        </div>
                     </div>
 
-                    <!-- Category: Gang Management -->
-                    <div class="control-group-title">GANG ASSIGNMENT</div>
-                    <div class="form-row" style="margin-bottom: 14px;">
-                        <input type="text" id="manage-gang-name" class="search-input" placeholder="Gang Name (e.g. ballas, families, cartel)...">
-                        <input type="number" id="manage-gang-grade" class="search-input" style="max-width: 90px;" value="0" placeholder="Grade">
-                        <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">Assign Gang</button>
+                    <!-- Category 4: Métiers & Gangs -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">💼 4. MÉTIERS (JOBS) & GANGS</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="form-row" style="margin-bottom: 0;">
+                                <input type="text" id="manage-job-name" class="search-input" placeholder="Métier (police, ambulance, mechanic)...">
+                                <input type="number" id="manage-job-grade" class="search-input count-input" value="0" placeholder="Grade">
+                                <button class="secondary-btn" onclick="execPlayerDetailed('set_job')">Définir Job</button>
+                            </div>
+                            <div class="form-row" style="margin-bottom: 0;">
+                                <input type="text" id="manage-gang-name" class="search-input" placeholder="Gang (ballas, families, cartel)...">
+                                <input type="number" id="manage-gang-grade" class="search-input count-input" value="0" placeholder="Grade">
+                                <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">Définir Gang</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Category: Moderation & Messaging -->
-                    <div class="control-group-title">COMMUNICATION & MODERATION</div>
-                    <div class="form-row" style="margin-bottom: 10px;">
-                        <input type="text" id="manage-pm-msg" class="search-input" placeholder="Send Staff PM message...">
-                        <button class="primary-btn" onclick="execPlayerDetailed('message')">Send PM</button>
-                    </div>
-                    <div class="form-row" style="margin-bottom: 14px;">
-                        <input type="text" id="manage-warn-msg" class="search-input" placeholder="Staff Warning reason...">
-                        <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">Issue Warning</button>
-                        <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">Force Logout</button>
-                    </div>
-
-                    <!-- Category: Troll & Punishments -->
-                    <div class="control-group-title">TROLL & DISCIPLINE SUITE</div>
-                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap in Sky</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Set On Fire</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">JailBox Cage</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Make Drunk</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Make Pee</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Make Poop</span></button>
-                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Loud Sound</span></button>
-                        <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'damage_veh' })"><span class="btn-icon">💥</span><span class="btn-text">Damage Car</span></button>
+                    <!-- Category 5: Santé, Armure & Vitals -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">❤️ 5. SANTÉ, ARMURE & VITALS</div>
+                        <div class="quick-actions-grid">
+                            <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Gilet</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'feed' })"><span class="btn-icon">🍔</span><span class="btn-text">100% Faim & Soif</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Vider le Stress</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Toggle Godmode</span></button>
+                            <button class="action-btn danger" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer le Joueur</span></button>
+                        </div>
                     </div>
 
-                    <!-- Category: Account Wipes -->
-                    <div class="control-group-title">ACCOUNT WIPES (IRREVERSIBLE)</div>
-                    <div class="quick-actions-grid">
-                        <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Cash & Bank</span></button>
-                        <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Items</span></button>
-                        <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.15);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Full Character Wipe</span></button>
+                    <!-- Category 6: Véhicule du Joueur -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">🚗 6. CONTRÔLE DE SON VÉHICULE</div>
+                        <div class="quick-actions-grid">
+                            <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Donner les Clés</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'repair' })"><span class="btn-icon">🔧</span><span class="btn-text">Réparer & Laver</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'max_tune' })"><span class="btn-icon">⚡</span><span class="btn-text">Bennys Max Tune</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'eject' })"><span class="btn-icon">🚪</span><span class="btn-text">Éjecter du Véhicule</span></button>
+                            <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'damage' })"><span class="btn-icon">💥</span><span class="btn-text">Crever les Pneus</span></button>
+                            <button class="action-btn danger" onclick="execPlayerDetailed('vehicle_action', { vehAction: 'delete' })"><span class="btn-icon">🗑️</span><span class="btn-text">Supprimer Véhicule</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Category 7: Skins & Apparence -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">🎭 7. SKINS, PEDS & APPARENCE</div>
+                        <div class="form-row">
+                            <input type="text" id="manage-ped-model" class="search-input" placeholder="Modèle de Ped (ex: s_m_y_cop_01, player_zero, a_c_chop)...">
+                            <button class="primary-btn" onclick="execPlayerDetailed('apply_ped_target')">Changer Ped</button>
+                            <button class="secondary-btn" onclick="execPlayerDetailed('clothing_menu')">👔 Clothing Menu</button>
+                            <button class="secondary-btn" onclick="execPlayerDetailed('clean_ped')">🧼 Nettoyer Sang</button>
+                        </div>
+                    </div>
+
+                    <!-- Category 8: Trolls & Sanctions -->
+                    <div class="perm-cat-group" style="margin-bottom: 14px;">
+                        <div class="perm-cat-header">🚀 8. TROLLS & SANCTIONS STAFF</div>
+                        <div class="quick-actions-grid" style="margin-bottom: 12px;">
+                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Faire Pisser</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Faire Caca</span></button>
+                            <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
+                        </div>
+                        <div class="form-row" style="margin-bottom: 10px;">
+                            <input type="text" id="manage-pm-msg" class="search-input" placeholder="Message PM Staff privé...">
+                            <button class="primary-btn" onclick="execPlayerDetailed('message')">Envoyer PM</button>
+                        </div>
+                        <div class="form-row" style="margin-bottom: 10px;">
+                            <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement officiel...">
+                            <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">Avertir</button>
+                            <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">Force Logout</button>
+                        </div>
+                        <div class="quick-actions-grid">
+                            <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent</span></button>
+                            <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Items</span></button>
+                            <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.15);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total</span></button>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="secondary-btn" id="manage-modal-close-btn">Close</button>
+                <div class="modal-footer" style="padding: 14px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                    <button class="secondary-btn" id="manage-modal-close-btn" style="padding: 8px 24px;">Fermer</button>
                 </div>
             </div>
         </div>

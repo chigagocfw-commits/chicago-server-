@@ -36,6 +36,8 @@ files {
     'web/index.html',
     'web/css/style.css',
     'web/js/app.js',
+    'web/images/vehicles/*.webp',
+    'web/images/vehicles/index.json',
 }
 
 dependencies {

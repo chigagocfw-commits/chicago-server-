@@ -1606,6 +1606,39 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
                 SendNUIMessage({ action = "showPlayerDetails", details = res.details })
             end
         end, tId)
+    elseif action == 'teleport_to_friend' then
+        lib.callback('souh4il_dev:server:teleportPlayerToPlayer', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Joueur #%d transféré avec succès vers #%d!"):format(data.fromId, data.toId) or (res and res.error or "Échec"), type = res and res.success and 'success' or 'error' })
+        end, { fromId = data.fromId, toId = data.toId })
+    elseif action == 'manage_money' then
+        lib.callback('souh4il_dev:server:managePlayerMoney', false, function(res)
+            if res and res.success then
+                SendNUIMessage({ action = "updateTargetLiveMoney", cash = res.cash, bank = res.bank })
+                lib.notify({ title = SharedConfig.PanelName, description = ("Argent mis à jour sur joueur #%d."):format(tId), type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = res and res.error or "Erreur", type = 'error' })
+            end
+        end, data)
+    elseif action == 'give_item_target' then
+        lib.callback('souh4il_dev:server:giveItemToPlayer', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Item %s (x%d) donné à #%d."):format(data.item, data.count, tId) or (res and res.error or "Erreur"), type = res and res.success and 'success' or 'error' })
+        end, data)
+    elseif action == 'set_job_direct' then
+        lib.callback('souh4il_dev:server:setPlayerJobDirect', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Métier défini sur %s (Grade %d)."):format(data.job, data.grade) or "Erreur", type = res and res.success and 'success' or 'error' })
+        end, data)
+    elseif action == 'vitals' then
+        lib.callback('souh4il_dev:server:controlPlayerVitals', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Action vitale '%s' envoyée à #%d."):format(data.vitalsType, tId) or "Erreur", type = res and res.success and 'success' or 'error' })
+        end, data)
+    elseif action == 'vehicle_control' then
+        lib.callback('souh4il_dev:server:controlPlayerVehicle', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Action véhicule '%s' envoyée à #%d."):format(data.vehAction, tId) or "Erreur", type = res and res.success and 'success' or 'error' })
+        end, data)
+    elseif action == 'appearance_control' then
+        lib.callback('souh4il_dev:server:controlPlayerAppearance', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and ("Action apparence '%s' envoyée à #%d."):format(data.appType, tId) or "Erreur", type = res and res.success and 'success' or 'error' })
+        end, data)
     end
     cb('ok')
 end)
