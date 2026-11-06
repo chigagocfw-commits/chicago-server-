@@ -159,43 +159,43 @@ RegisterNetEvent('hud:client:UpdateNeeds', function(hunger, thirst)
     if UpdateNeeds then UpdateNeeds(hunger, thirst) end
 end)
 
--- Track previous money values for change detection
-local lastCash = -1
-local lastBank = -1
-
 -- Detect money changes from QBCore:Player:SetPlayerData
 RegisterNetEvent('QBCore:Player:SetPlayerData', function(playerData)
     if not (UpdateMoney and playerData and playerData.money) then return end
 
     local cash = playerData.money.cash or 0
+    if GetResourceState('ox_inventory') == 'started' then
+        local oxCash = exports.ox_inventory:Search('count', 'money')
+        if oxCash ~= nil then
+            cash = oxCash
+        end
+    end
     local bank = playerData.money.bank or 0
-    -- Marked bills handled separately by inventory module - don't include here
+
+    local oldCash = (lastMoney and lastMoney.cash and lastMoney.cash >= 0) and lastMoney.cash or cash
+    local oldBank = (lastMoney and lastMoney.bank and lastMoney.bank >= 0) and lastMoney.bank or bank
 
     -- Initialize on first call
-    if lastCash == -1 then
-        lastCash = cash
-        lastBank = bank
+    if not lastMoney or lastMoney.cash == -1 then
         UpdateMoney(cash, bank, 0)
         return
     end
 
     -- Detect cash change
-    if cash ~= lastCash then
-        local diff = cash - lastCash
+    if cash ~= oldCash then
+        local diff = cash - oldCash
         local changeAmount = math.abs(diff)
         local isMinus = diff < 0
-        lastCash = cash
-        UpdateMoney(cash, bank, 0, nil, 'cash', changeAmount, isMinus)
+        UpdateMoney(cash, bank, 0, 'cash', changeAmount, nil, isMinus)
         return
     end
 
     -- Detect bank change
-    if bank ~= lastBank then
-        local diff = bank - lastBank
+    if bank ~= oldBank then
+        local diff = bank - oldBank
         local changeAmount = math.abs(diff)
         local isMinus = diff < 0
-        lastBank = bank
-        UpdateMoney(cash, bank, 0, nil, 'bank', changeAmount, isMinus)
+        UpdateMoney(cash, bank, 0, 'bank', changeAmount, nil, isMinus)
         return
     end
 
@@ -208,13 +208,14 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(moneyType, amount, isMinus
     local playerData = GetQBXPlayerData()
     if playerData and playerData.money then
         local cash = playerData.money.cash or 0
+        if GetResourceState('ox_inventory') == 'started' then
+            local oxCash = exports.ox_inventory:Search('count', 'money')
+            if oxCash ~= nil then
+                cash = oxCash
+            end
+        end
         local bank = playerData.money.bank or 0
-        -- Marked bills handled separately by inventory module
-        -- Update tracked values
-        lastCash = cash
-        lastBank = bank
-        -- Society is handled separately by FetchSocietyMoney - not included here
-        UpdateMoney(cash, bank, 0, nil, moneyType, amount, isMinus)
+        UpdateMoney(cash, bank, 0, moneyType, amount, nil, isMinus)
     end
 end)
 

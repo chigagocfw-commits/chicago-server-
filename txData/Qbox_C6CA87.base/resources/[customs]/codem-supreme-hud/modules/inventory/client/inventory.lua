@@ -20,6 +20,9 @@ end
 local function BuildTrackedItemsList()
     trackedItems = {}
 
+    -- Physical cash item
+    trackedItems['money'] = true
+
     -- Minimap required items
     for _, itemName in ipairs(GetRequiredItems()) do
         trackedItems[itemName] = true
@@ -100,6 +103,11 @@ local function RefreshItems()
 
     -- Refresh tracked items (markedbills, etc.)
     RefreshTrackedItems()
+
+    -- Sync money if ox_inventory is used
+    if GetResourceState('ox_inventory') == 'started' and SendMoneyInfo then
+        SendMoneyInfo()
+    end
 end
 
 -- ═══════════════════════════════════════════════════════════════
@@ -114,6 +122,29 @@ AddEventHandler('ox_inventory:itemCount', function(itemName, totalCount)
     if itemCache[itemName] ~= nil then
         itemCache[itemName] = totalCount
     end
+
+    if itemName == 'money' and UpdateMoney then
+        local cash = totalCount or 0
+        local bank = 0
+        if lastMoney and lastMoney.bank and lastMoney.bank >= 0 then
+            bank = lastMoney.bank
+        else
+            local pData = GetPlayerData and GetPlayerData()
+            if pData and pData.money and pData.money.bank then
+                bank = pData.money.bank
+            end
+        end
+
+        local oldCash = (lastMoney and lastMoney.cash and lastMoney.cash >= 0) and lastMoney.cash or cash
+        local diff = cash - oldCash
+        if diff ~= 0 then
+            UpdateMoney(cash, bank, 0, 'cash', math.abs(diff), nil, diff < 0)
+        else
+            UpdateMoney(cash, bank, 0)
+        end
+        return
+    end
+
     RefreshItems()
 end)
 

@@ -197,7 +197,7 @@ RegisterNetEvent('QBCore:Player:SetPlayerData', function(playerData)
         local changeAmount = math.abs(diff)
         local isMinus = diff < 0
         lastCash = cash
-        UpdateMoney(cash, bank, 0, nil, 'cash', changeAmount, isMinus)
+        UpdateMoney(cash, bank, 0, 'cash', changeAmount, nil, isMinus)
         return
     end
 
@@ -207,7 +207,7 @@ RegisterNetEvent('QBCore:Player:SetPlayerData', function(playerData)
         local changeAmount = math.abs(diff)
         local isMinus = diff < 0
         lastBank = bank
-        UpdateMoney(cash, bank, 0, nil, 'bank', changeAmount, isMinus)
+        UpdateMoney(cash, bank, 0, 'bank', changeAmount, nil, isMinus)
         return
     end
 
@@ -226,7 +226,7 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(moneyType, amount, isMinus
         lastCash = cash
         lastBank = bank
         -- Society is handled separately by FetchSocietyMoney - not included here
-        UpdateMoney(cash, bank, 0, nil, moneyType, amount, isMinus)
+        UpdateMoney(cash, bank, 0, moneyType, amount, nil, isMinus)
     end
 end)
 

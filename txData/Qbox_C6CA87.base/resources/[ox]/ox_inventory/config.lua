@@ -119,8 +119,8 @@
 
 Prism = {}
 
-Prism.ProfileType = 'discord'-- ( 'discord', 'steam', 'mugshot' ) if mugshot you need to have a dependency installed https://github.com/BaziForYou/MugShotBase64
-Prism.UseCitizenId = false -- ( Use citizen id instead of player server id ( Only enable for QBcore or Qbox ))
+Prism.ProfileType = 'mugshot'-- ( 'discord', 'steam', 'mugshot' ) if mugshot you need to have a dependency installed https://github.com/BaziForYou/MugShotBase64
+Prism.UseCitizenId = true -- ( Use citizen id instead of player server id ( Only enable for QBcore or Qbox ))
 Prism.UseNativeLabeling = true -- ( Use native Inventory labeling for secondary inventory )
 Prism.mouseTrailActive = {
     enabled = true,

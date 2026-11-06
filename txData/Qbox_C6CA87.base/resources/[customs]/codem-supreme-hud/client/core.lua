@@ -1033,11 +1033,10 @@ function UpdateMoney(cash, bank, marked, changeType, changeAmount, changeLabel, 
     end
 
     local cashChanged = cash ~= lastMoney.cash
-    if hasMarked and not cashChanged then
-        cashChanged = marked ~= lastMoney.marked
-    end
+    local bankChanged = bank ~= lastMoney.bank
+    local markedChanged = hasMarked and (marked ~= lastMoney.marked) or false
 
-    if cashChanged then
+    if cashChanged or bankChanged or markedChanged then
         lastMoney.bank = bank
         lastMoney.cash = cash
         if hasMarked then
@@ -1050,13 +1049,9 @@ function UpdateMoney(cash, bank, marked, changeType, changeAmount, changeLabel, 
         if changeType and changeAmount and changeAmount > 0 then
             local changeData = {
                 type = changeType,
-                amount = math.floor(changeAmount)
+                amount = math.floor(changeAmount),
+                isMinus = (changeIsMinus == true)
             }
-            local isMinus = changeIsMinus or changeData
-            if not changeIsMinus then
-                isMinus = false
-            end
-            changeData.isMinus = isMinus
             nuiData.change = changeData
         end
         NuiMessage("updatePlayerInfo", nuiData)
@@ -1079,13 +1074,23 @@ function SendMoneyInfo()
     local cash = 0
     local bank = 0
     local marked = 0
+
+    local hasOx = GetResourceState('ox_inventory') == 'started'
+    local oxCash = hasOx and exports.ox_inventory:Search('count', 'money') or nil
+
+    if oxCash ~= nil then
+        cash = oxCash
+    end
+
     local moneyField = playerData.money
     if moneyField then
         if type(playerData.money) == "table" then
-            local cashVal = playerData.money.cash
-            cash = cashVal or cash
-            if not cashVal then
-                cash = 0
+            if oxCash == nil then
+                local cashVal = playerData.money.cash
+                cash = cashVal or cash
+                if not cashVal then
+                    cash = 0
+                end
             end
             local bankVal = playerData.money.bank
             bank = bankVal or bank
@@ -1098,10 +1103,12 @@ function SendMoneyInfo()
         if accounts then
             for _, account in ipairs(playerData.accounts) do
                 if account.name == "money" then
-                    local moneyVal = account.money
-                    cash = moneyVal or cash
-                    if not moneyVal then
-                        cash = 0
+                    if oxCash == nil then
+                        local moneyVal = account.money
+                        cash = moneyVal or cash
+                        if not moneyVal then
+                            cash = 0
+                        end
                     end
                 elseif account.name == "bank" then
                     local bankVal = account.money
