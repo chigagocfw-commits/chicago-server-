@@ -1925,6 +1925,28 @@ return {
 		}
 	},
 
+	["cola"] = {
+		label = "Cola",
+		weight = 500,
+		stack = true,
+		close = true,
+		description = "For all the thirsty out there",
+		client = {
+			image = "cola.png",
+		}
+	},
+
+	["medikit"] = {
+		label = "Medikit",
+		weight = 2500,
+		stack = true,
+		close = true,
+		description = "A medical kit to treat injuries",
+		client = {
+			image = "firstaid.png",
+		}
+	},
+
 	["woodcamo_attachment"] = {
 		label = "Woodland Camo",
 		weight = 1000,
