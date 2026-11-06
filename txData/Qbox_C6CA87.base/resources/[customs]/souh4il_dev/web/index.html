@@ -378,7 +378,13 @@
                     <section class="tab-pane" id="pane-items">
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>VISUAL ITEM SPAWNER (WITH PICTURES)</h4>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+
+                                    <h4>VISUAL ITEM SPAWNER (ALL SERVER ITEMS & WEAPONS)</h4>
+
+                                    <span class="catalog-badge text-cyan" id="total-items-badge">392+ ITEMS</span>
+
+                                </div>
                                 <div class="header-tools">
                                     <div class="item-filter-tabs">
                                         <button class="filter-chip active" data-cat="all">All</button>
@@ -1157,103 +1163,199 @@
 
         <!-- Staff & Granular Permissions Modal -->
         <div id="staff-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-box" style="max-width: 680px;">
+            <div class="modal-box modal-large">
                 <div class="modal-header">
-                    <h3 id="staff-modal-title">🛡️ Grant / Edit Staff Permissions</h3>
+                    <div>
+                        <h3 id="staff-modal-title">🛡️ GESTION DU STAFF & PERMISSIONS AVANCÉES</h3>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Définissez un rôle préétabli ou activez manuellement chaque module ("bach i9dr ikhdm").</p>
+                    </div>
                     <button class="modal-close" id="staff-modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <!-- Quick Select from Online Players -->
-                    <div class="form-group">
-                        <label>Select from Online Players (or enter manual License):</label>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Sélectionner un Joueur Connecté :</label>
                         <select id="staff-select-player" class="search-input">
-                            <option value="">-- Choose an online player or enter manually below --</option>
+                            <option value="">-- Choisir un joueur connecté ou saisir manuellement la license ci-dessous --</option>
                         </select>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div class="form-group">
-                            <label>Player / Staff Name:</label>
-                            <input type="text" id="staff-input-name" class="search-input" placeholder="Staff display name">
+                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Nom / Pseudo Staff :</label>
+                            <input type="text" id="staff-input-name" class="search-input" placeholder="Ex: SOUH4IL">
                         </div>
                         <div class="form-group">
-                            <label>Role Preset:</label>
+                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Rôle Attribué :</label>
                             <select id="staff-select-role" class="search-input">
-                                <option value="moderator">MODERATOR (Basic Moderation)</option>
-                                <option value="admin">ADMIN (Full Admin & Punishments)</option>
-                                <option value="developer">DEVELOPER (Dev & World Tools)</option>
-                                <option value="owner">OWNER (Full Master Powers)</option>
-                                <option value="custom">CUSTOM (Manual Selection)</option>
+                                <option value="moderator">MODERATOR (Modération Joueurs)</option>
+                                <option value="admin">ADMIN (Administration Complète)</option>
+                                <option value="developer">DEVELOPER (Dev & Outils Serveur)</option>
+                                <option value="owner">OWNER (Master Godmode & Tout)</option>
+                                <option value="custom">CUSTOM (Sélection Sur-Mesure)</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Rockstar License Identifier:</label>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Rockstar License Identifier :</label>
                         <input type="text" id="staff-input-license" class="search-input" placeholder="license:385f488fdcdc30a24c28b7a333ba9cbbffed5044" style="font-family: var(--font-mono); font-size: 0.8rem;">
                     </div>
 
-                    <!-- Granular Feature Checkboxes (nkhtar bach i9dr ikhdm) -->
-                    <div class="control-group-title" style="margin-top: 10px;">GRANULAR FEATURE PERMISSIONS (BACH I9DR IKHDM)</div>
-                    <div class="perm-checkbox-grid">
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-players" checked>
-                            <label for="perm-players">👥 <b>Players Suite</b> (Spectate, Goto, Bring, Freeze, Heal, Revive)</label>
+                    <!-- Role Presets Quick Bar -->
+                    <div style="margin-bottom: 6px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Presets Rapides 1-Click :</span>
+                    </div>
+                    <div class="role-presets-bar">
+                        <button type="button" class="preset-btn" id="preset-btn-mod">🛡️ MODÉRATEUR</button>
+                        <button type="button" class="preset-btn" id="preset-btn-admin">⚖️ ADMINISTRATEUR</button>
+                        <button type="button" class="preset-btn" id="preset-btn-dev">🛠️ DÉVELOPPEUR</button>
+                        <button type="button" class="preset-btn" id="preset-btn-owner">👑 FULL OWNER</button>
+                        <button type="button" class="preset-btn" id="preset-btn-clear" style="border-color: rgba(255, 77, 77, 0.4); color: #ff6b6b;">🧹 TOUT DÉCOCHER</button>
+                    </div>
+
+                    <!-- Categorized Granular Permissions Matrix -->
+                    <div class="perm-categories-container">
+                        <!-- Category 1: Joueurs & Modération -->
+                        <div class="perm-cat-group">
+                            <div class="perm-cat-header">👥 1. GESTION DES JOUEURS & MODÉRATION</div>
+                            <div class="perm-cards-grid">
+                                <label class="perm-check-card" for="perm-players">
+                                    <input type="checkbox" id="perm-players" checked>
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Players Suite</span>
+                                        <span class="perm-check-card-desc">Heal, Revive, Freeze, Spectate, Goto, Bring, Warn</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-teleport">
+                                    <input type="checkbox" id="perm-teleport" checked>
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Téléportation</span>
+                                        <span class="perm-check-card-desc">Marqueur GPS, Coordonnées XYZ, Lieux enregistrés</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-punishments">
+                                    <input type="checkbox" id="perm-punishments">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Sanctions & Bans</span>
+                                        <span class="perm-check-card-desc">Kick, Bannissement temporaire/permanent, Ban Offline</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-teleport" checked>
-                            <label for="perm-teleport">📍 <b>Teleportation</b> (Waypoints, Saved Locations, Coords)</label>
+
+                        <!-- Category 2: Véhicules & Équipements -->
+                        <div class="perm-cat-group">
+                            <div class="perm-cat-header">🚗 2. VÉHICULES, ITEMS & ÉQUIPEMENTS</div>
+                            <div class="perm-cards-grid">
+                                <label class="perm-check-card" for="perm-vehicles">
+                                    <input type="checkbox" id="perm-vehicles">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Contrôle Véhicules</span>
+                                        <span class="perm-check-card-desc">Spawn 971+ véhicules, Bennys Max Mod, Réparation, Clés</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-items">
+                                    <input type="checkbox" id="perm-items">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Items & Argent</span>
+                                        <span class="perm-check-card-desc">Donner items ox_inventory, armes, cash et banque</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-arsenal">
+                                    <input type="checkbox" id="perm-arsenal">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Arsenal Propriétaire</span>
+                                        <span class="perm-check-card-desc">Équipement tactique d'assaut et loadouts exclusifs</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-vehicles" checked>
-                            <label for="perm-vehicles">🚗 <b>Vehicle Controls</b> (Spawn, Max Bennys, Repair, Delete)</label>
+
+                        <!-- Category 3: Personnages & Métiers -->
+                        <div class="perm-cat-group">
+                            <div class="perm-cat-header">🎭 3. PERSONNAGES, SKINS & MÉTIERS (JOBS)</div>
+                            <div class="perm-cards-grid">
+                                <label class="perm-check-card" for="perm-characters">
+                                    <input type="checkbox" id="perm-characters">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">1,051+ Peds & Skins</span>
+                                        <span class="perm-check-card-desc">Changement immédiat de skin parmi tous les peds du serveur</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-jobs">
+                                    <input type="checkbox" id="perm-jobs">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Métiers & Gangs</span>
+                                        <span class="perm-check-card-desc">Assignation de métier, gang, gestion des salaires et grades</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-punishments">
-                            <label for="perm-punishments">🔨 <b>Punishments</b> (Warn, Kick, Ban, Offline Ban, Wipe)</label>
+
+                        <!-- Category 4: Monde, Événements & Outils Dev -->
+                        <div class="perm-cat-group">
+                            <div class="perm-cat-header">🌍 4. MONDE, ÉVÉNEMENTS & OUTILS DEV</div>
+                            <div class="perm-cards-grid">
+                                <label class="perm-check-card" for="perm-world">
+                                    <input type="checkbox" id="perm-world">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Météo & Temps</span>
+                                        <span class="perm-check-card-desc">Contrôle du ciel, gel de l'heure, blackout mondial, clear zone</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-events">
+                                    <input type="checkbox" id="perm-events">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Event Manager</span>
+                                        <span class="perm-check-card-desc">Lancement des events serveur (Purge, Fight Night, Drag Race)</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-devtools">
+                                    <input type="checkbox" id="perm-devtools">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Outils Développeur</span>
+                                        <span class="perm-check-card-desc">Spawner d'objets (props), stashes de gangs, inspecteur</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-items">
-                            <label for="perm-items">📦 <b>Items & Weapons</b> (Give Items, Weapons, Money)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-characters">
-                            <label for="perm-characters">👤 <b>Characters</b> (Dossiers, Skins, Ped Models)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-jobs">
-                            <label for="perm-jobs">💼 <b>Jobs & Gangs</b> (Change Jobs, Ranks, Societies)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-world">
-                            <label for="perm-world">🌍 <b>World & Weather</b> (Weather, Time, Blackout, Clear)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-devtools">
-                            <label for="perm-devtools">🛠️ <b>Dev Tools</b> (Prop Spawner, Stashes, Inspector)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-arsenal">
-                            <label for="perm-arsenal">🔫 <b>Owner Arsenal</b> (Exclusive Custom Loadouts)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-god">
-                            <label for="perm-god">⚡ <b>God Powers</b> (Godmode, Noclip, Invis, Ammo, Trolls)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-logs">
-                            <label for="perm-logs">📜 <b>Audit Logs</b> (View Tamper-Evident Security Logs)</label>
-                        </div>
-                        <div class="perm-check-item">
-                            <input type="checkbox" id="perm-events">
-                            <label for="perm-events">🎉 <b>Event Manager</b> (Launch races, fights, purges, airdrops)</label>
-                        </div>
-                        <div class="perm-check-item" style="grid-column: span 2;">
-                            <input type="checkbox" id="perm-staff">
-                            <label for="perm-staff">🛡️ <b>Staff Management</b> (Can add/edit/revoke other staff)</label>
+
+                        <!-- Category 5: Master Godmode & Administration Staff -->
+                        <div class="perm-cat-group" style="border-color: rgba(255, 215, 0, 0.3);">
+                            <div class="perm-cat-header" style="color: #ffd700;">👑 5. MASTER GODMODE & SUPER-ADMINISTRATION</div>
+                            <div class="perm-cards-grid">
+                                <label class="perm-check-card" for="perm-god">
+                                    <input type="checkbox" id="perm-god">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">God Powers & Trolls</span>
+                                        <span class="perm-check-card-desc">Godmode, Noclip, Munitions infinies, Invisibilité, Trolls fun</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-logs">
+                                    <input type="checkbox" id="perm-logs">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Journaux d'Audit</span>
+                                        <span class="perm-check-card-desc">Inspection des logs de sécurité inviolables du panel</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-staff" style="grid-column: span 2;">
+                                    <input type="checkbox" id="perm-staff">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">Administration du Staff</span>
+                                        <span class="perm-check-card-desc">Autorisation de nommer, modifier ou révoquer les permissions des autres staff</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer" style="padding: 16px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="secondary-btn" id="btn-cancel-staff" style="padding: 10px 20px;">Annuler</button>
+                    <button class="primary-btn" id="btn-save-staff" style="padding: 10px 25px; font-weight: 700; background: var(--accent-cyan); color: #000; box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);">💾 Enregistrer les Accès</button>
+                </div>
+            </div>
+        </div>
                 <div class="modal-footer">
                     <button class="secondary-btn" id="btn-cancel-staff">Cancel</button>
                     <button class="primary-btn" id="btn-save-staff">💾 Enregistrer les permissions</button>

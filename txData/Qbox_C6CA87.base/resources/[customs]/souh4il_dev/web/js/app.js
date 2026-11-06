@@ -11,6 +11,10 @@ let currentJobFilter = 'all';
 let allServerItems = [];
 let allServerVehicles = [];
 let allServerJobs = [];
+let allServerCharacters = [];
+let currentPedLimit = 120;
+let currentVehLimit = 120;
+let currentItemLimit = 120;
 
 // Curated Characters & Peds Catalog (Top GTA V / FiveM Ped Models)
 const VISUAL_PEDS = [
@@ -270,6 +274,7 @@ window.addEventListener('message', (event) => {
             postNUI('fetchPlayers');
             postNUI('fetchAllItems');
             postNUI('fetchAllVehicles');
+            postNUI('fetchAllCharacters');
             postNUI('fetchAllJobs');
             renderVisualItems();
             renderVisualVehicles();
@@ -287,14 +292,26 @@ window.addEventListener('message', (event) => {
     } else if (data.action === 'updateAllItems') {
         if (data.items && Array.isArray(data.items) && data.items.length > 0) {
             allServerItems = data.items;
+            const badge = document.getElementById('total-items-badge');
+            if (badge) badge.innerText = `${allServerItems.length} ITEMS`;
             const query = document.getElementById('item-search-input')?.value.toLowerCase().trim() || '';
             renderVisualItems(query);
         }
     } else if (data.action === 'updateAllVehicles') {
         if (data.vehicles && Array.isArray(data.vehicles) && data.vehicles.length > 0) {
             allServerVehicles = data.vehicles;
+            const badge = document.getElementById('total-vehs-badge');
+            if (badge) badge.innerText = `${allServerVehicles.length} CARS`;
             const query = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
             renderVisualVehicles(query);
+        }
+    } else if (data.action === 'updateAllCharacters') {
+        if (data.characters && Array.isArray(data.characters) && data.characters.length > 0) {
+            allServerCharacters = data.characters;
+            const badge = document.getElementById('total-chars-badge');
+            if (badge) badge.innerText = `${allServerCharacters.length} PEDS`;
+            const query = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
+            renderVisualCharacters(query);
         }
     } else if (data.action === 'updateAllJobs') {
         if (data.jobs && Array.isArray(data.jobs) && data.jobs.length > 0) {
@@ -765,6 +782,8 @@ function renderVisualVehicles(searchQuery = '') {
             matchesCategory = cat.includes('off') || cat.includes('road');
         } else if (currentVehFilter === 'vans') {
             matchesCategory = cat.includes('van') || cat.includes('commercial') || cat.includes('industrial');
+        } else if (currentVehFilter === 'air') {
+            matchesCategory = cat.includes('heli') || cat.includes('plane') || cat.includes('boat') || cat.includes('cycle');
         }
 
         const q = searchQuery.toLowerCase().trim();
@@ -781,10 +800,10 @@ function renderVisualVehicles(searchQuery = '') {
         return;
     }
 
-    // Limit to 120 items per page/view for fast rendering
-    const renderChunk = filtered.slice(0, 120);
+    // Limit to currentVehLimit per page/view for fast rendering
+    const renderChunk = filtered.slice(0, currentVehLimit);
 
-    container.innerHTML = renderChunk.map(veh => {
+    let html = renderChunk.map(veh => {
         const model = veh.model.toLowerCase();
         const name = veh.name || model;
         const brand = veh.brand || '';
@@ -1652,6 +1671,7 @@ function openGrantMemberModal(license, name) {
     document.getElementById('staff-select-role').value = 'moderator';
 
     applyRolePresetToCheckboxes('moderator');
+    highlightPresetButton('preset-btn-mod');
     modal.style.display = 'flex';
 }
 
@@ -1667,6 +1687,7 @@ function openAddStaffModal() {
     document.getElementById('staff-select-role').value = 'moderator';
 
     applyRolePresetToCheckboxes('moderator');
+    highlightPresetButton('preset-btn-mod');
     modal.style.display = 'flex';
 }
 
@@ -1692,6 +1713,13 @@ function openEditStaff(license) {
         if (chk) chk.checked = !!perms[k];
     });
 
+    const btnMap = {
+        moderator: 'preset-btn-mod',
+        admin: 'preset-btn-admin',
+        developer: 'preset-btn-dev',
+        owner: 'preset-btn-owner'
+    };
+    highlightPresetButton(btnMap[roleLower] || '');
     modal.style.display = 'flex';
 }
 
@@ -1971,3 +1999,59 @@ document.getElementById('staff-search-input')?.addEventListener('input', () => {
 document.getElementById('btn-refresh-event')?.addEventListener('click', checkEventState);
 document.getElementById('btn-stop-active-event')?.addEventListener('click', stopActiveEvent);
 document.getElementById('btn-launch-custom-event')?.addEventListener('click', launchCustomEvent);
+
+// Preset Buttons & Modal Helpers
+function highlightPresetButton(activeId) {
+    ['preset-btn-mod', 'preset-btn-admin', 'preset-btn-dev', 'preset-btn-owner', 'preset-btn-clear'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            if (id === activeId) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+}
+
+document.getElementById('preset-btn-mod')?.addEventListener('click', () => {
+    document.getElementById('staff-select-role').value = 'moderator';
+    applyRolePresetToCheckboxes('moderator');
+    highlightPresetButton('preset-btn-mod');
+});
+document.getElementById('preset-btn-admin')?.addEventListener('click', () => {
+    document.getElementById('staff-select-role').value = 'admin';
+    applyRolePresetToCheckboxes('admin');
+    highlightPresetButton('preset-btn-admin');
+});
+document.getElementById('preset-btn-dev')?.addEventListener('click', () => {
+    document.getElementById('staff-select-role').value = 'developer';
+    applyRolePresetToCheckboxes('developer');
+    highlightPresetButton('preset-btn-dev');
+});
+document.getElementById('preset-btn-owner')?.addEventListener('click', () => {
+    document.getElementById('staff-select-role').value = 'owner';
+    applyRolePresetToCheckboxes('owner');
+    highlightPresetButton('preset-btn-owner');
+});
+document.getElementById('preset-btn-clear')?.addEventListener('click', () => {
+    document.getElementById('staff-select-role').value = 'custom';
+    ALL_PERM_KEYS.forEach(k => {
+        const chk = document.getElementById(`perm-${k}`);
+        if (chk) chk.checked = false;
+    });
+    highlightPresetButton('preset-btn-clear');
+});
+
+document.getElementById('staff-select-role')?.addEventListener('change', (e) => {
+    const role = e.target.value;
+    if (role !== 'custom') {
+        applyRolePresetToCheckboxes(role);
+        const btnMap = {
+            moderator: 'preset-btn-mod',
+            admin: 'preset-btn-admin',
+            developer: 'preset-btn-dev',
+            owner: 'preset-btn-owner'
+        };
+        highlightPresetButton(btnMap[role] || '');
+    } else {
+        highlightPresetButton('');
+    }
+});
