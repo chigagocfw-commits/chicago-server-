@@ -442,42 +442,66 @@ local function SpawnVehicle(modelName, maxTune)
     local ped = PlayerPedId()
     local hash = joaat(modelName)
 
-    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
-        lib.notify({ title = SharedConfig.PanelName, description = "Invalid vehicle model: " .. modelName, type = 'error' })
-        return
+    -- 1. Try local client spawn if model is in CD image
+    if IsModelInCdimage(hash) and IsModelAVehicle(hash) then
+        RequestModel(hash)
+        local timeout = 0
+        while not HasModelLoaded(hash) and timeout < 80 do
+            Wait(50)
+            timeout = timeout + 1
+        end
+
+        if HasModelLoaded(hash) then
+            -- Delete current vehicle if sitting inside
+            local currentVeh = GetVehiclePedIsIn(ped, false)
+            if currentVeh and currentVeh ~= 0 then
+                SetEntityAsMissionEntity(currentVeh, true, true)
+                DeleteVehicle(currentVeh)
+            end
+
+            local coords = GetEntityCoords(ped)
+            local heading = GetEntityHeading(ped)
+            local veh = CreateVehicle(hash, coords.x, coords.y, coords.z, heading, true, false)
+
+            local waitCount = 0
+            while not DoesEntityExist(veh) and waitCount < 40 do
+                Wait(25)
+                waitCount = waitCount + 1
+            end
+
+            if DoesEntityExist(veh) then
+                SetPedIntoVehicle(ped, veh, -1)
+                SetVehicleEngineOn(veh, true, true, false)
+                SetModelAsNoLongerNeeded(hash)
+
+                local netId = NetworkGetNetworkIdFromEntity(veh)
+                SetNetworkIdExistsOnAllMachines(netId, true)
+
+                lib.callback('souh4il_dev:server:giveVehicleKeys', false, function() end, netId)
+
+                if maxTune then
+                    ApplyMaxTune(veh)
+                end
+
+                lib.notify({ title = SharedConfig.PanelName, description = ("Vehicle '%s' spawned."):format(modelName), type = 'success' })
+                return
+            end
+        end
     end
 
-    RequestModel(hash)
-    local timeout = 0
-    while not HasModelLoaded(hash) and timeout < 100 do
-        Wait(50)
-        timeout = timeout + 1
-    end
-
-    if not HasModelLoaded(hash) then
-        lib.notify({ title = SharedConfig.PanelName, description = "Failed to load model: " .. modelName, type = 'error' })
-        return
-    end
-
-    local coords = GetEntityCoords(ped)
-    local heading = GetEntityHeading(ped)
-    local veh = CreateVehicle(hash, coords.x, coords.y, coords.z, heading, true, false)
-
-    SetPedIntoVehicle(ped, veh, -1)
-    SetVehicleEngineOn(veh, true, true, false)
-    SetModelAsNoLongerNeeded(hash)
-
-    local netId = NetworkGetNetworkIdFromEntity(veh)
-    SetNetworkIdExistsOnAllMachines(netId, true)
-
-    -- Register keys in server
-    lib.callback('souh4il_dev:server:giveVehicleKeys', false, function() end, netId)
-
-    if maxTune then
-        ApplyMaxTune(veh)
-    end
-
-    lib.notify({ title = SharedConfig.PanelName, description = ("Vehicle '%s' spawned."):format(modelName), type = 'success' })
+    -- 2. Fallback to server-side spawn (Guaranteed for custom add-ons & server-setter)
+    lib.callback('souh4il_dev:server:spawnVehicleDirect', false, function(res)
+        if res and res.success then
+            if maxTune and res.netId then
+                Wait(300)
+                local ent = NetworkGetEntityFromNetworkId(res.netId)
+                if DoesEntityExist(ent) then ApplyMaxTune(ent) end
+            end
+            lib.notify({ title = SharedConfig.PanelName, description = ("Vehicle '%s' spawned."):format(modelName), type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = "Failed to spawn: " .. (res and res.error or modelName), type = 'error' })
+        end
+    end, { model = modelName, maxTune = maxTune })
 end
 
 -- =========================================================================
@@ -801,9 +825,13 @@ end)
 
 -- Developer Tools: Ped Model Changer
 RegisterNUICallback('setPedModel', function(data, cb)
-    local modelName = data.model
-    local hash = joaat(modelName)
+    local modelName = data and data.model
+    if not modelName or #modelName == 0 then
+        cb('error')
+        return
+    end
 
+    local hash = joaat(modelName)
     if not IsModelInCdimage(hash) or not IsModelValid(hash) then
         lib.notify({ title = SharedConfig.PanelName, description = "Invalid skin model: " .. modelName, type = 'error' })
         cb('ok')
@@ -811,8 +839,16 @@ RegisterNUICallback('setPedModel', function(data, cb)
     end
 
     RequestModel(hash)
-    while not HasModelLoaded(hash) do
+    local timeout = 0
+    while not HasModelLoaded(hash) and timeout < 80 do
         Wait(50)
+        timeout = timeout + 1
+    end
+
+    if not HasModelLoaded(hash) then
+        lib.notify({ title = SharedConfig.PanelName, description = "Failed to load skin model: " .. modelName, type = 'error' })
+        cb('ok')
+        return
     end
 
     SetPlayerModel(PlayerId(), hash)

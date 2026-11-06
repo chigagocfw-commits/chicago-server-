@@ -233,3 +233,48 @@ AddEventHandler("onResourceStop", function(resourceName)
     DUI.clearAllReplaceTextures()
     ATM:reset()
 end)
+
+-- =========================================================================
+-- OX_TARGET INTEGRATION FOR ATMS
+-- =========================================================================
+CreateThread(function()
+    while GetResourceState('ox_target') ~= 'started' do
+        Wait(500)
+    end
+
+    local atmModels = {
+        'prop_atm_01',
+        'prop_atm_02',
+        'prop_atm_03',
+        'prop_fleeca_atm',
+    }
+
+    exports.ox_target:addModel(atmModels, {
+        {
+            name = 'bablo_atm_use_card',
+            icon = 'fas fa-credit-card',
+            label = 'Insérer la carte bancaire (ATM)',
+            distance = 2.0,
+            canInteract = function(entity)
+                if not entity or IsPedInAnyVehicle(PlayerPedId(), false) then return false end
+                return not ATM:isBeingUsed()
+            end,
+            onSelect = function(data)
+                local hasCard = false
+                pcall(function()
+                    hasCard = exports.ox_inventory:Search('count', 'bcreditcard') > 0
+                end)
+
+                if hasCard then
+                    TriggerServerEvent("bablo-atm:server:UseCreditCardFromTarget", { select = "first" })
+                else
+                    lib.notify({
+                        title = 'Distributeur Fleeca',
+                        description = "Vous n'avez pas de carte bancaire sur vous. Rendez-vous dans une banque pour en créer une.",
+                        type = 'error'
+                    })
+                end
+            end
+        }
+    })
+end)

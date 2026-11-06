@@ -334,6 +334,17 @@ return {
 		}
 	},
 
+	['bcreditcard'] = {
+		label = 'Carte Bancaire',
+		weight = 10,
+		stack = false,
+		close = true,
+		description = 'Carte bancaire Fleeca pour opérations bancaires et distributeurs (ATM)',
+		client = {
+			image = 'bcreditcard.png'
+		}
+	},
+
 	['scrapmetal'] = {
 		label = 'Scrap Metal',
 		weight = 80,

@@ -682,53 +682,122 @@ document.getElementById('tp-player-search')?.addEventListener('input', (e) => {
     filterTeleportPlayers(e.target.value.toLowerCase().trim());
 });
 
+// =========================================================================
+// FAVORITES SYSTEM (Persistent in LocalStorage)
+// =========================================================================
+const Favorites = {
+    _data: {
+        vehicles: new Set(JSON.parse(localStorage.getItem('sdev_fav_vehicles') || '[]')),
+        characters: new Set(JSON.parse(localStorage.getItem('sdev_fav_characters') || '[]')),
+        items: new Set(JSON.parse(localStorage.getItem('sdev_fav_items') || '[]')),
+    },
+    has(type, id) {
+        if (!id) return false;
+        return this._data[type]?.has(id.toLowerCase()) ?? false;
+    },
+    toggle(type, id) {
+        const set = this._data[type];
+        if (!set || !id) return false;
+        const key = id.toLowerCase();
+        let added = false;
+        if (set.has(key)) {
+            set.delete(key);
+            added = false;
+        } else {
+            set.add(key);
+            added = true;
+        }
+        localStorage.setItem(`sdev_fav_${type}`, JSON.stringify(Array.from(set)));
+        return added;
+    }
+};
+
+window.toggleFavorite = function(type, id) {
+    Favorites.toggle(type, id);
+    if (type === 'vehicles') {
+        const q = document.getElementById('veh-search-input')?.value || '';
+        renderVisualVehicles(q);
+    } else if (type === 'characters') {
+        const q = document.getElementById('ped-search-input')?.value || '';
+        renderVisualCharacters(q);
+    } else if (type === 'items') {
+        const q = document.getElementById('item-search-input')?.value || '';
+        renderVisualItems(q);
+    }
+};
+
 // Visual Items Rendering & Categories (Dynamic ox_inventory Catalog)
 function renderVisualItems(searchQuery = '') {
     const container = document.getElementById('visual-items-container');
     if (!container) return;
 
     const sourceList = (allServerItems && allServerItems.length > 0) ? allServerItems : VISUAL_ITEMS;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
 
     const filtered = sourceList.filter(item => {
+        const itemName = item.name.toLowerCase();
+        const itemLabel = (item.label || item.name).toLowerCase();
         const cat = (item.category || 'tool').toLowerCase();
-        let matchesCategory = false;
-        if (currentItemFilter === 'all') {
-            matchesCategory = true;
-        } else if (currentItemFilter === 'weapon') {
-            matchesCategory = cat === 'weapon' || item.name.toLowerCase().startsWith('weapon_');
-        } else if (currentItemFilter === 'ammo') {
-            matchesCategory = cat === 'ammo' || item.name.toLowerCase().includes('ammo');
-        } else if (currentItemFilter === 'food') {
-            matchesCategory = cat === 'food';
-        } else if (currentItemFilter === 'medical') {
-            matchesCategory = cat === 'medical';
-        } else if (currentItemFilter === 'tool') {
-            matchesCategory = cat === 'tool' || (!cat.includes('weapon') && !cat.includes('ammo') && !cat.includes('food') && !cat.includes('medical'));
+
+        // 1. Instant 1st letter match check
+        const matchesSearch = !isSearching || itemName.includes(q) || itemLabel.includes(q);
+        if (!matchesSearch) return false;
+
+        // 2. Favorites category check
+        if (currentItemFilter === 'favorites') {
+            return Favorites.has('items', itemName);
         }
 
-        const q = searchQuery.toLowerCase().trim();
-        const matchesSearch = !q || 
-            item.name.toLowerCase().includes(q) || 
-            (item.label && item.label.toLowerCase().includes(q));
+        // When actively searching, search across all categories automatically
+        if (isSearching) return true;
 
-        return matchesCategory && matchesSearch;
+        if (currentItemFilter === 'all') return true;
+        if (currentItemFilter === 'weapon') return cat === 'weapon' || itemName.startsWith('weapon_');
+        if (currentItemFilter === 'ammo') return cat === 'ammo' || itemName.includes('ammo');
+        if (currentItemFilter === 'food') return cat === 'food';
+        if (currentItemFilter === 'medical') return cat === 'medical';
+        if (currentItemFilter === 'tool') return cat === 'tool' || (!cat.includes('weapon') && !cat.includes('ammo') && !cat.includes('food') && !cat.includes('medical'));
+
+        return true;
     });
+
+    // Rank prefix matches at the top (Starts with `q` appears first)
+    if (isSearching) {
+        filtered.sort((a, b) => {
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            const aLabel = (a.label || a.name).toLowerCase();
+            const bLabel = (b.label || b.name).toLowerCase();
+
+            const aStarts = aName.startsWith(q) || aLabel.startsWith(q);
+            const bStarts = bName.startsWith(q) || bLabel.startsWith(q);
+
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return aName.localeCompare(bName);
+        });
+    }
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="table-empty" style="grid-column: 1 / -1;">No matching items found.</div>';
         return;
     }
 
-    // Limit initial DOM nodes to 150 for fluid 60FPS UI response
-    const renderChunk = filtered.slice(0, 150);
+    const renderChunk = filtered.slice(0, isSearching ? 250 : 150);
 
     container.innerHTML = renderChunk.map(item => {
         const itemName = item.name.toLowerCase();
         const itemLabel = item.label || item.name;
         const imgSrc = `https://cfx-nui-ox_inventory/web/images/${itemName}.png`;
         const fallbackSrc = `nui://ox_inventory/web/images/${itemName}.png`;
+        const isFav = Favorites.has('items', itemName);
+
         return `
-            <div class="visual-item-card">
+            <div class="visual-item-card ${isFav ? 'is-favorite' : ''}">
+                <button class="fav-star-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('items', '${escapeHtml(itemName)}')" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                    ${isFav ? '★' : '☆'}
+                </button>
                 <div class="item-thumb-wrapper">
                     <img class="item-thumb" src="${imgSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}'; this.parentElement.innerHTML='<span style=\\'font-size:24px\\'>📦</span>';">
                 </div>
@@ -753,13 +822,15 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
         document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         currentItemFilter = chip.getAttribute('data-cat');
-        const query = document.getElementById('item-search-input')?.value.toLowerCase().trim() || '';
+        const query = document.getElementById('item-search-input')?.value || '';
         renderVisualItems(query);
     });
 });
 
-document.getElementById('item-search-input')?.addEventListener('input', (e) => {
-    renderVisualItems(e.target.value.toLowerCase().trim());
+['input', 'keyup'].forEach(evt => {
+    document.getElementById('item-search-input')?.addEventListener(evt, (e) => {
+        renderVisualItems(e.target.value);
+    });
 });
 
 document.getElementById('btn-spawn-item')?.addEventListener('click', () => {
@@ -773,80 +844,166 @@ document.getElementById('btn-spawn-item')?.addEventListener('click', () => {
     }
 });
 
+// Vehicle & Character Image Handlers with Graceful Multi-Stage Fallback
+window.handleVehImgError = function(img, model) {
+    const stage = parseInt(img.getAttribute('data-stage') || '0', 10);
+    if (stage === 0) {
+        // Stage 1: Try local oxlyn-garage NUI
+        img.setAttribute('data-stage', '1');
+        img.src = `https://cfx-nui-oxlyn-garage/images/vehicles/${model}.webp`;
+    } else if (stage === 1) {
+        // Stage 2: Try docs.fivem.net CDN
+        img.setAttribute('data-stage', '2');
+        img.src = `https://docs.fivem.net/vehicles/${model}.webp`;
+    } else {
+        // Stage 3: Hide broken img, display clean placeholder box
+        img.onerror = null;
+        img.style.display = 'none';
+        const parent = img.parentElement;
+        if (parent) {
+            const placeholder = parent.querySelector('.veh-placeholder-box');
+            if (placeholder) placeholder.style.display = 'flex';
+        }
+    }
+};
+
+window.handlePedImgError = function(img, model) {
+    const stage = parseInt(img.getAttribute('data-stage') || '0', 10);
+    if (stage === 0) {
+        img.setAttribute('data-stage', '1');
+        img.src = `https://docs.fivem.net/peds/${model}.webp`;
+    } else {
+        img.onerror = null;
+        img.style.display = 'none';
+        const parent = img.parentElement;
+        if (parent) {
+            const placeholder = parent.querySelector('.ped-placeholder-box');
+            if (placeholder) placeholder.style.display = 'flex';
+        }
+    }
+};
+
+window.spawnVehicleDirect = function(model) {
+    if (!model) return;
+    const maxTune = document.getElementById('veh-max-tune')?.checked ?? true;
+    postNUI('spawnVehicle', { model, maxTune });
+};
+
+window.applyPedDirect = function(model) {
+    if (!model) return;
+    postNUI('setPedModel', { model });
+};
+
 // Visual Vehicles Rendering & Categories (Dynamic Qbox Vehicles Catalog)
 function renderVisualVehicles(searchQuery = '') {
     const container = document.getElementById('visual-vehicles-container');
     if (!container) return;
 
     const sourceList = (allServerVehicles && allServerVehicles.length > 0) ? allServerVehicles : FALLBACK_VEHICLES;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
 
     const filtered = sourceList.filter(veh => {
+        const model = veh.model.toLowerCase();
+        const name = (veh.name || '').toLowerCase();
+        const brand = (veh.brand || '').toLowerCase();
         const cat = (veh.category || '').toLowerCase();
-        let matchesCategory = false;
-        if (currentVehFilter === 'all') {
-            matchesCategory = true;
-        } else if (currentVehFilter === 'super') {
-            matchesCategory = cat.includes('super');
-        } else if (currentVehFilter === 'sports') {
-            matchesCategory = cat.includes('sport');
-        } else if (currentVehFilter === 'muscle') {
-            matchesCategory = cat.includes('muscle');
-        } else if (currentVehFilter === 'suvs') {
-            matchesCategory = cat.includes('suv');
-        } else if (currentVehFilter === 'sedans') {
-            matchesCategory = cat.includes('sedan') || cat.includes('coupe') || cat.includes('compact');
-        } else if (currentVehFilter === 'emergency') {
-            matchesCategory = cat.includes('emerg') || cat.includes('police') || cat.includes('fire') || cat.includes('medic');
-        } else if (currentVehFilter === 'motorcycles') {
-            matchesCategory = cat.includes('motor') || cat.includes('bike') || cat.includes('cycle');
-        } else if (currentVehFilter === 'offroad') {
-            matchesCategory = cat.includes('off') || cat.includes('road');
-        } else if (currentVehFilter === 'vans') {
-            matchesCategory = cat.includes('van') || cat.includes('commercial') || cat.includes('industrial');
-        } else if (currentVehFilter === 'air') {
-            matchesCategory = cat.includes('heli') || cat.includes('plane') || cat.includes('boat');
+
+        // 1. Instant 1st letter search check
+        const matchesSearch = !isSearching || 
+            model.includes(q) || 
+            name.includes(q) || 
+            brand.includes(q) ||
+            cat.includes(q);
+
+        if (!matchesSearch) return false;
+
+        // 2. Favorites category check
+        if (currentVehFilter === 'favorites') {
+            return Favorites.has('vehicles', model);
         }
 
-        const q = searchQuery.toLowerCase().trim();
-        const matchesSearch = !q || 
-            veh.model.toLowerCase().includes(q) || 
-            (veh.name && veh.name.toLowerCase().includes(q)) ||
-            (veh.brand && veh.brand.toLowerCase().includes(q));
+        // When actively typing a search query, search across ALL categories automatically
+        if (isSearching) {
+            return true;
+        }
 
-        return matchesCategory && matchesSearch;
+        if (currentVehFilter === 'all') return true;
+        if (currentVehFilter === 'super') return cat.includes('super');
+        if (currentVehFilter === 'sports') return cat.includes('sport');
+        if (currentVehFilter === 'muscle') return cat.includes('muscle');
+        if (currentVehFilter === 'suvs') return cat.includes('suv');
+        if (currentVehFilter === 'sedans') return cat.includes('sedan') || cat.includes('coupe') || cat.includes('compact');
+        if (currentVehFilter === 'emergency') return cat.includes('emerg') || cat.includes('police') || cat.includes('fire') || cat.includes('medic');
+        if (currentVehFilter === 'motorcycles') return cat.includes('motor') || cat.includes('bike') || cat.includes('cycle');
+        if (currentVehFilter === 'offroad') return cat.includes('off') || cat.includes('road');
+        if (currentVehFilter === 'vans') return cat.includes('van') || cat.includes('commercial') || cat.includes('industrial');
+        if (currentVehFilter === 'air') return cat.includes('heli') || cat.includes('plane') || cat.includes('boat');
+
+        return true;
     });
+
+    // 3. Prefix Ranking: Models starting with `q` appear at the very top!
+    if (isSearching) {
+        filtered.sort((a, b) => {
+            const aMod = a.model.toLowerCase();
+            const bMod = b.model.toLowerCase();
+            const aName = (a.name || '').toLowerCase();
+            const bName = (b.name || '').toLowerCase();
+
+            const aStarts = aMod.startsWith(q) || aName.startsWith(q);
+            const bStarts = bMod.startsWith(q) || bName.startsWith(q);
+
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+
+            return aMod.localeCompare(bMod);
+        });
+    }
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="table-empty" style="grid-column: 1 / -1;">No matching vehicles found.</div>';
         return;
     }
 
-    const renderChunk = filtered.slice(0, currentVehLimit);
+    const limit = isSearching ? Math.max(currentVehLimit, 250) : currentVehLimit;
+    const renderChunk = filtered.slice(0, limit);
 
     let html = renderChunk.map(veh => {
         const model = veh.model.toLowerCase();
         const name = veh.name || model;
         const brand = veh.brand || '';
         const cat = veh.category || 'Vehicle';
-        const imgFiveM = `https://docs.fivem.net/vehicles/${model}.webp`;
-        const imgFallback = `https://raw.githubusercontent.com/root-cause/v-vehicle-hashes/master/images/${model}.png`;
+        const localImg = `images/vehicles/${model}.webp`;
+        const isFav = Favorites.has('vehicles', model);
 
         return `
-            <div class="visual-veh-card">
+            <div class="visual-veh-card ${isFav ? 'is-favorite' : ''}" onclick="spawnVehicleDirect('${escapeHtml(model)}')">
+                <button class="fav-star-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('vehicles', '${escapeHtml(model)}')" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                    ${isFav ? '★' : '☆'}
+                </button>
                 <div class="veh-thumb-wrapper">
                     ${brand ? `<span class="veh-brand-tag">${escapeHtml(brand)}</span>` : ''}
                     <span class="veh-cat-tag">${escapeHtml(cat)}</span>
-                    <img class="veh-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\'font-size:38px;opacity:0.7;\'>🚘</span>'; };">
+                    <img class="veh-thumb" src="${localImg}" loading="lazy" onerror="handleVehImgError(this, '${escapeHtml(model)}')" alt="${escapeHtml(name)}">
+                    <div class="veh-placeholder-box" style="display: none;">
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.5l1.5-3h8l1.5 3H19a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2M5 17l.5 2.5a1 1 0 0 0 1 .5h1a1 1 0 0 0 1-.8L9 17m10 0l-.5 2.5a1 1 0 0 1-1 .5h-1a1 1 0 0 1-1-.8L15 17"></path>
+                            <circle cx="7.5" cy="12.5" r="1.5"></circle>
+                            <circle cx="16.5" cy="12.5" r="1.5"></circle>
+                        </svg>
+                        <span class="veh-placeholder-label">CUSTOM ADDON</span>
+                    </div>
                 </div>
                 <div class="veh-title" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                 <div class="veh-model-sub">${model}</div>
-                <button class="veh-spawn-btn" onclick="spawnVehicleDirect('${model}')">Spawn Driver</button>
+                <button class="veh-spawn-btn" onclick="event.stopPropagation(); spawnVehicleDirect('${escapeHtml(model)}')">Spawn Driver</button>
             </div>
         `;
     }).join('');
 
-    if (filtered.length > currentVehLimit) {
-        html += `<button class="load-more-btn" onclick="loadMoreVehicles()">➕ Afficher plus de véhicules (${currentVehLimit} sur ${filtered.length})</button>`;
+    if (filtered.length > limit) {
+        html += `<button class="load-more-btn" onclick="loadMoreVehicles()">➕ Afficher plus de véhicules (${limit} sur ${filtered.length})</button>`;
     }
 
     container.innerHTML = html;
@@ -854,13 +1011,8 @@ function renderVisualVehicles(searchQuery = '') {
 
 window.loadMoreVehicles = function() {
     currentVehLimit += 120;
-    const q = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
+    const q = document.getElementById('veh-search-input')?.value || '';
     renderVisualVehicles(q);
-};
-
-window.spawnVehicleDirect = function(model) {
-    const maxTune = document.getElementById('veh-max-tune')?.checked ?? true;
-    postNUI('spawnVehicle', { model, maxTune });
 };
 
 document.querySelectorAll('.filter-chip-veh').forEach(chip => {
@@ -868,13 +1020,15 @@ document.querySelectorAll('.filter-chip-veh').forEach(chip => {
         document.querySelectorAll('.filter-chip-veh').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         currentVehFilter = chip.getAttribute('data-cat');
-        const query = document.getElementById('veh-search-input')?.value.toLowerCase().trim() || '';
+        const query = document.getElementById('veh-search-input')?.value || '';
         renderVisualVehicles(query);
     });
 });
 
-document.getElementById('veh-search-input')?.addEventListener('input', (e) => {
-    renderVisualVehicles(e.target.value.toLowerCase().trim());
+['input', 'keyup'].forEach(evt => {
+    document.getElementById('veh-search-input')?.addEventListener(evt, (e) => {
+        renderVisualVehicles(e.target.value);
+    });
 });
 
 // Characters & Skins Rendering (Dynamic illenium-appearance 1,051+ Peds Catalog)
@@ -883,63 +1037,91 @@ function renderVisualCharacters(searchQuery = '') {
     if (!container) return;
 
     const sourceList = (allServerCharacters && allServerCharacters.length > 0) ? allServerCharacters : VISUAL_PEDS;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
 
     const filtered = sourceList.filter(ped => {
+        const model = ped.model.toLowerCase();
+        const label = (ped.label || '').toLowerCase();
         const cat = (ped.category || '').toLowerCase();
-        let matchesCategory = false;
-        if (currentPedFilter === 'all') {
-            matchesCategory = true;
-        } else if (currentPedFilter === 'story') {
-            matchesCategory = cat === 'story' || cat === 'vip';
-        } else if (currentPedFilter === 'emergency') {
-            matchesCategory = cat === 'emergency';
-        } else if (currentPedFilter === 'gangs') {
-            matchesCategory = cat === 'gangs' || cat === 'gang';
-        } else if (currentPedFilter === 'male') {
-            matchesCategory = cat === 'male' || cat === 'civilian';
-        } else if (currentPedFilter === 'female') {
-            matchesCategory = cat === 'female';
-        } else if (currentPedFilter === 'animals') {
-            matchesCategory = cat === 'animals' || cat === 'animal';
-        } else if (currentPedFilter === 'multiplayer') {
-            matchesCategory = cat === 'multiplayer';
+
+        // 1. Instant 1st letter search check
+        const matchesSearch = !isSearching || 
+            model.includes(q) || 
+            label.includes(q) ||
+            cat.includes(q);
+
+        if (!matchesSearch) return false;
+
+        // 2. Favorites category check
+        if (currentPedFilter === 'favorites') {
+            return Favorites.has('characters', model);
         }
 
-        const q = searchQuery.toLowerCase().trim();
-        const matchesSearch = !q || 
-            ped.model.toLowerCase().includes(q) || 
-            (ped.label && ped.label.toLowerCase().includes(q));
-        return matchesCategory && matchesSearch;
+        // When actively typing a search query, search across ALL categories automatically
+        if (isSearching) return true;
+
+        if (currentPedFilter === 'all') return true;
+        if (currentPedFilter === 'story' || currentPedFilter === 'vip') return cat === 'story' || cat === 'vip';
+        if (currentPedFilter === 'emergency') return cat === 'emergency';
+        if (currentPedFilter === 'gangs' || currentPedFilter === 'gang') return cat === 'gangs' || cat === 'gang';
+        if (currentPedFilter === 'male' || currentPedFilter === 'civilian') return cat === 'male' || cat === 'civilian';
+        if (currentPedFilter === 'female') return cat === 'female';
+        if (currentPedFilter === 'animals' || currentPedFilter === 'animal') return cat === 'animals' || cat === 'animal';
+        if (currentPedFilter === 'multiplayer') return cat === 'multiplayer';
+
+        return true;
     });
+
+    // 3. Prefix Ranking: Characters starting with `q` appear at the very top!
+    if (isSearching) {
+        filtered.sort((a, b) => {
+            const aMod = a.model.toLowerCase();
+            const bMod = b.model.toLowerCase();
+            const aStarts = aMod.startsWith(q) || (a.label && a.label.toLowerCase().startsWith(q));
+            const bStarts = bMod.startsWith(q) || (b.label && b.label.toLowerCase().startsWith(q));
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return aMod.localeCompare(bMod);
+        });
+    }
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="table-empty" style="grid-column: 1 / -1;">No matching characters found.</div>';
         return;
     }
 
-    const renderChunk = filtered.slice(0, currentPedLimit);
+    const limit = isSearching ? Math.max(currentPedLimit, 250) : currentPedLimit;
+    const renderChunk = filtered.slice(0, limit);
 
     let html = renderChunk.map(ped => {
         const model = ped.model.toLowerCase();
         const label = ped.label || model;
         const imgFiveM = `https://docs.fivem.net/peds/${model}.webp`;
-        const imgFallback = `https://raw.githubusercontent.com/root-cause/v-ped-hashes/master/images/${model}.png`;
         const isAnimal = ped.category === 'animals' || ped.category === 'animal';
+        const isFav = Favorites.has('characters', model);
 
         return `
-            <div class="visual-ped-card">
+            <div class="visual-ped-card ${isFav ? 'is-favorite' : ''}" onclick="applyPedDirect('${escapeHtml(model)}')">
+                <button class="fav-star-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('characters', '${escapeHtml(model)}')" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                    ${isFav ? '★' : '☆'}
+                </button>
                 <div class="ped-thumb-wrapper">
-                    <img class="ped-thumb" src="${imgFiveM}" onerror="this.onerror=null; this.src='${imgFallback}'; this.onerror=function(){ this.parentElement.innerHTML='<span style=\'font-size:32px;opacity:0.7;\'>${isAnimal ? '🐾' : '👤'}</span>'; };">
+                    <img class="ped-thumb" src="${imgFiveM}" loading="lazy" onerror="handlePedImgError(this, '${escapeHtml(model)}')" alt="${escapeHtml(label)}">
+                    <div class="ped-placeholder-box" style="display: none;">
+                        <span style="font-size: 32px; opacity: 0.85;">${isAnimal ? '🐾' : '👤'}</span>
+                        <span class="ped-placeholder-label">PED MODEL</span>
+                    </div>
                 </div>
                 <div class="ped-title" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
                 <div class="ped-model-sub">${model}</div>
-                <button class="ped-apply-btn" onclick="applyPedDirect('${model}')">Apply Skin</button>
+                <button class="ped-apply-btn" onclick="event.stopPropagation(); applyPedDirect('${escapeHtml(model)}')">Apply Skin</button>
             </div>
         `;
     }).join('');
 
-    if (filtered.length > currentPedLimit) {
-        html += `<button class="load-more-btn" onclick="loadMorePeds()">➕ Afficher plus de personnages (${currentPedLimit} sur ${filtered.length})</button>`;
+    if (filtered.length > limit) {
+        html += `<button class="load-more-btn" onclick="loadMorePeds()">➕ Afficher plus de personnages (${limit} sur ${filtered.length})</button>`;
     }
 
     container.innerHTML = html;
@@ -947,9 +1129,25 @@ function renderVisualCharacters(searchQuery = '') {
 
 window.loadMorePeds = function() {
     currentPedLimit += 120;
-    const q = document.getElementById('ped-search-input')?.value.toLowerCase().trim() || '';
+    const q = document.getElementById('ped-search-input')?.value || '';
     renderVisualCharacters(q);
 };
+
+document.querySelectorAll('.filter-chip-ped').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip-ped').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentPedFilter = chip.getAttribute('data-cat');
+        const query = document.getElementById('ped-search-input')?.value || '';
+        renderVisualCharacters(query);
+    });
+});
+
+['input', 'keyup'].forEach(evt => {
+    document.getElementById('ped-search-input')?.addEventListener(evt, (e) => {
+        renderVisualCharacters(e.target.value);
+    });
+});
 
 // Jobs & Careers Rendering (Dynamic Qbox Jobs Catalog)
 function renderVisualJobs(searchQuery = '') {
@@ -957,29 +1155,39 @@ function renderVisualJobs(searchQuery = '') {
     if (!container) return;
 
     const sourceList = (allServerJobs && allServerJobs.length > 0) ? allServerJobs : FALLBACK_JOBS;
+    const q = searchQuery.toLowerCase().trim();
+    const isSearching = q.length > 0;
 
     const filtered = sourceList.filter(job => {
         const cat = (job.category || 'public').toLowerCase();
-        let matchesCategory = false;
-        if (currentJobFilter === 'all') {
-            matchesCategory = true;
-        } else if (currentJobFilter === 'emergency') {
-            matchesCategory = cat === 'emergency';
-        } else if (currentJobFilter === 'public') {
-            matchesCategory = cat === 'public';
-        } else if (currentJobFilter === 'business') {
-            matchesCategory = cat === 'business';
-        } else if (currentJobFilter === 'gang') {
-            matchesCategory = cat === 'gang';
-        }
+        const jName = job.name.toLowerCase();
+        const jTitle = (job.label || jName).toLowerCase();
 
-        const q = searchQuery.toLowerCase().trim();
-        const matchesSearch = !q || 
-            job.name.toLowerCase().includes(q) || 
-            (job.label && job.label.toLowerCase().includes(q));
+        const matchesSearch = !isSearching || jName.includes(q) || jTitle.includes(q);
+        if (!matchesSearch) return false;
 
-        return matchesCategory && matchesSearch;
+        if (isSearching) return true;
+
+        if (currentJobFilter === 'all') return true;
+        if (currentJobFilter === 'emergency') return cat === 'emergency';
+        if (currentJobFilter === 'public') return cat === 'public';
+        if (currentJobFilter === 'business') return cat === 'business';
+        if (currentJobFilter === 'gang') return cat === 'gang';
+
+        return true;
     });
+
+    if (isSearching) {
+        filtered.sort((a, b) => {
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            const aStarts = aName.startsWith(q) || (a.label && a.label.toLowerCase().startsWith(q));
+            const bStarts = bName.startsWith(q) || (b.label && b.label.toLowerCase().startsWith(q));
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return aName.localeCompare(bName);
+        });
+    }
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="table-empty" style="grid-column: 1 / -1;">No matching jobs found.</div>';
@@ -1044,8 +1252,10 @@ document.querySelectorAll('.filter-chip-job').forEach(chip => {
     });
 });
 
-document.getElementById('job-search-input')?.addEventListener('input', (e) => {
-    renderVisualJobs(e.target.value.toLowerCase().trim());
+['input', 'keyup'].forEach(evt => {
+    document.getElementById('job-search-input')?.addEventListener(evt, (e) => {
+        renderVisualJobs(e.target.value);
+    });
 });
 
 // Owner Arsenal & Economy

@@ -1690,6 +1690,57 @@ lib.callback.register('souh4il_dev:server:getEventState', function(source)
     return { success = true, activeEvent = ActiveEvent }
 end)
 
+---Callback: Server-Side Spawn Vehicle Direct (Fallback for custom addons & reliable OneSync sync)
+lib.callback.register('souh4il_dev:server:spawnVehicleDirect', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'vehicle_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local model = tostring(data and data.model or ''):lower()
+    if #model == 0 then return { success = false, error = "INVALID_MODEL" } end
+
+    local ped = GetPlayerPed(source)
+    if not ped or ped == 0 then return { success = false, error = "PLAYER_PED_NOT_FOUND" } end
+
+    local currentVeh = GetVehiclePedIsIn(ped, false)
+    if currentVeh and currentVeh ~= 0 then
+        DeleteEntity(currentVeh)
+    end
+
+    local coords = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+
+    local spawnedVeh = nil
+    pcall(function()
+        if exports.qbx_core and exports.qbx_core.SpawnVehicle then
+            local _, v = exports.qbx_core:SpawnVehicle(source, model, vec4(coords.x, coords.y, coords.z, heading), true)
+            spawnedVeh = v
+        end
+    end)
+
+    if not spawnedVeh or not DoesEntityExist(spawnedVeh) then
+        -- Native fallback with server setter
+        local hash = joaat(model)
+        local veh = CreateVehicleServerSetter(hash, "automobile", coords.x, coords.y, coords.z, heading)
+        if DoesEntityExist(veh) then
+            spawnedVeh = veh
+            TaskWarpPedIntoVehicle(ped, veh, -1)
+        end
+    end
+
+    if spawnedVeh and DoesEntityExist(spawnedVeh) then
+        local netId = NetworkGetNetworkIdFromEntity(spawnedVeh)
+        pcall(function() exports.qbx_vehiclekeys:GiveKeys(source, spawnedVeh) end)
+        Logger.Write("SPAWN_VEHICLE", source, nil, { model = model, netId = netId }, "SUCCESS")
+        return { success = true, netId = netId }
+    end
+
+    return { success = false, error = "FAILED_TO_CREATE_VEHICLE" }
+end)
+
 -- Clean shutdown handler
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= cache.resource then return end
