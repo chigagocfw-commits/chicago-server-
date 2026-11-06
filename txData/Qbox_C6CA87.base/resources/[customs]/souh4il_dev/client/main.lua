@@ -797,67 +797,67 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
     local myPed = PlayerPedId()
 
     if isSpectating then
-        NetworkSetInSpectatorMode(false, myPed)
-        isSpectating = false
-        spectateTarget = nil
-        lib.notify({ title = SharedConfig.PanelName, description = "Spectate mode disabled.", type = 'inform' })
-    else
-        local targetPed = GetPlayerPed(GetPlayerFromServerId(targetId))
-        if DoesEntityExist(targetPed) then
-            NetworkSetInSpectatorMode(true, targetPed)
-            isSpectating = true
-            spectateTarget = targetId
-            lib.notify({ title = SharedConfig.PanelName, description = "Spectating player #" .. targetId, type = 'success' })
+            NetworkSetInSpectatorMode(false, myPed)
+            isSpectating = false
+            spectateTarget = nil
+            lib.notify({ title = SharedConfig.PanelName, description = "Spectate mode disabled.", type = 'inform' })
         else
-            lib.notify({ title = SharedConfig.PanelName, description = "Target ped is not within streaming distance.", type = 'error' })
+            local targetPed = GetPlayerPed(GetPlayerFromServerId(targetId))
+            if DoesEntityExist(targetPed) then
+                NetworkSetInSpectatorMode(true, targetPed)
+                isSpectating = true
+                spectateTarget = targetId
+                lib.notify({ title = SharedConfig.PanelName, description = "Spectating player #" .. targetId, type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = "Target ped is not within streaming distance.", type = 'error' })
+            end
         end
-    end
-    cb('ok')
-end)
-
--- Teleport Preset
-RegisterNUICallback('teleportPreset', function(data, cb)
-    local locKey = data.location
-    local dest = TELEPORT_LOCATIONS[locKey]
-    if dest then
-        local ped = PlayerPedId()
-        DoScreenFadeOut(200)
-        Wait(250)
-        SetEntityCoords(ped, dest.x, dest.y, dest.z, false, false, false, false)
-        SetEntityHeading(ped, dest.w)
-        Wait(200)
-        DoScreenFadeIn(200)
-        lib.notify({ title = SharedConfig.PanelName, description = "Teleported to " .. locKey:upper(), type = 'success' })
-    end
-    cb('ok')
-end)
-
--- Teleport Coords
-RegisterNUICallback('teleportCoords', function(data, cb)
-    local ped = PlayerPedId()
-    local x = tonumber(data.x)
-    local y = tonumber(data.y)
-    local z = tonumber(data.z)
-    if x and y and z then
-        DoScreenFadeOut(200)
-        Wait(250)
-        SetEntityCoords(ped, x, y, z, false, false, false, false)
-        Wait(200)
-        DoScreenFadeIn(200)
-        lib.notify({ title = SharedConfig.PanelName, description = ("Teleported to (%.1f, %.1f, %.1f)"):format(x, y, z), type = 'success' })
-    end
-    cb('ok')
-end)
-
--- Fetch Online Players
-RegisterNUICallback('fetchPlayers', function(_, cb)
-    lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(response)
-        if response and response.success then
-            SendNUIMessage({ action = "updatePlayers", players = response.players })
-        end
+        cb('ok')
     end)
-    cb('ok')
-end)
+
+    -- Teleport Preset
+    RegisterNUICallback('teleportPreset', function(data, cb)
+        local locKey = data.location
+        local dest = TELEPORT_LOCATIONS[locKey]
+        if dest then
+            local ped = PlayerPedId()
+            DoScreenFadeOut(200)
+            Wait(250)
+            SetEntityCoords(ped, dest.x, dest.y, dest.z, false, false, false, false)
+            SetEntityHeading(ped, dest.w)
+            Wait(200)
+            DoScreenFadeIn(200)
+            lib.notify({ title = SharedConfig.PanelName, description = "Teleported to " .. locKey:upper(), type = 'success' })
+        end
+        cb('ok')
+    end)
+
+    -- Teleport Coords
+    RegisterNUICallback('teleportCoords', function(data, cb)
+        local ped = PlayerPedId()
+        local x = tonumber(data.x)
+        local y = tonumber(data.y)
+        local z = tonumber(data.z)
+        if x and y and z then
+            DoScreenFadeOut(200)
+            Wait(250)
+            SetEntityCoords(ped, x, y, z, false, false, false, false)
+            Wait(200)
+            DoScreenFadeIn(200)
+            lib.notify({ title = SharedConfig.PanelName, description = ("Teleported to (%.1f, %.1f, %.1f)"):format(x, y, z), type = 'success' })
+        end
+        cb('ok')
+    end)
+
+    -- Fetch Online Players
+    RegisterNUICallback('fetchPlayers', function(_, cb)
+        lib.callback('souh4il_dev:server:getOnlinePlayers', false, function(response)
+            if response and response.success then
+                SendNUIMessage({ action = "updatePlayers", players = response.players })
+            end
+        end)
+        cb('ok')
+    end)
 
 -- Player Teleport Actions (Goto / Bring)
 RegisterNUICallback('teleportAction', function(data, cb)
@@ -1056,6 +1056,405 @@ end)
 
 RegisterNetEvent('souh4il_dev:client:syncBlackout', function(state)
     SetBlackout(state)
+end)
+
+-- =========================================================================
+-- EXPANDED OWNER CHEATS & ADMIN SUITE (ALL REQUESTED FEATURES)
+-- =========================================================================
+local isAdminTag = false
+local isPlayerNames = false
+local isPlayerBlips = false
+local isMinimapOnFoot = false
+local isCoordsHUD = false
+local playerBlips = {}
+
+local function Draw3DText(x, y, z, text)
+    local onScreen, _x, _y = World3dToScreen2d(x, y, z)
+    if onScreen then
+        SetTextScale(0.32, 0.32)
+        SetTextFont(4)
+        SetTextProportional(1)
+        SetTextColour(255, 255, 255, 230)
+        SetTextOutline()
+        SetTextEntry("STRING")
+        SetTextCentre(1)
+        AddTextComponentString(text)
+        DrawText(_x, _y)
+    end
+end
+
+-- Admin Tag Thread
+CreateThread(function()
+    while true do
+        if isAdminTag then
+            local ped = PlayerPedId()
+            local coords = GetEntityCoords(ped)
+            Draw3DText(coords.x, coords.y, coords.z + 1.15, "~r~[OWNER / ADMIN]~w~\n~y~SOUH4IL~w~")
+            Wait(0)
+        else
+            Wait(1000)
+        end
+    end
+end)
+
+-- Overhead Names Thread
+CreateThread(function()
+    while true do
+        if isPlayerNames then
+            local myPed = PlayerPedId()
+            local myCoords = GetEntityCoords(myPed)
+            for _, player in ipairs(GetActivePlayers()) do
+                local ped = GetPlayerPed(player)
+                if ped ~= myPed and DoesEntityExist(ped) then
+                    local coords = GetEntityCoords(ped)
+                    local dist = #(myCoords - coords)
+                    if dist <= 120.0 then
+                        local sId = GetPlayerServerId(player)
+                        local name = GetPlayerName(player)
+                        local hp = GetEntityHealth(ped)
+                        local arm = GetPedArmour(ped)
+                        local text = ("~y~[%d] %s~w~\nHP: ~g~%d~w~ | ARM: ~b~%d~w~ | ~s~%.0fm"):format(sId, name, hp, arm, dist)
+                        Draw3DText(coords.x, coords.y, coords.z + 1.05, text)
+                    end
+                end
+            end
+            Wait(0)
+        else
+            Wait(1000)
+        end
+    end
+end)
+
+-- Player Blips Thread
+CreateThread(function()
+    while true do
+        if isPlayerBlips then
+            local myServerId = GetPlayerServerId(PlayerId())
+            for _, player in ipairs(GetActivePlayers()) do
+                local sId = GetPlayerServerId(player)
+                if sId ~= myServerId then
+                    local ped = GetPlayerPed(player)
+                    if DoesEntityExist(ped) then
+                        if not playerBlips[sId] or not DoesBlipExist(playerBlips[sId]) then
+                            local blip = AddBlipForEntity(ped)
+                            SetBlipSprite(blip, 1)
+                            SetBlipColour(blip, 0)
+                            SetBlipScale(blip, 0.75)
+                            BeginTextCommandSetBlipName("STRING")
+                            AddTextComponentString(("Player [%d] %s"):format(sId, GetPlayerName(player)))
+                            EndTextCommandSetBlipName(blip)
+                            playerBlips[sId] = blip
+                        end
+                    end
+                end
+            end
+            Wait(2000)
+        else
+            if next(playerBlips) then
+                for sId, blip in pairs(playerBlips) do
+                    if DoesBlipExist(blip) then RemoveBlip(blip) end
+                end
+                playerBlips = {}
+            end
+            Wait(1000)
+        end
+    end
+end)
+
+-- Minimap on Foot Thread
+CreateThread(function()
+    while true do
+        if isMinimapOnFoot and not isCinematicHUD then
+            DisplayRadar(true)
+            Wait(250)
+        else
+            Wait(1000)
+        end
+    end
+end)
+
+-- Live Coordinates HUD Thread
+CreateThread(function()
+    while true do
+        if isCoordsHUD then
+            local ped = PlayerPedId()
+            local c = GetEntityCoords(ped)
+            local h = GetEntityHeading(ped)
+            SetTextScale(0.35, 0.35)
+            SetTextFont(4)
+            SetTextColour(0, 255, 204, 255)
+            SetTextOutline()
+            SetTextEntry("STRING")
+            AddTextComponentString(("~y~X:~w~ %.2f  ~y~Y:~w~ %.2f  ~y~Z:~w~ %.2f  ~y~H:~w~ %.2f"):format(c.x, c.y, c.z, h))
+            DrawText(0.015, 0.015)
+            Wait(0)
+        else
+            Wait(800)
+        end
+    end
+end)
+
+-- Infinite Ammo Thread
+CreateThread(function()
+    while true do
+        if isInfiniteAmmo then
+            local ped = PlayerPedId()
+            local weapon = GetSelectedPedWeapon(ped)
+            if weapon ~= `WEAPON_UNARMED` then
+                SetPedInfiniteAmmo(ped, true, weapon)
+                SetPedInfiniteAmmoClip(ped, true)
+                SetAmmoInClip(ped, weapon, 999)
+            end
+            Wait(250)
+        else
+            Wait(1000)
+        end
+    end
+end)
+
+-- Client Event Listeners for Heal, Warn, Troll
+RegisterNetEvent('souh4il_dev:client:receiveHeal', function()
+    local ped = PlayerPedId()
+    SetEntityHealth(ped, 200)
+    SetPedArmour(ped, 100)
+    ClearPedBloodDamage(ped)
+    ResetPedVisibleDamage(ped)
+    ClearPedLastWeaponDamage(ped)
+    lib.notify({ title = SharedConfig.PanelName, description = "You have been revived & fully healed by staff.", type = 'success' })
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveWarn', function(reason)
+    PlaySoundFrontend(-1, "Event_Start_Text", "GTAO_FM_Events_Soundset", 1)
+    lib.alertDialog({
+        header = '⚠️ OFFICIAL STAFF WARNING',
+        content = reason,
+        centered = true,
+        cancel = false
+    })
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveTroll', function(trollType)
+    local ped = PlayerPedId()
+    if trollType == 'slap' then
+        SetEntityVelocity(ped, 0.0, 0.0, 45.0)
+        PlaySoundFrontend(-1, "Bed", "WastedSounds", 1)
+    elseif trollType == 'fire' then
+        StartEntityFire(ped)
+    elseif trollType == 'jailbox' then
+        DoScreenFadeOut(200)
+        Wait(250)
+        SetEntityCoords(ped, 1792.5, 2483.2, -122.5, false, false, false, false)
+        Wait(200)
+        DoScreenFadeIn(200)
+    elseif trollType == 'drunk' then
+        RequestAnimSet("move_m@drunk@verydrunk")
+        while not HasAnimSetLoaded("move_m@drunk@verydrunk") do Wait(10) end
+        SetPedMovementClipset(ped, "move_m@drunk@verydrunk", 1.0)
+        ShakeGameplayCam("DRUNK_SHAKE", 2.0)
+        SetPedIsDrunk(ped, true)
+        Wait(15000)
+        ResetPedMovementClipset(ped, 0.0)
+        StopGameplayCamShaking(true)
+        SetPedIsDrunk(ped, false)
+    elseif trollType == 'pee' then
+        lib.playAnim(ped, 'misscarsteal2peeing', 'peeing_loop', 8.0, -8.0, 6000, 1, 0, false, false, false)
+    elseif trollType == 'poop' then
+        lib.playAnim(ped, 'missfbi3_party', 'stand_talk_loop_a_male1', 8.0, -8.0, 6000, 1, 0, false, false, false)
+    elseif trollType == 'sound' then
+        PlaySoundFrontend(-1, "Bed", "WastedSounds", 1)
+    elseif trollType == 'damage_veh' then
+        local veh = GetVehiclePedIsIn(ped, false)
+        if veh ~= 0 then
+            SetVehicleEngineHealth(veh, 0.0)
+            SetVehicleUndriveable(veh, true)
+            for i = 0, 7 do SetVehicleTyreBurst(veh, i, true, 1000.0) end
+        end
+    end
+end)
+
+-- Extended Toggle Power Callback
+RegisterNUICallback('toggleExtendedPower', function(data, cb)
+    local power = data.power
+    local state = data.state
+
+    if power == 'admintag' then
+        isAdminTag = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Admin Overhead Tag " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'names' then
+        isPlayerNames = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Player Names & Distance " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'blips' then
+        isPlayerBlips = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Map Player Blips " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'minimap' then
+        isMinimapOnFoot = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Minimap on Foot " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'coordshud' then
+        isCoordsHUD = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Live Coordinates HUD " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'infammo' then
+        isInfiniteAmmo = state
+        lib.notify({ title = SharedConfig.PanelName, description = "Infinite Ammo " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    elseif power == 'noclip2' then
+        isNoclip = state
+        speedIndex = state and 5 or 2
+        local ped = PlayerPedId()
+        local veh = GetVehiclePedIsIn(ped, false)
+        local entity = veh ~= 0 and veh or ped
+        if not state then
+            SetEntityCollision(entity, true, true)
+            FreezeEntityPosition(entity, false)
+        end
+        lib.notify({ title = SharedConfig.PanelName, description = "Fast NoClip 2 (5x) " .. (state and "ENABLED" or "DISABLED"), type = state and 'success' or 'inform' })
+    end
+    cb('ok')
+end)
+
+-- General Client Action Execution
+RegisterNUICallback('clientAction', function(data, cb)
+    local action = data.action
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+
+    if action == 'clothes' then
+        TriggerEvent('qb-clothing:client:openMenu')
+        TriggerEvent('illenium-appearance:client:openClothingShopMenu')
+        TriggerEvent('fivem-appearance:client:openClothingShopMenu')
+        lib.notify({ title = SharedConfig.PanelName, description = "Clothing & Appearance menu requested.", type = 'inform' })
+    elseif action == 'bennys' then
+        local veh = GetVehiclePedIsIn(ped, false)
+        if veh ~= 0 then
+            ApplyMaxTune(veh)
+            lib.notify({ title = SharedConfig.PanelName, description = "Max Benny's Tuning & Armor applied!", type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = "You must be inside a vehicle.", type = 'error' })
+        end
+    elseif action == 'refuel' then
+        local veh = GetVehiclePedIsIn(ped, false)
+        if veh ~= 0 then
+            SetVehicleFuelLevel(veh, 100.0)
+            DecorSetFloat(veh, "_FUEL_LEVEL", 100.0)
+            if exports['LegacyFuel'] then exports['LegacyFuel']:SetFuel(veh, 100.0) end
+            lib.notify({ title = SharedConfig.PanelName, description = "Vehicle tank refueled to 100%.", type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = "You must be inside a vehicle.", type = 'error' })
+        end
+    elseif action == 'clear_veh' then
+        ClearAreaOfVehicles(coords.x, coords.y, coords.z, 100.0, false, false, false, false, false)
+        lib.notify({ title = SharedConfig.PanelName, description = "Cleared all unoccupied vehicles in 100m radius.", type = 'success' })
+    elseif action == 'clear_peds' then
+        ClearAreaOfPeds(coords.x, coords.y, coords.z, 100.0, 1)
+        lib.notify({ title = SharedConfig.PanelName, description = "Cleared all NPCs in 100m radius.", type = 'success' })
+    elseif action == 'clear_props' then
+        ClearAreaOfObjects(coords.x, coords.y, coords.z, 100.0, 0)
+        lib.notify({ title = SharedConfig.PanelName, description = "Cleared all loose props in 100m radius.", type = 'success' })
+    elseif action == 'duty' then
+        lib.callback('souh4il_dev:server:toggleDuty', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = "Duty status toggled.", type = 'success' })
+            end
+        end)
+    elseif action == 'stress' then
+        lib.callback('souh4il_dev:server:removeStress', false, function()
+            lib.notify({ title = SharedConfig.PanelName, description = "Stress fully removed.", type = 'success' })
+        end)
+    elseif action == 'revive_all' then
+        lib.callback('souh4il_dev:server:reviveAll', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Revived %d players."):format(res.count), type = 'success' })
+            end
+        end)
+    elseif action == 'revive_radius' then
+        lib.callback('souh4il_dev:server:reviveInRadius', false, function(res)
+            if res and res.success then
+                lib.notify({ title = SharedConfig.PanelName, description = ("Revived %d nearby players."):format(res.count), type = 'success' })
+            end
+        end, 50.0)
+    elseif action == 'veh_lock' or action == 'veh_unlock' or action == 'veh_engine' or action == 'veh_freeze' then
+        local veh = GetVehiclePedIsIn(ped, false)
+        if veh ~= 0 then
+            if action == 'veh_lock' then SetVehicleDoorsLocked(veh, 2)
+            elseif action == 'veh_unlock' then SetVehicleDoorsLocked(veh, 1)
+            elseif action == 'veh_engine' then SetVehicleEngineOn(veh, not GetIsVehicleEngineRunning(veh), true, true)
+            elseif action == 'veh_freeze' then FreezeEntityPosition(veh, not IsEntityPositionFrozen(veh))
+            end
+            lib.notify({ title = SharedConfig.PanelName, description = "Vehicle state updated.", type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = "Must be inside a vehicle.", type = 'error' })
+        end
+    elseif action == 'spawn_prop' and data.prop then
+        local propHash = joaat(data.prop)
+        RequestModel(propHash)
+        local t = 0
+        while not HasModelLoaded(propHash) and t < 50 do Wait(50); t = t + 1 end
+        if HasModelLoaded(propHash) then
+            local p = CreateObject(propHash, coords.x + 1.0, coords.y, coords.z, true, true, false)
+            PlaceObjectOnGroundProperly(p)
+            lib.notify({ title = SharedConfig.PanelName, description = "Prop spawned successfully.", type = 'success' })
+        else
+            lib.notify({ title = SharedConfig.PanelName, description = "Invalid prop model.", type = 'error' })
+        end
+    end
+    cb('ok')
+end)
+
+-- Player Detailed Action Handler
+RegisterNUICallback('playerDetailedAction', function(data, cb)
+    local action = data.action
+    local tId = tonumber(data.targetId)
+
+    if action == 'heal' then
+        lib.callback('souh4il_dev:server:healPlayer', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Player healed & revived." or "Failed", type = res and res.success and 'success' or 'error' })
+        end, tId)
+    elseif action == 'give_keys' then
+        local veh = GetVehiclePedIsIn(PlayerPedId(), false)
+        local plate = veh ~= 0 and GetVehicleNumberPlateText(veh) or "CHICAGO"
+        lib.callback('souh4il_dev:server:giveKeysToPlayer', false, function()
+            lib.notify({ title = SharedConfig.PanelName, description = "Keys granted to player.", type = 'success' })
+        end, { targetId = tId, plate = plate })
+    elseif action == 'set_gang' then
+        lib.callback('souh4il_dev:server:setPlayerGang', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Player gang updated." or "Failed", type = res and res.success and 'success' or 'error' })
+        end, { targetId = tId, gang = data.gang, grade = data.grade })
+    elseif action == 'give_perm' or action == 'remove_perm' then
+        lib.callback('souh4il_dev:server:managePermission', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Permissions updated." or "Failed", type = res and res.success and 'success' or 'error' })
+        end, { targetId = tId, role = data.role or 'admin', action = action == 'give_perm' and 'add' or 'remove' })
+    elseif action == 'open_inv' then
+        lib.callback('souh4il_dev:server:openInventory', false, function() end, { type = 'player', target = tId })
+    elseif action == 'open_trunk' or action == 'open_glovebox' then
+        local veh = GetVehiclePedIsIn(PlayerPedId(), false)
+        local plate = veh ~= 0 and GetVehicleNumberPlateText(veh) or "CHICAGO"
+        lib.callback('souh4il_dev:server:openInventory', false, function() end, { type = action == 'open_trunk' and 'trunk' or 'glovebox', target = plate })
+    elseif action == 'warn' then
+        lib.callback('souh4il_dev:server:warnPlayer', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = "Warning issued to player.", type = 'success' })
+        end, { targetId = tId, reason = data.reason })
+    elseif action == 'force_logout' then
+        lib.callback('souh4il_dev:server:forceLogout', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = "Player forced to logout.", type = 'inform' })
+        end, tId)
+    elseif action == 'message' then
+        lib.callback('souh4il_dev:server:messagePlayer', false, function()
+            lib.notify({ title = SharedConfig.PanelName, description = "Staff message dispatched.", type = 'success' })
+        end, { targetId = tId, message = data.message })
+    elseif action == 'troll' then
+        lib.callback('souh4il_dev:server:trollPlayer', false, function()
+            lib.notify({ title = SharedConfig.PanelName, description = ("Troll action '%s' sent."):format(data.trollType), type = 'inform' })
+        end, { targetId = tId, type = data.trollType })
+    elseif action == 'wipe' then
+        lib.callback('souh4il_dev:server:wipePlayer', false, function(res)
+            lib.notify({ title = SharedConfig.PanelName, description = "Player wipe completed.", type = 'success' })
+        end, { targetId = tId, type = data.wipeType })
+    elseif action == 'get_details' then
+        lib.callback('souh4il_dev:server:getPlayerDetails', false, function(res)
+            if res and res.success then
+                SendNUIMessage({ action = "showPlayerDetails", details = res.details })
+            end
+        end, tId)
+    end
+    cb('ok')
 end)
 
 -- Clean Cleanup on Stop

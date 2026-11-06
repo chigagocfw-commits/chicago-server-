@@ -222,6 +222,57 @@
                                     <div class="toggle-info"><span class="toggle-title">Vehicle Rocket Boost</span><span class="toggle-desc">Hold Left Shift inside vehicle for instant rocket thrust</span></div>
                                     <label class="switch"><input type="checkbox" id="toggle-vehboost"><span class="slider"></span></label>
                                 </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Admin Overhead Tag</span><span class="toggle-desc">Display [OWNER / ADMIN] SOUH4IL 3D tag above head</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-admintag"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Player Names & Distance</span><span class="toggle-desc">Render overhead ID, name, HP, armor, and distance (ESP)</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-names"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Player Map Blips</span><span class="toggle-desc">Display live GPS radar blips for all connected players</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-blips"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Minimap On Foot</span><span class="toggle-desc">Keep full radar minimap visible while walking outside vehicles</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-minimap"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Live Coordinates HUD</span><span class="toggle-desc">Display live vector3, vector4, and heading on screen</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-coordshud"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Fast NoClip 2 (5x Speed)</span><span class="toggle-desc">Extreme velocity freecam mode for long-distance flight</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-noclip2"><span class="slider"></span></label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info"><span class="toggle-title">Infinite Ammo Clip</span><span class="toggle-desc">Continuous 999 ammo clip refill without reloading</span></div>
+                                    <label class="switch"><input type="checkbox" id="toggle-infammo"><span class="slider"></span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>ADVANCED OWNER POWERS & UTILITIES</h4>
+                                <span>Instant Administration & Server Controls</span>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="action-btn" id="btn-clothes-menu"><span class="btn-icon">👕</span><span class="btn-text">Clothes Menu</span></button>
+                                <button class="action-btn" id="btn-bennys-tune"><span class="btn-icon">🏎️</span><span class="btn-text">Bennys Max Mod</span></button>
+                                <button class="action-btn" id="btn-refuel-tank"><span class="btn-icon">⛽</span><span class="btn-text">Refuel Tank (100%)</span></button>
+                                <button class="action-btn" id="btn-toggle-duty"><span class="btn-icon">🛡️</span><span class="btn-text">Toggle Duty</span></button>
+                                <button class="action-btn" id="btn-remove-stress"><span class="btn-icon">🧘</span><span class="btn-text">Remove Stress</span></button>
+                                <button class="action-btn" id="btn-revive-radius"><span class="btn-icon">💫</span><span class="btn-text">Revive In Radius (50m)</span></button>
+                                <button class="action-btn" id="btn-revive-all"><span class="btn-icon">🌟</span><span class="btn-text">Revive ALL Players</span></button>
+                                <button class="action-btn danger" id="btn-clear-veh"><span class="btn-icon">🚗</span><span class="btn-text">Clear Area Vehicles</span></button>
+                                <button class="action-btn danger" id="btn-clear-peds"><span class="btn-icon">🚶</span><span class="btn-text">Clear Area Peds</span></button>
+                                <button class="action-btn danger" id="btn-clear-props"><span class="btn-icon">📦</span><span class="btn-text">Clear Area Objects</span></button>
+                                <button class="action-btn" id="btn-veh-lock"><span class="btn-icon">🔒</span><span class="btn-text">Lock Vehicle</span></button>
+                                <button class="action-btn" id="btn-veh-unlock"><span class="btn-icon">🔓</span><span class="btn-text">Unlock Vehicle</span></button>
+                                <button class="action-btn" id="btn-veh-engine"><span class="btn-icon">🔑</span><span class="btn-text">Toggle Engine</span></button>
+                                <button class="action-btn" id="btn-veh-freeze"><span class="btn-icon">❄️</span><span class="btn-text">Freeze Vehicle</span></button>
                             </div>
                         </div>
                     </section>
@@ -641,6 +692,60 @@
                                 <button class="weather-btn" data-weather="FOGGY">Foggy</button>
                             </div>
                         </div>
+
+                        <!-- Prop / Object Spawner -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>PROP & OBJECT SPAWNER</h4>
+                                <span>Spawn dynamic world objects, barriers, and staging props</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="prop-model-input" class="search-input" placeholder="Model name (e.g. prop_barrier_work06a, prop_roadcone02a)...">
+                                <button class="primary-btn" id="btn-spawn-prop-object">Spawn Prop Object</button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Command / Event Trigger -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM CLICK / COMMAND RUNNER</h4>
+                                <span>Execute direct server or client command trigger</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="custom-click-input" class="search-input" placeholder="Enter console command (e.g. say Hello Chicago, weather rain)...">
+                                <button class="primary-btn" id="btn-exec-custom-click">Execute Custom Action</button>
+                            </div>
+                        </div>
+
+                        <!-- Job & Gang Stash Builder -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM JOB & GANG STASH BUILDER</h4>
+                                <span>Register permanent secure stashes with custom storage capacity</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="stash-id-input" class="search-input" placeholder="Stash ID (e.g. police_stash, mafia_stash)...">
+                                <input type="text" id="stash-label-input" class="search-input" placeholder="Display Label...">
+                                <button class="secondary-btn" id="btn-create-custom-stash">Create & Open Stash</button>
+                            </div>
+                        </div>
+
+                        <!-- Offline Ban & Unban Center -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>OFFLINE MODERATION & BAN MANAGEMENT</h4>
+                                <span>Ban offline players by license or unban active records</span>
+                            </div>
+                            <div class="form-row" style="margin-bottom: 10px;">
+                                <input type="text" id="offline-ban-id" class="search-input" placeholder="License (e.g. license:385f...) or CitizenID...">
+                                <input type="text" id="offline-ban-reason" class="search-input" placeholder="Ban Reason...">
+                                <button class="primary-btn danger-btn" id="btn-ban-offline">Ban Offline Player</button>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="unban-id-input" class="search-input" placeholder="License or Ban ID to unban...">
+                                <button class="secondary-btn" id="btn-unban-player">Unban Player</button>
+                            </div>
+                        </div>
                     </section>
 
                     <!-- Tab: Security Logs -->
@@ -733,6 +838,108 @@
                 <div class="modal-footer">
                     <button class="secondary-btn" id="btn-cancel-job">Cancel</button>
                     <button class="primary-btn" id="btn-confirm-job">Set Job & Grade</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Player Manage Modal -->
+        <div id="player-manage-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-box" style="max-width: 650px;">
+                <div class="modal-header">
+                    <h3 id="manage-modal-title">⚡ Player Controls & Punishments</h3>
+                    <button class="modal-close" id="manage-modal-close">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <input type="hidden" id="manage-target-id">
+                    <input type="hidden" id="manage-target-name">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <span id="manage-target-info" class="target-badge" style="font-size: 13px; font-weight: 600;">ID: --</span>
+                    </div>
+
+                    <!-- Category: Core Health & Vehicles -->
+                    <div class="control-group-title">CORE ACTIONS & VEHICLES</div>
+                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
+                        <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('give_keys')"><span class="btn-icon">🔑</span><span class="btn-text">Give Car Keys</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Clear Stress</span></button>
+                    </div>
+
+                    <!-- Category: Permissions & Access -->
+                    <div class="control-group-title">PERMISSIONS & ACE RANKS</div>
+                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
+                        <button class="action-btn" onclick="execPlayerDetailed('give_perm', { role: 'admin' })"><span class="btn-icon">⭐</span><span class="btn-text">Give Admin</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('give_perm', { role: 'mod' })"><span class="btn-icon">🛡️</span><span class="btn-text">Give Mod</span></button>
+                        <button class="action-btn danger" onclick="execPlayerDetailed('remove_perm', { role: 'admin' })"><span class="btn-icon">❌</span><span class="btn-text">Revoke Perms</span></button>
+                    </div>
+
+                    <!-- Category: Inventory & Storage Access -->
+                    <div class="control-group-title">INVENTORY & CONTAINER INSPECTION</div>
+                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
+                        <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Open Inventory</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Open Trunk</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('open_glovebox')"><span class="btn-icon">🗄️</span><span class="btn-text">Open Glovebox</span></button>
+                        <button class="action-btn danger" onclick="execPlayerDetailed('clear_inv')"><span class="btn-icon">🗑️</span><span class="btn-text">Wipe Inventory</span></button>
+                    </div>
+
+                    <!-- Category: Gang Management -->
+                    <div class="control-group-title">GANG ASSIGNMENT</div>
+                    <div class="form-row" style="margin-bottom: 14px;">
+                        <input type="text" id="manage-gang-name" class="search-input" placeholder="Gang Name (e.g. ballas, families, cartel)...">
+                        <input type="number" id="manage-gang-grade" class="search-input" style="max-width: 90px;" value="0" placeholder="Grade">
+                        <button class="secondary-btn" onclick="execPlayerDetailed('set_gang')">Assign Gang</button>
+                    </div>
+
+                    <!-- Category: Moderation & Messaging -->
+                    <div class="control-group-title">COMMUNICATION & MODERATION</div>
+                    <div class="form-row" style="margin-bottom: 10px;">
+                        <input type="text" id="manage-pm-msg" class="search-input" placeholder="Send Staff PM message...">
+                        <button class="primary-btn" onclick="execPlayerDetailed('message')">Send PM</button>
+                    </div>
+                    <div class="form-row" style="margin-bottom: 14px;">
+                        <input type="text" id="manage-warn-msg" class="search-input" placeholder="Staff Warning reason...">
+                        <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">Issue Warning</button>
+                        <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">Force Logout</button>
+                    </div>
+
+                    <!-- Category: Troll & Punishments -->
+                    <div class="control-group-title">TROLL & DISCIPLINE SUITE</div>
+                    <div class="quick-actions-grid" style="margin-bottom: 14px;">
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap in Sky</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Set On Fire</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">JailBox Cage</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Make Drunk</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Make Pee</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Make Poop</span></button>
+                        <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Loud Sound</span></button>
+                        <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'damage_veh' })"><span class="btn-icon">💥</span><span class="btn-text">Damage Car</span></button>
+                    </div>
+
+                    <!-- Category: Account Wipes -->
+                    <div class="control-group-title">ACCOUNT WIPES (IRREVERSIBLE)</div>
+                    <div class="quick-actions-grid">
+                        <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Cash & Bank</span></button>
+                        <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Items</span></button>
+                        <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.15);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Full Character Wipe</span></button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn" id="manage-modal-close-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Details Dossier Modal -->
+        <div id="player-info-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-box" style="max-width: 550px;">
+                <div class="modal-header">
+                    <h3 id="info-modal-title">ℹ️ Player Dossier & Information</h3>
+                    <button class="modal-close" id="info-modal-close">&times;</button>
+                </div>
+                <div class="modal-body" id="info-modal-content">
+                    <div class="table-empty">Retrieving player records...</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn" id="info-modal-close-btn">Close</button>
                 </div>
             </div>
         </div>

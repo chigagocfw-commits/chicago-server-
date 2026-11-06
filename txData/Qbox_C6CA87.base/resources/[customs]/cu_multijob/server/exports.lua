@@ -1,4 +1,5 @@
 local config = lib.load("shared/config")
+local Query = require "server/modules/queries"
 
 Jobs = Jobs or {}
 
@@ -18,6 +19,7 @@ local function removeJob(source, id, job)
     end
     if Jobs[target] and Jobs[target][job] then
         Jobs[target][job] = nil
+        Query:saveJobs(targetId)
         if FW:GetJob(targetId).name == job then
             FW:SetJob(targetId, config.defaultJob.name, config.defaultJob.grade)
         end

@@ -309,6 +309,28 @@ window.addEventListener('message', (event) => {
         if (data.toggles) {
             syncToggles(data.toggles);
         }
+    } else if (data.action === 'showPlayerDetails') {
+        const d = data.details;
+        const content = document.getElementById('info-modal-content');
+        if (content && d) {
+            content.innerHTML = `
+                <div class="player-info-card">
+                    <div class="info-grid">
+                        <div class="info-row"><span class="info-k">Server ID:</span><span class="info-v highlight">#${d.id}</span></div>
+                        <div class="info-row"><span class="info-k">Player Name:</span><span class="info-v">${escapeHtml(d.name)}</span></div>
+                        <div class="info-row"><span class="info-k">Citizen ID:</span><span class="info-v font-mono">${escapeHtml(d.citizenid)}</span></div>
+                        <div class="info-row"><span class="info-k">Cash Money:</span><span class="info-v text-green">$${Number(d.cash).toLocaleString()}</span></div>
+                        <div class="info-row"><span class="info-k">Bank Balance:</span><span class="info-v text-green">$${Number(d.bank).toLocaleString()}</span></div>
+                        <div class="info-row"><span class="info-k">Job / Grade:</span><span class="info-v">${escapeHtml(d.job)} (${escapeHtml(d.jobGrade)})</span></div>
+                        <div class="info-row"><span class="info-k">Gang / Grade:</span><span class="info-v">${escapeHtml(d.gang)} (${escapeHtml(d.gangGrade)})</span></div>
+                        <div class="info-row"><span class="info-k">Phone Number:</span><span class="info-v font-mono">${escapeHtml(d.phone)}</span></div>
+                        <div class="info-row"><span class="info-k">Ping / IP:</span><span class="info-v">${d.ping}ms (${d.ip})</span></div>
+                        <div class="info-row" style="grid-column: 1 / -1;"><span class="info-k">Rockstar License:</span><span class="info-v font-mono text-muted" style="word-break: break-all;">${escapeHtml(d.license)}</span></div>
+                        <div class="info-row" style="grid-column: 1 / -1;"><span class="info-k">Discord ID:</span><span class="info-v font-mono text-muted">${escapeHtml(d.discord)}</span></div>
+                    </div>
+                </div>
+            `;
+        }
     }
 });
 
@@ -466,6 +488,74 @@ registerToggle('toggle-vehboost', 'vehboost');
 registerToggle('toggle-inspector', 'inspector');
 registerToggle('toggle-hidehud', 'hidehud');
 registerToggle('toggle-blackout', 'blackout');
+
+// Extended Owner Toggles
+const registerExtendedToggle = (id, power) => {
+    document.getElementById(id)?.addEventListener('change', (e) => {
+        postNUI('toggleExtendedPower', { power, state: e.target.checked });
+    });
+};
+
+registerExtendedToggle('toggle-admintag', 'admintag');
+registerExtendedToggle('toggle-names', 'names');
+registerExtendedToggle('toggle-blips', 'blips');
+registerExtendedToggle('toggle-minimap', 'minimap');
+registerExtendedToggle('toggle-coordshud', 'coordshud');
+registerExtendedToggle('toggle-noclip2', 'noclip2');
+registerExtendedToggle('toggle-infammo', 'infammo');
+
+// Quick Master Action Helpers
+const bindClientAction = (id, action) => {
+    document.getElementById(id)?.addEventListener('click', () => {
+        postNUI('clientAction', { action });
+    });
+};
+
+bindClientAction('btn-clothes-menu', 'clothes');
+bindClientAction('btn-bennys-tune', 'bennys');
+bindClientAction('btn-refuel-tank', 'refuel');
+bindClientAction('btn-toggle-duty', 'duty');
+bindClientAction('btn-remove-stress', 'stress');
+bindClientAction('btn-revive-radius', 'revive_radius');
+bindClientAction('btn-revive-all', 'revive_all');
+bindClientAction('btn-clear-veh', 'clear_veh');
+bindClientAction('btn-clear-peds', 'clear_peds');
+bindClientAction('btn-clear-props', 'clear_props');
+bindClientAction('btn-veh-lock', 'veh_lock');
+bindClientAction('btn-veh-unlock', 'veh_unlock');
+bindClientAction('btn-veh-engine', 'veh_engine');
+bindClientAction('btn-veh-freeze', 'veh_freeze');
+
+// Prop Spawner
+document.getElementById('btn-spawn-prop-object')?.addEventListener('click', () => {
+    const prop = document.getElementById('prop-model-input')?.value.trim();
+    if (prop) postNUI('clientAction', { action: 'spawn_prop', prop });
+});
+
+// Custom Click / Command Runner
+document.getElementById('btn-exec-custom-click')?.addEventListener('click', () => {
+    const cmd = document.getElementById('custom-click-input')?.value.trim();
+    if (cmd) postNUI('quickAction', { action: cmd });
+});
+
+// Custom Job & Gang Stash Builder
+document.getElementById('btn-create-custom-stash')?.addEventListener('click', () => {
+    const stashId = document.getElementById('stash-id-input')?.value.trim();
+    const label = document.getElementById('stash-label-input')?.value.trim() || 'Custom Stash';
+    if (stashId) postNUI('playerDetailedAction', { action: 'create_stash', stashId, label });
+});
+
+// Offline Ban & Unban Handlers
+document.getElementById('btn-ban-offline')?.addEventListener('click', () => {
+    const identifier = document.getElementById('offline-ban-id')?.value.trim();
+    const reason = document.getElementById('offline-ban-reason')?.value.trim() || 'Offline ban by Administrator';
+    if (identifier) postNUI('playerDetailedAction', { action: 'ban_offline', identifier, reason });
+});
+
+document.getElementById('btn-unban-player')?.addEventListener('click', () => {
+    const query = document.getElementById('unban-id-input')?.value.trim();
+    if (query) postNUI('playerDetailedAction', { action: 'unban', identifier: query });
+});
 
 // Teleport Destinations
 document.querySelectorAll('.teleport-btn').forEach(btn => {
@@ -1010,12 +1100,12 @@ function filterPlayers(query) {
             <td>${p.ping}ms</td>
             <td>
                 <div class="player-actions">
+                    <button class="p-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700; padding: 4px 10px;" onclick="openPlayerManageModal(${p.id}, '${escapeHtml(p.name)}')">⚡ Manage</button>
                     <button class="p-btn goto" onclick="playerAction('goto', ${p.id})">Goto</button>
                     <button class="p-btn bring" onclick="playerAction('bring', ${p.id})">Bring</button>
                     <button class="p-btn freeze" onclick="playerAction('freeze', ${p.id})">Freeze</button>
                     <button class="p-btn spectate" onclick="playerAction('spectate', ${p.id})">Spectate</button>
-                    <button class="p-btn setjob" onclick="openJobModal(${p.id}, '${escapeHtml(p.name)}')">Set Job</button>
-                    <button class="p-btn clearinv" onclick="playerAction('clearinv', ${p.id}, '${escapeHtml(p.name)}')">Clear Inv</button>
+                    <button class="p-btn info" style="background: rgba(255,255,255,0.08); padding: 4px 8px;" onclick="openPlayerInfoModal(${p.id})">ℹ️ Info</button>
                     <button class="p-btn kick" onclick="playerAction('kick', ${p.id}, '${escapeHtml(p.name)}')">Kick</button>
                     <button class="p-btn ban" onclick="openBanModal(${p.id}, '${escapeHtml(p.name)}')">Ban</button>
                 </div>
@@ -1126,6 +1216,65 @@ document.getElementById('btn-confirm-job')?.addEventListener('click', () => {
 
     postNUI('setPlayerJob', { targetId, job, grade });
     document.getElementById('job-modal').style.display = 'none';
+});
+
+// Master Player Manage Modal
+window.openPlayerManageModal = function(targetId, name) {
+    const modal = document.getElementById('player-manage-modal');
+    document.getElementById('manage-target-id').value = targetId;
+    document.getElementById('manage-target-name').value = name;
+    document.getElementById('manage-target-info').innerText = `TARGET: [#${targetId}] ${name}`;
+    modal.style.display = 'flex';
+};
+
+document.getElementById('manage-modal-close')?.addEventListener('click', () => {
+    document.getElementById('player-manage-modal').style.display = 'none';
+});
+document.getElementById('manage-modal-close-btn')?.addEventListener('click', () => {
+    document.getElementById('player-manage-modal').style.display = 'none';
+});
+
+window.execPlayerDetailed = function(action, extra = {}) {
+    const targetId = document.getElementById('manage-target-id').value;
+    const name = document.getElementById('manage-target-name').value;
+    const payload = { action, targetId, ...extra };
+
+    if (action === 'set_gang') {
+        payload.gang = document.getElementById('manage-gang-name')?.value.trim() || 'none';
+        payload.grade = document.getElementById('manage-gang-grade')?.value.trim() || 0;
+    } else if (action === 'message') {
+        payload.message = document.getElementById('manage-pm-msg')?.value.trim();
+        if (!payload.message) return;
+    } else if (action === 'warn') {
+        payload.reason = document.getElementById('manage-warn-msg')?.value.trim() || 'Official staff warning';
+    } else if (action === 'wipe') {
+        if (!confirm(`Are you SURE you want to execute ${extra.wipeType.toUpperCase()} wipe on [#${targetId}] ${name}? This cannot be undone!`)) {
+            return;
+        }
+    } else if (action === 'clear_inv') {
+        if (!confirm(`Are you sure you want to completely clear inventory of [#${targetId}] ${name}?`)) {
+            return;
+        }
+    }
+
+    postNUI('playerDetailedAction', payload);
+};
+
+// Player Info Modal
+window.openPlayerInfoModal = function(targetId) {
+    const modal = document.getElementById('player-info-modal');
+    const content = document.getElementById('info-modal-content');
+    content.innerHTML = '<div class="table-empty">Retrieving player records...</div>';
+    modal.style.display = 'flex';
+
+    postNUI('playerDetailedAction', { action: 'get_details', targetId });
+};
+
+document.getElementById('info-modal-close')?.addEventListener('click', () => {
+    document.getElementById('player-info-modal').style.display = 'none';
+});
+document.getElementById('info-modal-close-btn')?.addEventListener('click', () => {
+    document.getElementById('player-info-modal').style.display = 'none';
 });
 
 // Logs Rendering

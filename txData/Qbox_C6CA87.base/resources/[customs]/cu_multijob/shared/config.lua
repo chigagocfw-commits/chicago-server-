@@ -1,6 +1,6 @@
 return {
     framework = "qbox", -- auto | LEGACYCORE | es_extended | qb-core | qbox | nd_core | ox_core | custom
-    maxJobs = 4,
+    maxJobs = 50,
     allowedGroups = {
         ["admin"] = true,
         ["mod"] = true,
@@ -12,7 +12,7 @@ return {
         gradeLabel = "Unemployed",
     },
     command = "multijob",
-    keybind = "J",
+    keybind = "G",
     locale = "en",
     locales = {
         en = {

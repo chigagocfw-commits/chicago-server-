@@ -32,4 +32,3 @@ files {
 escrow_ignore {
     "**/*",
 }
-dependency '/assetpacks'

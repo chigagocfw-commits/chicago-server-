@@ -37,6 +37,7 @@ AddEventHandler("cu_multijob:server:onJobChange", function(source, job, lastJob)
         gradeLabel = job.gradeLabel,
     }
     Jobs[key] = jobs
+    Query:saveJobs(source)
 end)
 
 AddEventHandler("cu_multijob:server:playerLoaded", function(id)

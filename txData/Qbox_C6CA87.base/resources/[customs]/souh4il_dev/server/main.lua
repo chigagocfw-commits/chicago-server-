@@ -843,13 +843,385 @@ lib.addCommand('sdev_services', {
     ExecuteCommand('restart qbx_properties')
     ExecuteCommand('restart qbx_police')
     ExecuteCommand('restart ox_inventory')
+    ExecuteCommand('ensure cu_multijob')
+    ExecuteCommand('restart cu_multijob')
+    ExecuteCommand('restart souh4il_dev')
 
     if source ~= 0 then
-        exports.qbx_core:Notify(source, "Bank, Housing, and Police services reloaded successfully!", "success")
-        Logger.Write("RELOAD_SERVICES", source, nil, { services = "banking, properties, police, inventory" }, "SUCCESS")
+        exports.qbx_core:Notify(source, "All Services & SOUH4IL-DEV reloaded successfully!", "success")
+        Logger.Write("RELOAD_SERVICES", source, nil, { services = "all" }, "SUCCESS")
     else
-        print("^2[SOUH4IL-DEV] Bank, Housing, and Police services reloaded successfully!^0")
+        print("^2[SOUH4IL-DEV] All Services & SOUH4IL-DEV reloaded successfully!^0")
     end
+end)
+
+lib.addCommand('sdev_reload', {
+    help = 'Reload SOUH4IL-DEV Panel (Owner Only)'
+}, function(source)
+    if source ~= 0 and not Permissions.IsOwner(source) then
+        exports.qbx_core:Notify(source, "Unauthorized: Owner Only", "error")
+        return
+    end
+    ExecuteCommand('restart souh4il_dev')
+end)
+
+---Callback: Heal & Revive Player
+lib.callback.register('souh4il_dev:server:healPlayer', function(source, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(targetId) or source
+    if not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    TriggerClientEvent('qbx_medical:client:playerRevived', tId)
+    TriggerClientEvent('hospital:client:Revive', tId)
+    TriggerClientEvent('souh4il_dev:client:receiveHeal', tId)
+
+    Logger.Write("HEAL_PLAYER", source, tId, { target = tId }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Revive All Players
+lib.callback.register('souh4il_dev:server:reviveAll', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local players = GetPlayers()
+    for _, srcStr in ipairs(players) do
+        local pid = tonumber(srcStr)
+        if pid then
+            TriggerClientEvent('qbx_medical:client:playerRevived', pid)
+            TriggerClientEvent('hospital:client:Revive', pid)
+            TriggerClientEvent('souh4il_dev:client:receiveHeal', pid)
+        end
+    end
+
+    Logger.Write("REVIVE_ALL", source, nil, { count = #players }, "SUCCESS")
+    return { success = true, count = #players }
+end)
+
+---Callback: Revive Players in Radius
+lib.callback.register('souh4il_dev:server:reviveInRadius', function(source, radius)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local rad = tonumber(radius) or 50.0
+    local myPed = GetPlayerPed(tostring(source))
+    local myCoords = GetEntityCoords(myPed)
+    local revivedCount = 0
+
+    for _, srcStr in ipairs(GetPlayers()) do
+        local pid = tonumber(srcStr)
+        if pid then
+            local tPed = GetPlayerPed(srcStr)
+            local tCoords = GetEntityCoords(tPed)
+            if #(myCoords - tCoords) <= rad then
+                TriggerClientEvent('qbx_medical:client:playerRevived', pid)
+                TriggerClientEvent('hospital:client:Revive', pid)
+                TriggerClientEvent('souh4il_dev:client:receiveHeal', pid)
+                revivedCount = revivedCount + 1
+            end
+        end
+    end
+
+    Logger.Write("REVIVE_RADIUS", source, nil, { radius = rad, count = revivedCount }, "SUCCESS")
+    return { success = true, count = revivedCount }
+end)
+
+---Callback: Set Gang
+lib.callback.register('souh4il_dev:server:setPlayerGang', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'set_gang')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId) or source
+    local player = exports.qbx_core:GetPlayer(tId)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    player.Functions.SetGang(data.gang or "none", tonumber(data.grade) or 0)
+    Logger.Write("SET_GANG", source, tId, { gang = data.gang, grade = data.grade }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Give / Remove Permission (ACE Principal)
+lib.callback.register('souh4il_dev:server:managePermission', function(source, data)
+    if not Permissions.IsOwner(source) then
+        return { success = false, error = "OWNER_ONLY" }
+    end
+
+    local tId = tonumber(data.targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local lic = Identifiers.GetLicense(tId)
+    if not lic then return { success = false, error = "NO_LICENSE" } end
+
+    local role = data.role or 'admin'
+    local isAdd = data.action == 'add'
+
+    if isAdd then
+        ExecuteCommand(('add_principal identifier.license:%s qbx.%s'):format(lic, role))
+        ExecuteCommand(('add_principal identifier.license:%s souh4il_dev.%s'):format(lic, role))
+    else
+        ExecuteCommand(('remove_principal identifier.license:%s qbx.%s'):format(lic, role))
+        ExecuteCommand(('remove_principal identifier.license:%s souh4il_dev.%s'):format(lic, role))
+    end
+
+    Logger.Write(isAdd and "GRANT_PERMISSION" or "REVOKE_PERMISSION", source, tId, { license = lic, role = role }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Warn Player
+lib.callback.register('souh4il_dev:server:warnPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    local msg = data.reason or "You have received an official staff warning."
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    TriggerClientEvent('souh4il_dev:client:receiveWarn', tId, msg)
+    exports.qbx_core:Notify(tId, "⚠️ OFFICIAL WARNING: " .. msg, "error", 10000)
+    Logger.Write("WARN_PLAYER", source, tId, { reason = msg }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Force Logout Player
+lib.callback.register('souh4il_dev:server:forceLogout', function(source, targetId)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    DropPlayer(tostring(tId), "Forced logout by Chicago RP Administration.")
+    Logger.Write("FORCE_LOGOUT", source, tId, {}, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Message Player
+lib.callback.register('souh4il_dev:server:messagePlayer', function(source, data)
+    local tId = tonumber(data.targetId)
+    local msg = data.message or ""
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    exports.qbx_core:Notify(tId, "[STAFF MESSAGE]: " .. msg, "inform", 10000)
+    TriggerClientEvent('chat:addMessage', tId, {
+        color = {255, 50, 50},
+        multiline = true,
+        args = {"[ADMIN PM]", msg}
+    })
+    Logger.Write("MESSAGE_PLAYER", source, tId, { message = msg }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Troll Action on Target Player
+lib.callback.register('souh4il_dev:server:trollPlayer', function(source, data)
+    if not Permissions.IsOwner(source) and not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(data.targetId)
+    local trollType = data.type
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    TriggerClientEvent('souh4il_dev:client:receiveTroll', tId, trollType)
+    Logger.Write("TROLL_ACTION", source, tId, { type = trollType }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Open Target Inventory / Storage
+lib.callback.register('souh4il_dev:server:openInventory', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local invType = data.type
+    local target = data.target
+
+    if invType == 'player' then
+        exports.ox_inventory:forceOpenInventory(source, 'player', tonumber(target))
+    elseif invType == 'trunk' then
+        exports.ox_inventory:forceOpenInventory(source, 'trunk', 'trunk' .. tostring(target))
+    elseif invType == 'glovebox' then
+        exports.ox_inventory:forceOpenInventory(source, 'glovebox', 'glove' .. tostring(target))
+    elseif invType == 'stash' then
+        exports.ox_inventory:forceOpenInventory(source, 'stash', tostring(target))
+    end
+
+    return { success = true }
+end)
+
+---Callback: Create Custom Job or Gang Stash
+lib.callback.register('souh4il_dev:server:createStash', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local stashId = data.stashId or ("stash_" .. os.time())
+    local label = data.label or "Custom Stash"
+    local slots = tonumber(data.slots) or 50
+    local maxWeight = tonumber(data.weight) or 1000000
+
+    exports.ox_inventory:RegisterStash(stashId, label, slots, maxWeight)
+    exports.ox_inventory:forceOpenInventory(source, 'stash', stashId)
+    Logger.Write("CREATE_STASH", source, nil, { stashId = stashId, label = label, slots = slots, weight = maxWeight }, "SUCCESS")
+    return { success = true, stashId = stashId }
+end)
+
+---Callback: Get Player Detailed Dossier (Player Info)
+lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, targetId)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local tId = tonumber(targetId)
+    if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local player = exports.qbx_core:GetPlayer(tId)
+    local pData = player and player.PlayerData or {}
+
+    local cash = (pData.money and pData.money.cash) or 0
+    local bank = (pData.money and pData.money.bank) or 0
+    local job = (pData.job and pData.job.label) or "Civilian"
+    local jobGrade = (pData.job and pData.job.grade and pData.job.grade.name) or "0"
+    local gang = (pData.gang and pData.gang.label) or "None"
+    local gangGrade = (pData.gang and pData.gang.grade and pData.gang.grade.name) or "0"
+    local phone = (pData.charinfo and pData.charinfo.phone) or "N/A"
+    local citizenid = pData.citizenid or "N/A"
+    local license = Identifiers.GetLicense(tId) or "UNKNOWN"
+    local discord = Identifiers.GetDiscord(tId) or "NONE"
+    local ping = GetPlayerPing(tostring(tId)) or 0
+    local endpoint = GetPlayerEndpoint(tostring(tId)) or "127.0.0.1"
+
+    return {
+        success = true,
+        details = {
+            id = tId,
+            name = GetPlayerName(tostring(tId)) or "Unknown",
+            citizenid = citizenid,
+            cash = cash,
+            bank = bank,
+            job = job,
+            jobGrade = jobGrade,
+            gang = gang,
+            gangGrade = gangGrade,
+            phone = phone,
+            license = license,
+            discord = discord,
+            ping = ping,
+            ip = endpoint,
+        }
+    }
+end)
+
+---Callback: Wipe Player (Cash, Inventory, or Full)
+lib.callback.register('souh4il_dev:server:wipePlayer', function(source, data)
+    if not Permissions.IsOwner(source) then
+        return { success = false, error = "OWNER_ONLY" }
+    end
+
+    local tId = tonumber(data.targetId)
+    local wipeType = data.type
+    local player = exports.qbx_core:GetPlayer(tId)
+    if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    if wipeType == 'cash' then
+        player.Functions.SetMoney('cash', 0)
+        player.Functions.SetMoney('bank', 0)
+    elseif wipeType == 'inventory' then
+        exports.ox_inventory:ClearInventory(tId)
+    elseif wipeType == 'full' then
+        player.Functions.SetMoney('cash', 0)
+        player.Functions.SetMoney('bank', 0)
+        exports.ox_inventory:ClearInventory(tId)
+        player.Functions.SetJob('unemployed', 0)
+        player.Functions.SetGang('none', 0)
+    end
+
+    Logger.Write("WIPE_PLAYER", source, tId, { type = wipeType }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Ban Offline Player
+lib.callback.register('souh4il_dev:server:banOfflinePlayer', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local identifier = data.identifier
+    local reason = data.reason or "Banned by administrator (Offline)"
+    local hours = tonumber(data.duration) or 0
+    local expireTime = hours > 0 and (os.time() + hours * 3600) or 2147483647
+    local banner = GetPlayerName(tostring(source)) or "Staff"
+
+    MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        "Offline Player",
+        identifier,
+        "NONE",
+        "NONE",
+        reason,
+        expireTime,
+        banner
+    })
+
+    Logger.Write("BAN_OFFLINE", source, nil, { identifier = identifier, reason = reason, hours = hours }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Unban Player
+lib.callback.register('souh4il_dev:server:unbanPlayer', function(source, data)
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local queryVal = data.identifier or data.id
+    MySQL.query.await('DELETE FROM bans WHERE id = ? OR license = ?', { queryVal, queryVal })
+    Logger.Write("UNBAN_PLAYER", source, nil, { identifier = queryVal }, "SUCCESS")
+    return { success = true }
+end)
+
+---Callback: Give Vehicle Keys To Player
+lib.callback.register('souh4il_dev:server:giveKeysToPlayer', function(source, data)
+    local tId = tonumber(data.targetId) or source
+    local plate = tostring(data.plate)
+    TriggerClientEvent('qb-vehiclekeys:client:AddKeys', tId, plate)
+    return { success = true }
+end)
+
+---Callback: Toggle Job Duty
+lib.callback.register('souh4il_dev:server:toggleDuty', function(source)
+    local player = exports.qbx_core:GetPlayer(source)
+    if not player then return { success = false } end
+    local currentDuty = player.PlayerData.job.onduty
+    player.Functions.SetJobDuty(not currentDuty)
+    exports.qbx_core:Notify(source, ("Duty state: %s"):format(not currentDuty and "ON DUTY" or "OFF DUTY"), "inform")
+    return { success = true, duty = not currentDuty }
+end)
+
+---Callback: Remove Stress
+lib.callback.register('souh4il_dev:server:removeStress', function(source, targetId)
+    local tId = tonumber(targetId) or source
+    local player = exports.qbx_core:GetPlayer(tId)
+    if player then
+        player.Functions.SetMetaData('stress', 0)
+        TriggerClientEvent('hud:client:UpdateStress', tId, 0)
+    end
+    return { success = true }
 end)
 
 -- Clean shutdown handler
