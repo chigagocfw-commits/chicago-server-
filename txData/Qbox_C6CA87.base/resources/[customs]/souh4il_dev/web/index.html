@@ -11,10 +11,8 @@
 </head>
 <body>
     <div id="app" class="panel-container" style="display: none;">
-        <!-- Backdrop glow -->
         <div class="ambient-glow"></div>
 
-        <!-- Main Window -->
         <div class="panel-window">
             <!-- Sidebar -->
             <aside class="sidebar">
@@ -50,26 +48,29 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         <span>Dashboard</span>
                     </button>
-                    <button class="nav-item" data-tab="self">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        <span>Self Control</span>
+                    <button class="nav-item" data-tab="god">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        <span>God Powers</span>
                     </button>
                     <button class="nav-item" data-tab="players">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        <span>Player Management</span>
+                        <span>Players</span>
+                    </button>
+                    <button class="nav-item" data-tab="teleport">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                        <span>Teleport</span>
+                    </button>
+                    <button class="nav-item" data-tab="items">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span>Items & Weapons</span>
                     </button>
                     <button class="nav-item" data-tab="vehicles">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H7.5a1 1 0 0 0-.8.4L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3m14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>
-                        <span>Vehicle Control</span>
+                        <span>Vehicles</span>
                     </button>
                     <button class="nav-item" data-tab="world">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                        <span>World Control</span>
-                    </button>
-                    <button class="nav-item owner-only" data-tab="arsenal" id="nav-arsenal">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18h12"></path><path d="M6 14h12"></path><path d="M10 10l2-6 2 6"></path><path d="M3 21h18"></path></svg>
-                        <span>Owner Arsenal</span>
-                        <span class="nav-lock">★</span>
+                        <span>World & Weather</span>
                     </button>
                     <button class="nav-item" data-tab="logs">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -96,11 +97,7 @@
                     <div class="topbar-actions">
                         <div class="telemetry-pill">
                             <span class="telemetry-label">SECURITY:</span>
-                            <span class="telemetry-value active">DUAL-KEY ACTIVE</span>
-                        </div>
-                        <div class="telemetry-pill">
-                            <span class="telemetry-label">SERVER:</span>
-                            <span class="telemetry-value">ONLINE</span>
+                            <span class="telemetry-value active" id="telemetry-auth">DUAL-KEY ACTIVE</span>
                         </div>
                         <button class="close-btn" id="close-btn" title="Close Panel (ESC)">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -117,44 +114,20 @@
                     <section class="tab-pane active" id="pane-dashboard">
                         <div class="metrics-grid">
                             <div class="metric-card">
-                                <div class="metric-header">
-                                    <span>SYSTEM STATUS</span>
-                                    <div class="metric-icon cyan">●</div>
-                                </div>
-                                <div class="metric-body">
-                                    <h3>OPERATIONAL</h3>
-                                    <p>Security Core Active</p>
-                                </div>
+                                <div class="metric-header"><span>SYSTEM STATUS</span><div class="metric-icon cyan">●</div></div>
+                                <div class="metric-body"><h3>OPERATIONAL</h3><p>Security Core Active</p></div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-header">
-                                    <span>VERIFIED ROLE</span>
-                                    <div class="metric-icon blue">★</div>
-                                </div>
-                                <div class="metric-body">
-                                    <h3 id="dash-role">OWNER</h3>
-                                    <p id="dash-auth">Dual-Key Confirmed</p>
-                                </div>
+                                <div class="metric-header"><span>VERIFIED ROLE</span><div class="metric-icon blue">★</div></div>
+                                <div class="metric-body"><h3 id="dash-role">OWNER</h3><p id="dash-auth">Dual-Key Confirmed</p></div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-header">
-                                    <span>RATE LIMITER</span>
-                                    <div class="metric-icon green">⚡</div>
-                                </div>
-                                <div class="metric-body">
-                                    <h3>FAIL-CLOSED</h3>
-                                    <p>Monotonic (GetGameTimer)</p>
-                                </div>
+                                <div class="metric-header"><span>ONLINE PLAYERS</span><div class="metric-icon green">👥</div></div>
+                                <div class="metric-body"><h3 id="dash-player-count">--</h3><p>Active on server</p></div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-header">
-                                    <span>AUDIT ENGINE</span>
-                                    <div class="metric-icon purple">🔒</div>
-                                </div>
-                                <div class="metric-body">
-                                    <h3>APPEND-ONLY</h3>
-                                    <p>SHA-256 Hash Chained</p>
-                                </div>
+                                <div class="metric-header"><span>AUDIT ENGINE</span><div class="metric-icon purple">🔒</div></div>
+                                <div class="metric-body"><h3>APPEND-ONLY</h3><p>SHA-256 Hash Chained</p></div>
                             </div>
                         </div>
 
@@ -162,7 +135,7 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <h4>QUICK ACTIONS</h4>
-                                <span>Immediate Personal Controls</span>
+                                <span>Instant Master Controls</span>
                             </div>
                             <div class="quick-actions-grid">
                                 <button class="action-btn" id="qa-revive">
@@ -183,54 +156,36 @@
                                 </button>
                                 <button class="action-btn" id="qa-tpm">
                                     <span class="btn-icon">📍</span>
-                                    <span class="btn-text">TP to Marker</span>
+                                    <span class="btn-text">TP to Waypoint</span>
                                 </button>
                                 <button class="action-btn danger" id="qa-dv">
                                     <span class="btn-icon">🗑</span>
                                     <span class="btn-text">Delete Vehicle</span>
                                 </button>
-                            </div>
-                        </div>
-
-                        <!-- System Status Overview -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>SECURITY CORE HEALTH</h4>
-                                <span>Real-time Environment State</span>
-                            </div>
-                            <div class="status-table">
-                                <div class="status-row">
-                                    <span class="row-label">Platform Framework</span>
-                                    <span class="row-val">Qbox (qbx_core v1.24.0)</span>
-                                </div>
-                                <div class="status-row">
-                                    <span class="row-label">Primary Key Binding</span>
-                                    <span class="row-val highlight">F10 (Default) or /sdev_menu</span>
-                                </div>
-                                <div class="status-row">
-                                    <span class="row-label">Canonical Identity Protection</span>
-                                    <span class="row-val success">ENFORCED (Masked in Frontend)</span>
-                                </div>
-                                <div class="status-row">
-                                    <span class="row-label">Legacy snipe-menu Status</span>
-                                    <span class="row-val">Active Coexistence (Zero Interference)</span>
-                                </div>
+                                <button class="action-btn" id="qa-cash">
+                                    <span class="btn-icon">💵</span>
+                                    <span class="btn-text">Give $50,000 Cash</span>
+                                </button>
+                                <button class="action-btn" id="qa-armor">
+                                    <span class="btn-icon">🛡</span>
+                                    <span class="btn-text">Max Armor</span>
+                                </button>
                             </div>
                         </div>
                     </section>
 
-                    <!-- Tab: Self Control -->
-                    <section class="tab-pane" id="pane-self">
+                    <!-- Tab: God Powers -->
+                    <section class="tab-pane" id="pane-god">
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>CHARACTER CONTROL</h4>
-                                <span>Personal State Adjustments</span>
+                                <h4>DIVINE CAPABILITIES (GOD MODE)</h4>
+                                <span>Absolute Character Immunity & Movement</span>
                             </div>
                             <div class="toggles-grid">
                                 <div class="toggle-card">
                                     <div class="toggle-info">
-                                        <span class="toggle-title">God Mode</span>
-                                        <span class="toggle-desc">Invulnerability & Damage Protection</span>
+                                        <span class="toggle-title">God Mode (Invincibility)</span>
+                                        <span class="toggle-desc">Zero damage, infinite health & armor, no ragdoll</span>
                                     </div>
                                     <label class="switch">
                                         <input type="checkbox" id="toggle-godmode">
@@ -239,8 +194,18 @@
                                 </div>
                                 <div class="toggle-card">
                                     <div class="toggle-info">
-                                        <span class="toggle-title">Invisibility</span>
-                                        <span class="toggle-desc">Hide ped from network players</span>
+                                        <span class="toggle-title">NoClip (Free Flight)</span>
+                                        <span class="toggle-desc">Fly through walls with W/A/S/D + Space/Ctrl</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-noclip">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Ghost Invisibility</span>
+                                        <span class="toggle-desc">Completely hidden from all network players</span>
                                     </div>
                                     <label class="switch">
                                         <input type="checkbox" id="toggle-invis">
@@ -249,11 +214,21 @@
                                 </div>
                                 <div class="toggle-card">
                                     <div class="toggle-info">
-                                        <span class="toggle-title">NoClip Engine</span>
-                                        <span class="toggle-desc">Freecam translation & collision bypass</span>
+                                        <span class="toggle-title">Super Sprint & Unlimited Stamina</span>
+                                        <span class="toggle-desc">Run and swim at maximum velocity forever</span>
                                     </div>
                                     <label class="switch">
-                                        <input type="checkbox" id="toggle-noclip">
+                                        <input type="checkbox" id="toggle-sprint">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-card">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Super Jump</span>
+                                        <span class="toggle-desc">Leap over buildings and high barriers</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-jump">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
@@ -265,8 +240,11 @@
                     <section class="tab-pane" id="pane-players">
                         <div class="section-card">
                             <div class="section-header">
-                                <h4>PLAYER ROSTER</h4>
-                                <input type="text" id="player-search" class="search-input" placeholder="Search by ID, Name or CitizenID...">
+                                <h4>ONLINE PLAYERS ROSTER</h4>
+                                <div class="header-tools">
+                                    <input type="text" id="player-search" class="search-input" placeholder="Search by ID, Name, Job...">
+                                    <button class="secondary-btn" id="btn-refresh-players">Refresh</button>
+                                </div>
                             </div>
                             <div class="players-table-wrapper">
                                 <table class="data-table">
@@ -274,17 +252,87 @@
                                         <tr>
                                             <th>ID</th>
                                             <th>Name</th>
-                                            <th>Ping</th>
+                                            <th>Character</th>
                                             <th>Job</th>
+                                            <th>Ping</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="player-table-body">
-                                        <tr>
-                                            <td colspan="5" class="table-empty">Loading active players...</td>
-                                        </tr>
+                                        <tr><td colspan="6" class="table-empty">Loading active players...</td></tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Teleportation -->
+                    <section class="tab-pane" id="pane-teleport">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>POPULAR DESTINATIONS</h4>
+                                <span>Instant Waypoint Warp</span>
+                            </div>
+                            <div class="teleport-grid">
+                                <button class="teleport-btn" data-loc="legion"><span>Legion Square</span><small>City Center</small></button>
+                                <button class="teleport-btn" data-loc="pillbox"><span>Pillbox Hospital</span><small>Medical HQ</small></button>
+                                <button class="teleport-btn" data-loc="mrpd"><span>Mission Row PD</span><small>Police Station</small></button>
+                                <button class="teleport-btn" data-loc="sandy"><span>Sandy Shores Airfield</span><small>Desert Runway</small></button>
+                                <button class="teleport-btn" data-loc="paleto"><span>Paleto Bay</span><small>North Coast</small></button>
+                                <button class="teleport-btn" data-loc="mazebank"><span>Maze Bank Tower</span><small>Rooftop Helipad</small></button>
+                                <button class="teleport-btn" data-loc="casino"><span>Diamond Casino</span><small>Luxury Resort</small></button>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM COORDINATES</h4>
+                                <span>Teleport to exact Vector3</span>
+                            </div>
+                            <div class="form-row coords-row">
+                                <input type="number" step="0.01" id="tp-x" class="search-input" placeholder="X Coord">
+                                <input type="number" step="0.01" id="tp-y" class="search-input" placeholder="Y Coord">
+                                <input type="number" step="0.01" id="tp-z" class="search-input" placeholder="Z Coord">
+                                <button class="primary-btn" id="btn-tp-coords">Teleport to Coords</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tab: Items & Weapons -->
+                    <section class="tab-pane" id="pane-items">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>INSTANT EQUIPMENT PACKS</h4>
+                                <span>Added directly to ox_inventory</span>
+                            </div>
+                            <div class="loadout-grid">
+                                <div class="loadout-card">
+                                    <h5>TACTICAL ARSENAL</h5>
+                                    <p>Carbine Rifle, Combat Pistol, Heavy SMG + Ammo</p>
+                                    <button class="primary-btn item-pack-btn" data-pack="tactical_weapons">Claim Weapons</button>
+                                </div>
+                                <div class="loadout-card">
+                                    <h5>SURVIVAL PACK</h5>
+                                    <p>5x Burger, 5x Water, 5x Medikit, 5x Bandage</p>
+                                    <button class="primary-btn item-pack-btn" data-pack="survival_food">Claim Food & Medical</button>
+                                </div>
+                                <div class="loadout-card">
+                                    <h5>SPECIAL OPS</h5>
+                                    <p>Special Carbine, AP Pistol, Heavy Sniper + Ammo</p>
+                                    <button class="primary-btn item-pack-btn" data-pack="special_ops">Claim Special Ops</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>CUSTOM ITEM SPAWNER</h4>
+                                <span>Spawn any item from ox_inventory</span>
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="custom-item-name" class="search-input" placeholder="Item name (e.g. water, testburger, weapon_pistol)...">
+                                <input type="number" id="custom-item-count" class="search-input count-input" value="1" min="1" max="1000">
+                                <button class="primary-btn" id="btn-spawn-item">Give Item</button>
                             </div>
                         </div>
                     </section>
@@ -294,11 +342,33 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <h4>VEHICLE SPAWNER</h4>
-                                <span>Server-authoritative spawn with key injection</span>
+                                <span>Spawn vehicle directly into driver seat with keys & max tune</span>
                             </div>
                             <div class="form-row">
-                                <input type="text" id="veh-model-input" class="search-input" placeholder="Enter vehicle spawn model (e.g. sultan, a19police)...">
+                                <input type="text" id="veh-model-input" class="search-input" placeholder="Enter vehicle model (e.g. nero, sultan, a19police)...">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="veh-max-tune" checked> Max Tune
+                                </label>
                                 <button class="primary-btn" id="btn-spawn-veh">Spawn Vehicle</button>
+                            </div>
+                            <div class="quick-vehicles-row">
+                                <span>Quick Spawns:</span>
+                                <button class="quick-veh-btn" data-model="nero">Nero</button>
+                                <button class="quick-veh-btn" data-model="sultan">Sultan</button>
+                                <button class="quick-veh-btn" data-model="zentorno">Zentorno</button>
+                                <button class="quick-veh-btn" data-model="a19police">A19 Police</button>
+                                <button class="quick-veh-btn" data-model="bf400">BF400 (Bike)</button>
+                            </div>
+                        </div>
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>VEHICLE MODIFICATIONS</h4>
+                                <span>Modify current occupied vehicle</span>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="action-btn" id="veh-action-tune"><span class="btn-icon">⚡</span><span class="btn-text">Apply Max Tune</span></button>
+                                <button class="action-btn" id="veh-action-repair"><span class="btn-icon">🔧</span><span class="btn-text">Repair & Clean</span></button>
+                                <button class="action-btn danger" id="veh-action-delete"><span class="btn-icon">🗑</span><span class="btn-text">Delete Vehicle</span></button>
                             </div>
                         </div>
                     </section>
@@ -308,7 +378,7 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <h4>WEATHER & ENVIRONMENT</h4>
-                                <span>Renewed-Weathersync Synchronizer</span>
+                                <span>Server-Wide Weather Synchronizer</span>
                             </div>
                             <div class="weather-grid">
                                 <button class="weather-btn" data-weather="EXTRASUNNY">Extra Sunny</button>
@@ -317,35 +387,6 @@
                                 <button class="weather-btn" data-weather="RAIN">Rain</button>
                                 <button class="weather-btn" data-weather="THUNDER">Thunder</button>
                                 <button class="weather-btn" data-weather="FOGGY">Foggy</button>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Tab: Owner Arsenal -->
-                    <section class="tab-pane" id="pane-arsenal">
-                        <div class="section-card restricted">
-                            <div class="section-header">
-                                <div class="restricted-badge">★ OWNER ONLY</div>
-                                <h4>OWNER ARSENAL</h4>
-                                <span>Curated Tactical Loadouts & Custom Equipment</span>
-                            </div>
-                            <p class="restricted-notice">Protected by Dual-Key Mandatory Gate. Access strictly verified server-side.</p>
-                            <div class="arsenal-grid">
-                                <div class="loadout-card">
-                                    <h5>SWAT TACTICAL</h5>
-                                    <p>Carbine Rifle + Combat Pistol + Kevlar</p>
-                                    <button class="primary-btn loadout-btn" data-loadout="swat_tactical">Request Loadout</button>
-                                </div>
-                                <div class="loadout-card">
-                                    <h5>COVERT INFILTRATOR</h5>
-                                    <p>Silenced SMG + Heavy Pistol + Flashbang</p>
-                                    <button class="primary-btn loadout-btn" data-loadout="covert">Request Loadout</button>
-                                </div>
-                                <div class="loadout-card">
-                                    <h5>OWNER SPECIAL</h5>
-                                    <p>Special Carbine + Heavy Revolver + Full Gear</p>
-                                    <button class="primary-btn loadout-btn" data-loadout="owner_special">Request Loadout</button>
-                                </div>
                             </div>
                         </div>
                     </section>
@@ -365,9 +406,43 @@
                 </div>
             </main>
         </div>
+
+        <!-- Ban Player Modal -->
+        <div id="ban-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3 id="modal-title">Ban Player</h3>
+                    <button class="modal-close" id="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="ban-target-id">
+                    <div class="form-group">
+                        <label>Target Player:</label>
+                        <span id="ban-target-info" class="target-badge">ID: --</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason:</label>
+                        <input type="text" id="ban-reason" class="search-input" placeholder="Reason for ban (e.g. Cheating, RDM)...">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration:</label>
+                        <select id="ban-duration" class="search-input">
+                            <option value="0">Permanent (Forever)</option>
+                            <option value="24">1 Day (24 Hours)</option>
+                            <option value="72">3 Days (72 Hours)</option>
+                            <option value="168">1 Week (7 Days)</option>
+                            <option value="720">1 Month (30 Days)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="secondary-btn" id="btn-cancel-ban">Cancel</button>
+                    <button class="primary-btn danger-btn" id="btn-confirm-ban">Confirm Ban</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/app.js"></script>
 </body>
 </html>
-

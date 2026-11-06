@@ -200,6 +200,266 @@ RegisterNetEvent('souh4il_dev:server:setWeather', function(weatherType)
     end
 end)
 
+---Callback 5: Get Online Players
+lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_players')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local players = {}
+    local playerList = GetPlayers()
+
+    for _, srcStr in ipairs(playerList) do
+        local srcNum = tonumber(srcStr)
+        if srcNum then
+            local pName = GetPlayerName(srcStr) or ("Player #" .. srcStr)
+            local pPing = GetPlayerPing(srcStr) or 0
+            local qPlayer = exports.qbx_core:GetPlayer(srcNum)
+
+            local citizenid = "N/A"
+            local charName = pName
+            local jobLabel = "Civilian"
+
+            if qPlayer and qPlayer.PlayerData then
+                citizenid = qPlayer.PlayerData.citizenid or "N/A"
+                if qPlayer.PlayerData.charinfo then
+                    local fn = qPlayer.PlayerData.charinfo.firstname or ""
+                    local ln = qPlayer.PlayerData.charinfo.lastname or ""
+                    if #fn > 0 or #ln > 0 then
+                        charName = fn .. " " .. ln
+                    end
+                end
+                if qPlayer.PlayerData.job then
+                    jobLabel = qPlayer.PlayerData.job.label or qPlayer.PlayerData.job.name or "Civilian"
+                end
+            end
+
+            table.insert(players, {
+                id = srcNum,
+                name = pName,
+                charName = charName,
+                citizenid = citizenid,
+                ping = pPing,
+                job = jobLabel,
+                role = Permissions.GetStaffRole(srcNum)
+            })
+        end
+    end
+
+    return { success = true, players = players }
+end)
+
+---Callback 6: Ban Player (Strictly Authoritative via SQL bans table)
+lib.callback.register('souh4il_dev:server:banPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'ban_player')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local targetId = tonumber(data.targetId)
+    local banReason = data.reason or "Banned by administrator"
+    local durationHours = tonumber(data.duration) or 0 -- 0 = permanent
+
+    if not targetId or not DoesPlayerExist(tostring(targetId)) then
+        return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    if not Permissions.CanTargetPlayer(source, targetId) then
+        return { success = false, error = "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
+    local targetLic = Identifiers.GetLicense(targetId) or "UNKNOWN"
+    local targetDiscord = Identifiers.GetDiscord(targetId) or "NONE"
+    local targetIp = GetPlayerEndpoint(tostring(targetId)) or "NONE"
+    local targetName = GetPlayerName(tostring(targetId)) or "Unknown"
+    local bannerName = GetPlayerName(tostring(source)) or "Staff"
+
+    local expireTime = 2147483647
+    if durationHours > 0 then
+        expireTime = os.time() + (durationHours * 3600)
+    end
+
+    MySQL.insert.await('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        targetName,
+        targetLic,
+        targetDiscord,
+        targetIp,
+        banReason,
+        expireTime,
+        bannerName
+    })
+
+    Logger.Write("BAN_PLAYER", source, targetId, {
+        targetName = targetName,
+        targetLicense = targetLic,
+        reason = banReason,
+        durationHours = durationHours,
+        expire = expireTime
+    }, "SUCCESS")
+
+    local banMsg = ("You have been banned by %s.\nReason: %s\nExpires: %s"):format(
+        bannerName,
+        banReason,
+        durationHours == 0 and "PERMANENT" or os.date('%Y-%m-%d %H:%M:%S', expireTime)
+    )
+    DropPlayer(tostring(targetId), banMsg)
+
+    return { success = true }
+end)
+
+---Callback 7: Kick Player
+lib.callback.register('souh4il_dev:server:kickPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'kick_player')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.MODERATOR) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local targetId = tonumber(data.targetId)
+    local kickReason = data.reason or "Kicked by staff"
+
+    if not targetId or not DoesPlayerExist(tostring(targetId)) then
+        return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    if not Permissions.CanTargetPlayer(source, targetId) then
+        return { success = false, error = "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
+    local targetName = GetPlayerName(tostring(targetId)) or "Unknown"
+    local kickerName = GetPlayerName(tostring(source)) or "Staff"
+
+    Logger.Write("KICK_PLAYER", source, targetId, { targetName = targetName, reason = kickReason }, "SUCCESS")
+    DropPlayer(tostring(targetId), ("Kicked by %s. Reason: %s"):format(kickerName, kickReason))
+
+    return { success = true }
+end)
+
+---Callback 8: Teleport Action (Goto / Bring)
+lib.callback.register('souh4il_dev:server:teleportAction', function(source, action, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local target = tonumber(targetId)
+    if not target or not DoesPlayerExist(tostring(target)) then
+        return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    local srcPed = GetPlayerPed(source)
+    local tgtPed = GetPlayerPed(target)
+
+    if action == 'goto' then
+        local coords = GetEntityCoords(tgtPed)
+        SetEntityCoords(srcPed, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
+        Logger.Write("TELEPORT_GOTO", source, target, { coords = coords }, "SUCCESS")
+        return { success = true, action = 'goto' }
+    elseif action == 'bring' then
+        local coords = GetEntityCoords(srcPed)
+        SetEntityCoords(tgtPed, coords.x, coords.y, coords.z + 1.0, false, false, false, false)
+        Logger.Write("TELEPORT_BRING", source, target, { coords = coords }, "SUCCESS")
+        return { success = true, action = 'bring' }
+    end
+
+    return { success = false, error = "UNKNOWN_TELEPORT_ACTION" }
+end)
+
+---Callback 9: Freeze Player
+lib.callback.register('souh4il_dev:server:freezePlayer', function(source, targetId, state)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.MODERATOR) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local target = tonumber(targetId)
+    if not target or not DoesPlayerExist(tostring(target)) then
+        return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    FreezeEntityPosition(GetPlayerPed(target), state == true)
+    Logger.Write("FREEZE_PLAYER", source, target, { state = state }, "SUCCESS")
+    return { success = true, frozen = state }
+end)
+
+---Callback 10: Give Item (Integrated with ox_inventory)
+lib.callback.register('souh4il_dev:server:giveItem', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'give_item')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.DEVELOPER) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local itemName = tostring(data.item or ""):lower():gsub("%s+", "")
+    local count = math.max(1, math.min(1000, tonumber(data.count) or 1))
+    local targetId = tonumber(data.targetId) or source
+
+    if #itemName == 0 then
+        return { success = false, error = "INVALID_ITEM_NAME" }
+    end
+
+    local success, err = exports.ox_inventory:AddItem(targetId, itemName, count)
+    if success then
+        Logger.Write("GIVE_ITEM", source, targetId, { item = itemName, count = count }, "SUCCESS")
+        return { success = true }
+    else
+        return { success = false, error = tostring(err or "Failed to add item to inventory") }
+    end
+end)
+
+---Callback 11: Give Money
+lib.callback.register('souh4il_dev:server:giveMoney', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'give_money')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.DEVELOPER) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local moneyType = data.moneyType == 'bank' and 'bank' or 'cash'
+    local amount = math.max(1, tonumber(data.amount) or 10000)
+    local targetId = tonumber(data.targetId) or source
+
+    local player = exports.qbx_core:GetPlayer(targetId)
+    if player then
+        player.Functions.AddMoney(moneyType, amount, "souh4il_dev_admin")
+        Logger.Write("GIVE_MONEY", source, targetId, { type = moneyType, amount = amount }, "SUCCESS")
+        return { success = true }
+    end
+    return { success = false, error = "PLAYER_NOT_FOUND" }
+end)
+
+---Callback 12: Give Vehicle Keys (qbx_vehiclekeys Integration)
+lib.callback.register('souh4il_dev:server:giveVehicleKeys', function(source, netId)
+    local allowed, reason = Security.CheckRateLimit(source, 'vehicle_action')
+    if not allowed then return { success = false, error = reason } end
+
+    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
+    local entity = NetworkGetEntityFromNetworkId(netId)
+    if DoesEntityExist(entity) then
+        pcall(function()
+            exports.qbx_vehiclekeys:GiveKeys(source, entity)
+        end)
+        Logger.Write("SPAWN_VEHICLE", source, nil, { netId = netId }, "SUCCESS")
+        return { success = true }
+    end
+    return { success = false, error = "VEHICLE_ENTITY_NOT_FOUND" }
+end)
+
 -- Clean shutdown handler
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= cache.resource then return end
