@@ -89,7 +89,5 @@ end
 
 RegisterCommand(config.command, toggleMenu, false)
 RegisterCommand("jobs", toggleMenu, false)
-RegisterCommand("multijob_g", toggleMenu, false)
 
-RegisterKeyMapping(config.command, strings.keybindLabel or "Open multijob menu", "keyboard", config.keybind)
-RegisterKeyMapping("multijob_g", "Open multijob menu (G)", "keyboard", "G")
+RegisterKeyMapping(config.command, strings.keybindLabel or "Open multijob menu", "keyboard", "J")

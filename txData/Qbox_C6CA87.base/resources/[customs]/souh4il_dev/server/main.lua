@@ -842,7 +842,6 @@ lib.addCommand('sdev_services', {
     ExecuteCommand('restart bablo-banking')
     ExecuteCommand('restart qbx_properties')
     ExecuteCommand('restart qbx_police')
-    ExecuteCommand('restart ox_inventory')
     ExecuteCommand('ensure cu_multijob')
     ExecuteCommand('restart cu_multijob')
     ExecuteCommand('restart souh4il_dev')

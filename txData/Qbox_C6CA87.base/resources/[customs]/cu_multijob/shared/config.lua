@@ -12,7 +12,7 @@ return {
         gradeLabel = "Unemployed",
     },
     command = "multijob",
-    keybind = "G",
+    keybind = "J",
     locale = "en",
     locales = {
         en = {

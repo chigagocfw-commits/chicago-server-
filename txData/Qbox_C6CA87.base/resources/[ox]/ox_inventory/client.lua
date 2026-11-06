@@ -1468,7 +1468,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 		})
 	end
 
-	while not client.uiLoaded do Wait(50) end
+	local uiTimeout = 0
+	while not client.uiLoaded and uiTimeout < 40 do Wait(50); uiTimeout = uiTimeout + 1 end
 
 	SendNUIMessage({
 		action = 'init',
