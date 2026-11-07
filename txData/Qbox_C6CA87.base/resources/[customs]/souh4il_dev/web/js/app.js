@@ -271,13 +271,17 @@ window.addEventListener('message', (event) => {
             if (data.status) {
                 updateSecurityStatus(data.status);
             }
-            postNUI('fetchPlayers');
-            postNUI('fetchLogs');
-            postNUI('getNpcConfig');
-            postNUI('fetchAllItems');
-            postNUI('fetchAllVehicles');
-            postNUI('fetchAllCharacters');
-            postNUI('fetchAllJobs');
+            const s = data.status || {};
+            const p = s.permissions || {};
+            const isO = s.isOwner === true;
+
+            if (isO || p.view_players || p.players) postNUI('fetchPlayers');
+            if (isO || p.logs) postNUI('fetchLogs');
+            if (isO || p.world_control || p.world) postNUI('getNpcConfig');
+            if (isO || p.spawn_items || p.items) postNUI('fetchAllItems');
+            if (isO || p.spawn_vehicles || p.vehicles) postNUI('fetchAllVehicles');
+            if (isO || p.manage_skins || p.characters) postNUI('fetchAllCharacters');
+            if (isO || p.manage_jobs || p.jobs) postNUI('fetchAllJobs');
             renderVisualItems();
             renderVisualVehicles();
             renderVisualCharacters();
@@ -526,9 +530,11 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         currentTab = tab;
 
         if (tab === 'dashboard') {
-            postNUI('fetchPlayers');
-            postNUI('fetchLogs');
-            postNUI('getNpcConfig');
+            const isO = window._isOwner === true;
+            const p = window._activePerms || {};
+            if (isO || p.view_players || p.players) postNUI('fetchPlayers');
+            if (isO || p.logs) postNUI('fetchLogs');
+            if (isO || p.world_control || p.world) postNUI('getNpcConfig');
         } else if (tab === 'logs') {
             postNUI('fetchLogs');
         } else if (tab === 'players' || tab === 'teleport') {
@@ -922,15 +928,12 @@ document.getElementById('btn-spawn-item')?.addEventListener('click', () => {
 window.handleVehImgError = function(img, model) {
     const stage = parseInt(img.getAttribute('data-stage') || '0', 10);
     if (stage === 0) {
-        // Stage 1: Try local oxlyn-garage NUI
+        // Stage 1: Try local oxlyn-garage NUI resource (no external request)
         img.setAttribute('data-stage', '1');
         img.src = `https://cfx-nui-oxlyn-garage/images/vehicles/${model}.webp`;
-    } else if (stage === 1) {
-        // Stage 2: Try docs.fivem.net CDN
-        img.setAttribute('data-stage', '2');
-        img.src = `https://docs.fivem.net/vehicles/${model}.webp`;
     } else {
-        // Stage 3: Hide broken img, display clean placeholder box
+        // Stage 2: No more fallback — hide img, show placeholder box
+        // (docs.fivem.net removed: external CDN would leak staff IPs)
         img.onerror = null;
         img.style.display = 'none';
         const parent = img.parentElement;
@@ -942,18 +945,13 @@ window.handleVehImgError = function(img, model) {
 };
 
 window.handlePedImgError = function(img, model) {
-    const stage = parseInt(img.getAttribute('data-stage') || '0', 10);
-    if (stage === 0) {
-        img.setAttribute('data-stage', '1');
-        img.src = `https://docs.fivem.net/peds/${model}.webp`;
-    } else {
-        img.onerror = null;
-        img.style.display = 'none';
-        const parent = img.parentElement;
-        if (parent) {
-            const placeholder = parent.querySelector('.ped-placeholder-box');
-            if (placeholder) placeholder.style.display = 'flex';
-        }
+    // No external CDN fallback — hide img immediately to avoid IP leaks
+    img.onerror = null;
+    img.style.display = 'none';
+    const parent = img.parentElement;
+    if (parent) {
+        const placeholder = parent.querySelector('.ped-placeholder-box');
+        if (placeholder) placeholder.style.display = 'flex';
     }
 };
 

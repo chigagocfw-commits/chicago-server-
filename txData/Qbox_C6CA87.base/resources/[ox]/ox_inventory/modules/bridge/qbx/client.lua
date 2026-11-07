@@ -144,8 +144,9 @@ function client.setPlayerStatus(values)
             value = value * 0.0001
         end
 
-        playerState:set(name, lib.math.clamp(playerState[name] + value, 0, 100), true)
+        playerState:set(name, lib.math.clamp((playerState[name] or 0) + value, 0, 100), true)
     end
+    TriggerEvent('hud:client:UpdateNeeds', playerState.hunger or 100, playerState.thirst or 100)
 end
 
 --             

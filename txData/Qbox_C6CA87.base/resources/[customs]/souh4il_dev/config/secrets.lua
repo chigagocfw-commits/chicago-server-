@@ -13,7 +13,9 @@ Secrets.HMACSecret = GetConvar('souh4il_hmac_secret', 'CHANGEME_GENERATE_SECURE_
 Secrets.ExternalCheckpointEndpoint = GetConvar('souh4il_checkpoint_endpoint', '')
 
 -- Discord Webhook URL for emergency audit mirroring
--- Kept empty by default until explicitly provided by server owner
+-- SECURITY: Use `set` (not `setr`) in server.cfg to prevent client exposure:
+--   set souh4il_discord_webhook "https://discord.com/api/webhooks/..."
+-- Using `setr` would expose the URL to ALL clients — never use setr for secrets.
 Secrets.DiscordWebhookURL = GetConvar('souh4il_discord_webhook', '')
 
 return Secrets

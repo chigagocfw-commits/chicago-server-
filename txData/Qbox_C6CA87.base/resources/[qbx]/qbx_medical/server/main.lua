@@ -57,9 +57,12 @@ local function resetHungerAndThirst(player)
     end
     if not player then return end
 
+    local src = player.PlayerData.source
     player.Functions.SetMetaData('hunger', 100)
     player.Functions.SetMetaData('thirst', 100)
-    TriggerClientEvent('hud:client:UpdateNeeds', player.PlayerData.source, 100, 100)
+    Player(src).state:set('hunger', 100, true)
+    Player(src).state:set('thirst', 100, true)
+    TriggerClientEvent('hud:client:UpdateNeeds', src, 100, 100)
 end
 
 exports('ResetHungerAndThirst', resetHungerAndThirst)
@@ -223,7 +226,8 @@ lib.addCommand('aheal', {
 end)
 
 lib.callback.register('qbx_medical:server:respawn', function(source)
-	if Player(source).state[DEATH_STATE_STATE_BAG] ~= sharedConfig.deathState.DEAD or respawning[source] then return false end
+	local deathState = Player(source).state[DEATH_STATE_STATE_BAG]
+	if (deathState ~= sharedConfig.deathState.DEAD and deathState ~= sharedConfig.deathState.LAST_STAND) or respawning[source] then return false end
 	local respawnToken = GetGameTimer()
 	respawning[source] = respawnToken
 	if not triggerEventHooks('respawn', {source = source}) then
@@ -231,7 +235,7 @@ lib.callback.register('qbx_medical:server:respawn', function(source)
 		return false
 	end
 	TriggerEvent('qbx_medical:server:playerRespawned', source)
-	SetTimeout(30000, function()
+	SetTimeout(5000, function()
 		if respawning[source] == respawnToken then respawning[source] = nil end
 	end)
 	return true

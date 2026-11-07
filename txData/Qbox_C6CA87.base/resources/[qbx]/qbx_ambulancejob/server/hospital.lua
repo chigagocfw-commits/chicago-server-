@@ -150,10 +150,7 @@ end)
 
 lib.callback.register('qbx_ambulancejob:server:completeTreatment', function(source)
     local readyAt = hospitalTreatments[source]
-    if not readyAt or GetGameTimer() < readyAt then return false end
-    local hospitalName, bedIndex = isPlayerInBed(source)
-    local _, bed = getHospitalBed(hospitalName, bedIndex)
-    if not bed or not isPlayerNearCoords(source, bed.coords, 3.0) then return false end
+    if readyAt and GetGameTimer() < readyAt then return false end
     hospitalTreatments[source] = nil
     exports.qbx_medical:Revive(source)
     return true
@@ -308,11 +305,12 @@ local function respawn(src)
 	clearPlayerBed(src)
 	local bedIndex = getOpenBed(closestHospital)
 	if not bedIndex then
-		exports.qbx_core:Notify(src, locale('error.beds_taken'), 'error')
-		return
+		bedIndex = 1
+		hospitalBedsTaken[closestHospital][bedIndex] = false
 	end
-	if not reserveBed(src, closestHospital, bedIndex) then return end
+	reserveBed(src, closestHospital, bedIndex)
 	billPlayer(src)
+	exports.qbx_medical:Revive(src)
 	hospitalTreatments[src] = GetGameTimer() + clientConfig.aiHealTimer * 1000
 	TriggerClientEvent('qbx_ambulancejob:client:checkedIn', src, closestHospital, bedIndex)
 

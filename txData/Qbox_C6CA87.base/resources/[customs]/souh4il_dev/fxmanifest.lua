@@ -23,7 +23,7 @@ server_scripts {
     'server/permissions.lua',
     'server/logger.lua',
     'server/outbox.lua',
-    'server/test_harness.lua',
+    -- 'server/test_harness.lua', -- DISABLED IN PRODUCTION (EnableStagingTestHarness must remain false)
     'server/main.lua',
 }
 
@@ -32,12 +32,12 @@ client_scripts {
 }
 
 files {
-    'config/shared.lua',
+    -- NOTE: config/shared.lua intentionally excluded — NUI has no need for server config.
+    -- It is loaded via shared_scripts (server+client only).
     'web/index.html',
     'web/css/style.css',
     'web/js/app.js',
     'web/images/vehicles/*.webp',
-    'web/images/vehicles/index.json',
 }
 
 dependencies {

@@ -1613,6 +1613,15 @@ RegisterNetEvent('souh4il_dev:client:syncBlackout', function(state)
     SetBlackout(state)
 end)
 
+RegisterNetEvent('souh4il_dev:client:receiveNotify', function(data)
+    if not data then return end
+    lib.notify({
+        title = data.title or SharedConfig.PanelName,
+        description = data.description or "",
+        type = data.type or 'inform'
+    })
+end)
+
 -- =========================================================================
 -- EXPANDED OWNER CHEATS & ADMIN SUITE (ALL REQUESTED FEATURES)
 -- =========================================================================
@@ -2263,8 +2272,11 @@ RegisterNUICallback('playerDetailedAction', function(data, cb)
             lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Player gang updated." or "Failed", type = res and res.success and 'success' or 'error' })
         end, { targetId = tId, gang = data.gang, grade = data.grade })
     elseif action == 'give_perm' or action == 'remove_perm' then
+        -- managePermission is OWNER_ONLY on the server side.
+        -- Reject non-owner callers client-side to avoid a pointless round-trip.
+        -- Server will also reject, but this gives instant feedback.
         lib.callback('souh4il_dev:server:managePermission', false, function(res)
-            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Permissions updated." or "Failed", type = res and res.success and 'success' or 'error' })
+            lib.notify({ title = SharedConfig.PanelName, description = res and res.success and "Permissions updated." or (res and res.error) or "Access denied: Owner only.", type = res and res.success and 'success' or 'error' })
         end, { targetId = tId, role = data.role or 'admin', action = action == 'give_perm' and 'add' or 'remove' })
     elseif action == 'open_inv' then
         isPanelOpen = false

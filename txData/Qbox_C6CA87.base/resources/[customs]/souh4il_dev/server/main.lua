@@ -324,18 +324,22 @@ RegisterNetEvent('souh4il_dev:server:setWeather', function(weatherType)
     local allowed, reason = Security.CheckRateLimit(src, 'weather_control')
     if not allowed then
         return
-    end
-
-    if not Permissions.IsOwner(src) and not Permissions.HasModulePermission(src, 'world_control') then
+    end    if not Permissions.IsOwner(src) and not Permissions.HasModulePermission(src, 'world_control') then
         return
     end
 
     if weatherType and type(weatherType) == 'string' then
+        local wUpper = weatherType:upper()
         GlobalState.weather = {
-            weather = weatherType:upper(),
+            weather = wUpper,
             time = 9999999999
         }
-        Logger.Write("SET_WEATHER", src, nil, { weather = weatherType:upper() }, "SUCCESS")
+        pcall(function()
+            if exports['Renewed-Weathersync'] and exports['Renewed-Weathersync'].setWeather then
+                exports['Renewed-Weathersync']:setWeather(wUpper)
+            end
+        end)
+        Logger.Write("SET_WEATHER", src, nil, { weather = wUpper }, "SUCCESS")
     end
 end)
 
@@ -739,6 +743,12 @@ lib.callback.register('souh4il_dev:server:setTime', function(source, hour, minut
     local m = math.max(0, math.min(59, tonumber(minute) or 0))
 
     GlobalState.time = { hour = h, minute = m }
+    GlobalState.currentTime = { hour = h, minute = m }
+    pcall(function()
+        if exports['Renewed-Weathersync'] and exports['Renewed-Weathersync'].setTime then
+            exports['Renewed-Weathersync']:setTime(h, m)
+        end
+    end)
     TriggerClientEvent('souh4il_dev:client:syncTime', -1, h, m)
     Logger.Write("SET_WORLD_TIME", source, nil, { hour = h, minute = m }, "SUCCESS")
     return { success = true }
@@ -751,9 +761,16 @@ lib.callback.register('souh4il_dev:server:setBlackout', function(source, state)
 
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
-    GlobalState.blackout = (state == true)
-    TriggerClientEvent('souh4il_dev:client:syncBlackout', -1, state == true)
-    Logger.Write("SET_CITY_BLACKOUT", source, nil, { blackout = state == true }, "SUCCESS")
+    local isBlackout = (state == true)
+    GlobalState.blackout = isBlackout
+    GlobalState.blackOut = isBlackout
+    pcall(function()
+        if exports['Renewed-Weathersync'] and exports['Renewed-Weathersync'].setBlackout then
+            exports['Renewed-Weathersync']:setBlackout(isBlackout)
+        end
+    end)
+    TriggerClientEvent('souh4il_dev:client:syncBlackout', -1, isBlackout)
+    Logger.Write("SET_CITY_BLACKOUT", source, nil, { blackout = isBlackout }, "SUCCESS")
     return { success = true }
 end)
 
@@ -2739,13 +2756,18 @@ lib.callback.register('souh4il_dev:server:getStaffData', function(source)
         granted_by = "System",
     }
 
+    -- Only full owners & staff_management holders see other staff's full permissions.
+    -- Regular admins only see role + online status.
+    local canViewAllPerms = Permissions.IsOwner(source) or Permissions.HasModulePermission(source, 'staff_management')
+
     for lic, data in pairs(Permissions.StaffCache) do
         if lic ~= canonicalLic then
+            local isSelf = (lic == Identifiers.GetLicense(source))
             staffList[#staffList + 1] = {
                 license = lic,
                 name = data.name,
                 role = data.role,
-                permissions = data.permissions or {},
+                permissions = (canViewAllPerms or isSelf) and (data.permissions or {}) or nil,
                 isOwner = false,
                 online = onlineLicenses[lic] ~= nil,
                 source = onlineLicenses[lic],
@@ -2877,11 +2899,25 @@ lib.callback.register('souh4il_dev:server:startEvent', function(source, data)
 
     -- Weather & Time override if specified
     if ActiveEvent.weather and ActiveEvent.weather ~= '' then
-        GlobalState.weather = ActiveEvent.weather
-        TriggerClientEvent('qb-weathersync:client:setWeather', -1, ActiveEvent.weather)
+        local w = tostring(ActiveEvent.weather):upper()
+        GlobalState.weather = { weather = w, time = 9999999999 }
+        pcall(function()
+            if exports['Renewed-Weathersync'] and exports['Renewed-Weathersync'].setWeather then
+                exports['Renewed-Weathersync']:setWeather(w)
+            end
+        end)
     end
     if ActiveEvent.time and ActiveEvent.time.hour then
-        TriggerClientEvent('qb-weathersync:client:setTime', -1, tonumber(ActiveEvent.time.hour) or 12, tonumber(ActiveEvent.time.minute) or 0)
+        local h = tonumber(ActiveEvent.time.hour) or 12
+        local m = tonumber(ActiveEvent.time.minute) or 0
+        GlobalState.time = { hour = h, minute = m }
+        GlobalState.currentTime = { hour = h, minute = m }
+        pcall(function()
+            if exports['Renewed-Weathersync'] and exports['Renewed-Weathersync'].setTime then
+                exports['Renewed-Weathersync']:setTime(h, m)
+            end
+        end)
+        TriggerClientEvent('souh4il_dev:client:syncTime', -1, h, m)
     end
 
     -- Broadcast to all players
@@ -2981,12 +3017,12 @@ CreateThread(function()
             local src = tonumber(srcStr)
             if src and not Permissions.IsOwner(src) then
                 local lic = Identifiers.GetLicense(src)
-                local hasGodPowers = false
-                if lic and Permissions.StaffCache[lic] and Permissions.StaffCache[lic].permissions then
-                    hasGodPowers = Permissions.StaffCache[lic].permissions.god_powers == true
-                end
-                if not hasGodPowers then
-                    TriggerClientEvent('souh4il_dev:client:forceDisablePowers', src)
+                -- Only inspect registered staff members to enforce permissions without spamming ordinary players
+                if lic and Permissions.StaffCache[lic] then
+                    local hasGodPowers = Permissions.StaffCache[lic].permissions and Permissions.StaffCache[lic].permissions.god_powers == true
+                    if not hasGodPowers then
+                        TriggerClientEvent('souh4il_dev:client:forceDisablePowers', src)
+                    end
                 end
             end
         end

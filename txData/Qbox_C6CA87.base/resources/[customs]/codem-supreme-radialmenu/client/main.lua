@@ -287,7 +287,7 @@ local function setupVehicleMenu()
 end
 
 local function setupJobMenu()
-    local job = Framework:GetPlayerJob()
+    local job = Framework:GetPlayerJob(true) -- force refresh, skip cache
 
     if not job or not job.name or job.name == 'unemployed' then
         return nil
@@ -295,8 +295,18 @@ local function setupJobMenu()
 
     local isEmergency = (job.type == 'leo' or job.type == 'ems' or job.name == 'police' or job.name == 'bcso' or job.name == 'sasp' or job.name == 'ambulance')
 
-    -- If an emergency officer is off-duty, show a quick Toggle Duty button
-    if isEmergency and job.onduty == false then
+    -- Match job key or fallback to type FIRST (before duty check)
+    local jobKey = job.name
+    if job.type == 'leo' or job.name == 'bcso' or job.name == 'sasp' then
+        jobKey = 'police'
+    elseif job.type == 'ems' then
+        jobKey = 'ambulance'
+    end
+
+    local jobMenu = JobInteractions[job.name] or JobInteractions[jobKey]
+
+    -- If an emergency officer is off-duty AND no job menu exists, show Toggle Duty only
+    if isEmergency and job.onduty == false and not jobMenu then
         return {
             id = job.name,
             label = job.label or 'Emergency Services',
@@ -314,15 +324,23 @@ local function setupJobMenu()
         }
     end
 
-    -- Match job key or fallback to type
-    local jobKey = job.name
-    if job.type == 'leo' or job.name == 'bcso' or job.name == 'sasp' then
-        jobKey = 'police'
-    elseif job.type == 'ems' then
-        jobKey = 'ambulance'
+    -- If off-duty emergency AND has a job menu, prepend Toggle Duty to their actions
+    if isEmergency and job.onduty == false and jobMenu then
+        local copied = deepcopy(jobMenu)
+        if copied and copied.items then
+            table.insert(copied.items, 1, {
+                id = 'toggleduty',
+                label = 'Go On Duty',
+                icon = 'toggle-on',
+                event = 'QBCore:ToggleDuty',
+                type = 'server',
+                shouldClose = true
+            })
+            copied.label = copied.label or copied.title or _L('game.menu.job_actions')
+            return copied
+        end
     end
 
-    local jobMenu = JobInteractions[job.name] or JobInteractions[jobKey]
     if not jobMenu then
         return nil
     end

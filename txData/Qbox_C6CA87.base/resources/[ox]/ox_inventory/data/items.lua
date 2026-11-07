@@ -192,7 +192,7 @@ return {
 		label = 'Burger',
 		weight = 220,
 		client = {
-			status = { hunger = 200000 },
+			status = { hunger = 350000 },
 			anim = 'eating',
 			prop = 'burger',
 			usetime = 2500,
@@ -204,7 +204,7 @@ return {
 		label = 'Sprunk',
 		weight = 350,
 		client = {
-			status = { thirst = 200000 },
+			status = { thirst = 350000 },
 			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
 			prop = { model = `prop_ld_can_01`, pos = vec3(0.01, 0.01, 0.06), rot = vec3(5.0, 5.0, -180.5) },
 			usetime = 2500,
@@ -290,7 +290,7 @@ return {
 		label = 'Water',
 		weight = 500,
 		client = {
-			status = { thirst = 200000 },
+			status = { thirst = 350000 },
 			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
 			prop = { model = `prop_ld_flow_bottle`, pos = vec3(0.03, 0.03, 0.02), rot = vec3(0.0, 0.0, -1.5) },
 			usetime = 2500,
@@ -368,6 +368,9 @@ return {
 		close = false,
 		description = "Mmmmh yummie, grapes",
 		client = {
+			status = { hunger = 150000, thirst = 100000 },
+			anim = 'eating',
+			usetime = 2500,
 			image = "grape.png",
 		}
 	},
@@ -390,6 +393,10 @@ return {
 		close = true,
 		description = "Nice bread for your stomach",
 		client = {
+			status = { hunger = 350000 },
+			anim = 'eating',
+			prop = 'burger',
+			usetime = 2500,
 			image = "sandwich.png",
 		}
 	},
@@ -500,6 +507,9 @@ return {
 		close = true,
 		description = "For all the thirsty out there",
 		client = {
+			status = { thirst = 250000 },
+			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+			usetime = 2500,
 			image = "whiskey.png",
 		}
 	},
@@ -841,6 +851,9 @@ return {
 		close = true,
 		description = "Some delicious candy :O",
 		client = {
+			status = { hunger = 200000 },
+			anim = 'eating',
+			usetime = 2500,
 			image = "twerks_candy.png",
 		}
 	},
@@ -907,6 +920,9 @@ return {
 		close = true,
 		description = "Some delicious candy :O",
 		client = {
+			status = { hunger = 200000 },
+			anim = 'eating',
+			usetime = 2500,
 			image = "snikkel_candy.png",
 		}
 	},
@@ -951,6 +967,10 @@ return {
 		close = true,
 		description = "For all the thirsty out there",
 		client = {
+			status = { thirst = 350000 },
+			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+			prop = { model = `prop_ld_flow_bottle`, pos = vec3(0.03, 0.03, 0.02), rot = vec3(0.0, 0.0, -1.5) },
+			usetime = 2500,
 			image = "water_bottle.png",
 		}
 	},
@@ -1072,6 +1092,9 @@ return {
 		close = true,
 		description = "Pump 4 Caffeine",
 		client = {
+			status = { thirst = 300000 },
+			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+			usetime = 2500,
 			image = "coffee.png",
 		}
 	},
@@ -1479,6 +1502,10 @@ return {
 		close = true,
 		description = "Nice to eat",
 		client = {
+			status = { hunger = 350000 },
+			anim = 'eating',
+			prop = 'burger',
+			usetime = 2500,
 			image = "tosti.png",
 		}
 	},
@@ -1921,6 +1948,10 @@ return {
 		close = true,
 		description = "For all the thirsty out there",
 		client = {
+			status = { thirst = 350000 },
+			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+			prop = { model = `prop_ld_can_01`, pos = vec3(0.01, 0.01, 0.06), rot = vec3(5.0, 5.0, -180.5) },
+			usetime = 2500,
 			image = "cola.png",
 		}
 	},
@@ -1932,6 +1963,10 @@ return {
 		close = true,
 		description = "For all the thirsty out there",
 		client = {
+			status = { thirst = 350000 },
+			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+			prop = { model = `prop_ld_can_01`, pos = vec3(0.01, 0.01, 0.06), rot = vec3(5.0, 5.0, -180.5) },
+			usetime = 2500,
 			image = "cola.png",
 		}
 	},

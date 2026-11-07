@@ -112,15 +112,30 @@ function GetPlayerJob()
 end
 
 function GetPlayerNeeds()
+    local state = LocalPlayer and LocalPlayer.state
     local playerData = GetQBXPlayerData()
-    if playerData and playerData.metadata then
-        return {
-            hunger = math.floor(playerData.metadata.hunger or 100),
-            thirst = math.floor(playerData.metadata.thirst or 100)
-        }
-    end
-    return { hunger = 100, thirst = 100 }
+    local meta = playerData and playerData.metadata or {}
+    local hunger = (state and state.hunger ~= nil) and state.hunger or meta.hunger or 100
+    local thirst = (state and state.thirst ~= nil) and state.thirst or meta.thirst or 100
+    return {
+        hunger = math.floor(hunger),
+        thirst = math.floor(thirst)
+    }
 end
+
+AddStateBagChangeHandler('hunger', ('player:%s'):format(GetPlayerServerId(PlayerId())), function(_, _, value)
+    if value ~= nil and UpdateNeeds then
+        local state = LocalPlayer and LocalPlayer.state
+        UpdateNeeds(math.floor(value), math.floor((state and state.thirst) or 100))
+    end
+end)
+
+AddStateBagChangeHandler('thirst', ('player:%s'):format(GetPlayerServerId(PlayerId())), function(_, _, value)
+    if value ~= nil and UpdateNeeds then
+        local state = LocalPlayer and LocalPlayer.state
+        UpdateNeeds(math.floor((state and state.hunger) or 100), math.floor(value))
+    end
+end)
 
 function GetPlayerStress()
     local playerData = GetQBXPlayerData()

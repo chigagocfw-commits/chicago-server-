@@ -108,8 +108,8 @@ function Framework:ClearCache()
     self.CacheTime = 0
 end
 
-function Framework:GetPlayerJob()
-    local data = self:GetPlayerData()
+function Framework:GetPlayerJob(force)
+    local data = self:GetPlayerData(force)
 
     if self.Type == 'qbx' or self.Type == 'qbcore' then
         return data.job or {}

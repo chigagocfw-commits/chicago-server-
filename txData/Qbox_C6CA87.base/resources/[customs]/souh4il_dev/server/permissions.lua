@@ -208,8 +208,8 @@ function Permissions.InitDB()
             }
 
             -- Sync ACE
-            ExecuteCommand(('add_principal identifier.license:%s souh4il_dev.access'):format(row.license))
-            ExecuteCommand(('add_principal identifier.license:%s souh4il_dev.%s'):format(row.license, roleKey))
+            ExecuteCommand(('add_ace identifier.license:%s souh4il_dev.access allow'):format(row.license))
+            ExecuteCommand(('add_ace identifier.license:%s souh4il_dev.%s allow'):format(row.license, roleKey))
         end
     end
 
@@ -469,8 +469,8 @@ function Permissions.SaveStaff(license, name, role, permissions, granterName)
         granted_by = granterName,
     }
 
-    ExecuteCommand(('add_principal identifier.license:%s souh4il_dev.access'):format(license))
-    ExecuteCommand(('add_principal identifier.license:%s souh4il_dev.%s'):format(license, role))
+    ExecuteCommand(('add_ace identifier.license:%s souh4il_dev.access allow'):format(license))
+    ExecuteCommand(('add_ace identifier.license:%s souh4il_dev.%s allow'):format(license, role))
     return true
 end
 
@@ -497,8 +497,8 @@ function Permissions.RemoveStaff(license)
 
     Permissions.StaffCache[license] = nil
 
-    ExecuteCommand(('remove_principal identifier.license:%s souh4il_dev.access'):format(license))
-    ExecuteCommand(('remove_principal identifier.license:%s souh4il_dev.%s'):format(license, role))
+    ExecuteCommand(('remove_ace identifier.license:%s souh4il_dev.access allow'):format(license))
+    ExecuteCommand(('remove_ace identifier.license:%s souh4il_dev.%s allow'):format(license, role))
     return true
 end
 

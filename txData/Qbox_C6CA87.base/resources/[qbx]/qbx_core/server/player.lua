@@ -637,8 +637,8 @@ function CheckPlayerData(source, playerData)
     playerData.metadata = playerData.metadata or {}
     playerData.metadata.optin = playerData.metadata.optin and true or false
     playerData.metadata.health = playerData.metadata.health or 200
-    playerData.metadata.hunger = playerData.metadata.hunger or 100
-    playerData.metadata.thirst = playerData.metadata.thirst or 100
+    playerData.metadata.hunger = (playerData.metadata.hunger and playerData.metadata.hunger > 0) and playerData.metadata.hunger or 100
+    playerData.metadata.thirst = (playerData.metadata.thirst and playerData.metadata.thirst > 0) and playerData.metadata.thirst or 100
     playerData.metadata.stress = playerData.metadata.stress or 0
     if playerState then
         playerState:set('hunger', playerData.metadata.hunger, true)
@@ -1092,9 +1092,9 @@ function Save(source)
         -- character's saved health. Keep stored vitals if selection is aborted.
         playerData.metadata.health = GetEntityHealth(ped)
         playerData.metadata.armor = GetPedArmour(ped)
-        playerData.metadata.hunger = playerState.hunger or 0
-        playerData.metadata.thirst = playerState.thirst or 0
-        playerData.metadata.stress = playerState.stress or 0
+        playerData.metadata.hunger = playerState.hunger ~= nil and playerState.hunger or playerData.metadata.hunger or 100
+        playerData.metadata.thirst = playerState.thirst ~= nil and playerState.thirst or playerData.metadata.thirst or 100
+        playerData.metadata.stress = playerState.stress ~= nil and playerState.stress or playerData.metadata.stress or 0
     end
 
     CreateThread(function()

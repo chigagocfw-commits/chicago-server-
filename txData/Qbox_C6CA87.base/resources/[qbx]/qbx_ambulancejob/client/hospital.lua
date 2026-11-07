@@ -19,8 +19,11 @@ local function setBedCam()
         NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
     end
 
+    RequestCollisionAtCoord(bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z)
     bedObject = GetClosestObjectOfType(bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z, 1.0, bedOccupyingData.model, false, false, false)
-    FreezeEntityPosition(bedObject, true)
+    if bedObject and bedObject ~= 0 then
+        FreezeEntityPosition(bedObject, true)
+    end
 
     SetEntityCoords(cache.ped, bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z + 0.02, true, true, true, false)
     Wait(500)
@@ -66,10 +69,10 @@ local function putPlayerInBed(hospitalName, bedIndex, isRevive, skipOpenCheck)
         if isRevive then
             exports.qbx_core:Notify(locale('success.being_helped'), 'success')
             Wait(config.aiHealTimer * 1000)
-            if lib.callback.await('qbx_ambulancejob:server:completeTreatment') then
-                lib.playAnim(cache.ped, InBedDict, InBedAnim, 8.0, 1.0, -1, 1, 0, false, false, false)
-                CanLeaveBed = true
-            end
+            lib.callback.await('qbx_ambulancejob:server:completeTreatment')
+            TriggerEvent('hospital:client:Revive')
+            lib.playAnim(cache.ped, InBedDict, InBedAnim, 8.0, 1.0, -1, 1, 0, false, false, false)
+            CanLeaveBed = true
         else
             CanLeaveBed = true
         end
@@ -262,7 +265,9 @@ local function leaveBed()
     Wait(4000)
     ClearPedTasks(cache.ped)
     TriggerServerEvent('qbx_ambulancejob:server:playerLeftBed', hospitalOccupying, bedIndexOccupying)
-    FreezeEntityPosition(bedObject, true)
+    if bedObject and bedObject ~= 0 then
+        FreezeEntityPosition(bedObject, true)
+    end
     RenderScriptCams(false, true, 200, true, true)
     DestroyCam(cam, false)
 
