@@ -103,6 +103,12 @@ local CALLBACK_MODULES = {
     getStaffData = { 'staff_management', 'staff' },
     saveStaffMember = { 'staff_management', 'staff' },
     removeStaffMember = { 'staff_management', 'staff' },
+    -- previously unprotected callbacks (security fix)
+    getOnlinePlayers = { 'view_players', 'players' },
+    toggleDuty = { 'manage_jobs', 'jobs' },
+    removeStress = { 'player_heal', 'players' },
+    getEventState = { 'events' },
+    setTrafficDensity = { 'world_control', 'world' },
 }
 
 -- Only the real owner may edit critical system gates (prevents privilege escalation).
@@ -320,7 +326,7 @@ RegisterNetEvent('souh4il_dev:server:setWeather', function(weatherType)
         return
     end
 
-    if not Permissions.CanExecute(src, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(src) then
+    if not Permissions.IsOwner(src) and not Permissions.HasModulePermission(src, 'world_control') then
         return
     end
 
@@ -338,9 +344,9 @@ lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
     local allowed, reason = Security.CheckRateLimit(source, 'get_players')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
+    -- Financial data redaction: only show cash/bank to staff with manage_money
+    local canSeeMoney = Permissions.IsOwner(source) or (Permissions.GetPermissions(source).manage_money == true)
 
     local players = {}
     local playerList = GetPlayers()
@@ -400,8 +406,8 @@ lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
                 jobName = jobName,
                 onDuty = onDuty,
                 gangName = gangName,
-                cash = cash,
-                bank = bank,
+                cash = canSeeMoney and cash or 0,
+                bank = canSeeMoney and bank or 0,
                 isDead = isDead,
                 inVehicle = inVehicle,
                 isFrozen = Player(srcNum).state.sdev_frozen == true,
@@ -418,9 +424,7 @@ lib.callback.register('souh4il_dev:server:banPlayer', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'ban_player')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local targetId = tonumber(data.targetId)
     local banReason = data.reason or "Banned by administrator"
@@ -478,9 +482,7 @@ lib.callback.register('souh4il_dev:server:kickPlayer', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'kick_player')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.MODERATOR) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local targetId = tonumber(data.targetId)
     local kickReason = data.reason or "Kicked by staff"
@@ -507,9 +509,7 @@ lib.callback.register('souh4il_dev:server:teleportAction', function(source, acti
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local target = tonumber(targetId)
     if not target or not DoesPlayerExist(tostring(target)) then
@@ -549,9 +549,7 @@ end)
 
 ---Callback 8B: Get Target Player Coords for Long-Range Spectate
 lib.callback.register('souh4il_dev:server:getSpectateCoords', function(source, targetId)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local target = tonumber(targetId)
     if not target or not DoesPlayerExist(tostring(target)) then
@@ -578,9 +576,7 @@ lib.callback.register('souh4il_dev:server:freezePlayer', function(source, target
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.MODERATOR) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local target = tonumber(targetId)
     if not target or not DoesPlayerExist(tostring(target)) then
@@ -610,9 +606,7 @@ lib.callback.register('souh4il_dev:server:giveItem', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'give_item')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.DEVELOPER) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local itemName = tostring(data.item or ""):lower():gsub("%s+", "")
     local count = math.max(1, math.min(1000, tonumber(data.count) or 1))
@@ -636,9 +630,7 @@ lib.callback.register('souh4il_dev:server:giveMoney', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'give_money')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.DEVELOPER) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local moneyType = data.moneyType == 'bank' and 'bank' or 'cash'
     local amount = math.max(1, tonumber(data.amount) or 10000)
@@ -658,9 +650,7 @@ lib.callback.register('souh4il_dev:server:giveVehicleKeys', function(source, net
     local allowed, reason = Security.CheckRateLimit(source, 'vehicle_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local entity = NetworkGetEntityFromNetworkId(netId)
     if DoesEntityExist(entity) then
@@ -678,9 +668,7 @@ lib.callback.register('souh4il_dev:server:setPlayerJob', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'set_job')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local targetId = tonumber(data.targetId)
     local jobName = tostring(data.job or "unemployed"):lower():gsub("%s+", "")
@@ -705,9 +693,7 @@ lib.callback.register('souh4il_dev:server:clearPlayerInventory', function(source
     local allowed, reason = Security.CheckRateLimit(source, 'clear_inventory')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local target = tonumber(targetId)
     if not target or not DoesPlayerExist(tostring(target)) then
@@ -724,9 +710,7 @@ lib.callback.register('souh4il_dev:server:broadcastAnnouncement', function(sourc
     local allowed, reason = Security.CheckRateLimit(source, 'broadcast')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local cleanMsg = Security.SanitizeString(message, 300)
     if #cleanMsg == 0 then return { success = false, error = "EMPTY_MESSAGE" } end
@@ -747,9 +731,7 @@ lib.callback.register('souh4il_dev:server:setTime', function(source, hour, minut
     local allowed, reason = Security.CheckRateLimit(source, 'set_time')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local h = math.max(0, math.min(23, tonumber(hour) or 12))
     local m = math.max(0, math.min(59, tonumber(minute) or 0))
@@ -765,9 +747,7 @@ lib.callback.register('souh4il_dev:server:setBlackout', function(source, state)
     local allowed, reason = Security.CheckRateLimit(source, 'weather_control')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     GlobalState.blackout = (state == true)
     TriggerClientEvent('souh4il_dev:client:syncBlackout', -1, state == true)
@@ -780,9 +760,7 @@ lib.callback.register('souh4il_dev:server:setVehiclePlate', function(source, net
     local allowed, reason = Security.CheckRateLimit(source, 'set_plate')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plateClean = tostring(newPlate or ""):upper():sub(1, 8)
     local entity = NetworkGetEntityFromNetworkId(netId)
@@ -803,9 +781,7 @@ lib.callback.register('souh4il_dev:server:getAllGameItems', function(source)
     local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     if not cachedGameItems then
         local rawItems = exports.ox_inventory:Items() or {}
@@ -843,9 +819,7 @@ lib.callback.register('souh4il_dev:server:getAllGameVehicles', function(source)
     local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     if not cachedGameVehicles then
         local rawVehs = exports.qbx_core:GetVehiclesByName() or {}
@@ -898,9 +872,7 @@ lib.callback.register('souh4il_dev:server:getAllGameCharacters', function(source
     local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     if not cachedGameCharacters then
         local list = {}
@@ -952,9 +924,7 @@ lib.callback.register('souh4il_dev:server:getAllGameJobs', function(source)
     local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     if not cachedGameJobs then
         local rawJobs = exports.qbx_core:GetJobs() or {}
@@ -1027,9 +997,7 @@ lib.callback.register('souh4il_dev:server:setMyJob', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'set_job')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local jobName = tostring(data.job or 'unemployed')
     local grade = tonumber(data.grade) or 0
@@ -1049,9 +1017,7 @@ lib.callback.register('souh4il_dev:server:giveArsenalLoadout', function(source, 
     local allowed, reason = Security.CheckRateLimit(source, 'arsenal')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local loadoutKey = type(payload) == 'table' and payload.loadout or payload
     local targetId = (type(payload) == 'table' and tonumber(payload.targetId)) or source
@@ -1215,18 +1181,14 @@ end)
 
 ---Callback: Get Full World NPC & Police Config
 lib.callback.register('souh4il_dev:server:getNpcConfig', function(source)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
     WorldNpcConfig.realCopsOnDuty = CountRealCopsOnDuty()
     return { success = true, config = WorldNpcConfig }
 end)
 
 ---Callback: Update World NPC & Police Config
 lib.callback.register('souh4il_dev:server:updateNpcConfig', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     if type(data) ~= 'table' then return { success = false, error = "INVALID_DATA" } end
 
@@ -1280,9 +1242,7 @@ end)
 
 ---Callback: Clean / Purge All Active NPC Cops & Police Vehicles Now
 lib.callback.register('souh4il_dev:server:cleanNpcCopsNow', function(source)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     TriggerClientEvent('souh4il_dev:client:cleanNpcCops', -1)
     Logger.Write("CLEAN_NPC_COPS", source, nil, {}, "SUCCESS")
@@ -1294,9 +1254,7 @@ lib.callback.register('souh4il_dev:server:setTrafficDensity', function(source, d
     local allowed, reason = Security.CheckRateLimit(source, 'set_traffic')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local d = math.max(0.0, math.min(2.0, tonumber(densityVal) or 1.0))
     WorldNpcConfig.pedDensity = d
@@ -1346,9 +1304,7 @@ end)
 lib.callback.register('souh4il_dev:server:healPlayer', function(source, targetId)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(targetId) or source
     if not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1365,9 +1321,7 @@ end)
 lib.callback.register('souh4il_dev:server:reviveAll', function(source)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local players = GetPlayers()
     for _, srcStr in ipairs(players) do
@@ -1387,9 +1341,7 @@ end)
 lib.callback.register('souh4il_dev:server:reviveInRadius', function(source, radius)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local rad = tonumber(radius) or 50.0
     local myPed = GetPlayerPed(tostring(source))
@@ -1418,9 +1370,7 @@ end)
 lib.callback.register('souh4il_dev:server:setPlayerGang', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'set_gang')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId) or source
     local player = exports.qbx_core:GetPlayer(tId)
@@ -1462,9 +1412,7 @@ end)
 lib.callback.register('souh4il_dev:server:warnPlayer', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     local msg = data.reason or "You have received an official staff warning."
@@ -1478,9 +1426,7 @@ end)
 
 ---Callback: Force Logout Player
 lib.callback.register('souh4il_dev:server:forceLogout', function(source, targetId)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1508,9 +1454,7 @@ end)
 
 ---Callback: Troll Action on Target Player
 lib.callback.register('souh4il_dev:server:trollPlayer', function(source, data)
-    if not Permissions.IsOwner(source) and not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     local trollType = data.type
@@ -1523,9 +1467,7 @@ end)
 
 ---Callback: Open Target Inventory / Storage
 lib.callback.register('souh4il_dev:server:openInventory', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local invType = data.type
     local target = data.target
@@ -1545,9 +1487,7 @@ end)
 
 ---Callback: Create Custom Job or Gang Stash
 lib.callback.register('souh4il_dev:server:createStash', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local stashId = data.stashId or ("stash_" .. os.time())
     local label = data.label or "Custom Stash"
@@ -1562,9 +1502,7 @@ end)
 
 ---Callback: Get Player Detailed Dossier (Player Info)
 lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, targetId)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1690,9 +1628,7 @@ end)
 
 ---Callback: Remove Specific Item from Player Inventory
 lib.callback.register('souh4il_dev:server:removePlayerItem', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data and data.targetId)
     local item = tostring(data and data.item or ''):lower()
@@ -1710,9 +1646,7 @@ end)
 
 ---Callback: Give / Assign Official Property (House) to Player
 lib.callback.register('souh4il_dev:server:givePlayerProperty', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data and data.targetId)
     local propId = tonumber(data and data.propertyId)
@@ -1747,9 +1681,7 @@ end)
 
 ---Callback: Mass Server Action (Heal & Feed All, Clean Abandoned Cars)
 lib.callback.register('souh4il_dev:server:massServerAction', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local mType = tostring(data and data.massType or '')
     if mType == 'heal_feed_all' then
@@ -1793,9 +1725,7 @@ end)
 
 ---Callback: Save Admin's Current Vehicle to Personal Garage
 lib.callback.register('souh4il_dev:server:saveMyCurrentVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local player = exports.qbx_core:GetPlayer(source)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1832,9 +1762,8 @@ end)
 
 ---Callback: Wipe Player (Cash, Inventory, or Full)
 lib.callback.register('souh4il_dev:server:wipePlayer', function(source, data)
-    if not Permissions.IsOwner(source) then
-        return { success = false, error = "OWNER_ONLY" }
-    end
+    -- [SOUH4IL-DEV] Granular 'manage_wipes' enforced by CALLBACK_MODULES wrapper
+    -- Extra audit: destructive action, log prominently below
 
     local tId = tonumber(data.targetId)
     local wipeType = data.type
@@ -1862,9 +1791,7 @@ end)
 lib.callback.register('souh4il_dev:server:teleportPlayerToPlayer', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local fromId = tonumber(data.fromId)
     local toId = tonumber(data.toId)
@@ -1886,9 +1813,7 @@ end)
 lib.callback.register('souh4il_dev:server:managePlayerMoney', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'give_money')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     local player = exports.qbx_core:GetPlayer(tId)
@@ -1916,9 +1841,7 @@ end)
 lib.callback.register('souh4il_dev:server:giveItemToPlayer', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'give_item')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     local item = tostring(data.item or ''):lower():gsub('%s+', '')
@@ -1940,9 +1863,7 @@ end)
 lib.callback.register('souh4il_dev:server:controlPlayerVitals', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1957,9 +1878,7 @@ end)
 lib.callback.register('souh4il_dev:server:controlPlayerVehicle', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1974,9 +1893,7 @@ end)
 lib.callback.register('souh4il_dev:server:controlPlayerAppearance', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'player_action')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -2002,9 +1919,7 @@ end)
 lib.callback.register('souh4il_dev:server:setPlayerJobDirect', function(source, data)
     local allowed, reason = Security.CheckRateLimit(source, 'set_job')
     if not allowed then return { success = false, error = reason } end
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
     local player = exports.qbx_core:GetPlayer(tId)
@@ -2020,9 +1935,7 @@ end)
 
 ---Callback: Ban Offline Player
 lib.callback.register('souh4il_dev:server:banOfflinePlayer', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local identifier = data.identifier
     local reason = data.reason or "Banned by administrator (Offline)"
@@ -2046,9 +1959,7 @@ end)
 
 ---Callback: Unban Player
 lib.callback.register('souh4il_dev:server:unbanPlayer', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ADMIN) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local queryVal = data.identifier or data.id
     MySQL.query.await('DELETE FROM bans WHERE id = ? OR license = ?', { queryVal, queryVal })
@@ -2145,9 +2056,7 @@ end)
 
 ---Callback: Seize / Remove Player Vehicle
 lib.callback.register('souh4il_dev:server:seizePlayerVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     local targetId = tonumber(data and data.targetId)
@@ -2185,9 +2094,7 @@ end)
 
 ---Callback: Give Owned Vehicle (Saved in player_vehicles with Keys)
 lib.callback.register('souh4il_dev:server:givePlayerOwnedVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data and data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then
@@ -2272,9 +2179,7 @@ end)
 
 ---Callback: Seize / Revoke Player Property (House)
 lib.callback.register('souh4il_dev:server:seizePlayerProperty', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local propertyId = tonumber(data and data.propertyId)
     local targetId = tonumber(data and data.targetId)
@@ -2296,9 +2201,7 @@ end)
 
 ---Callback: Open House ox_inventory Stash
 lib.callback.register('souh4il_dev:server:openHouseStash', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local propId = tonumber(data and data.propertyId)
     local propName = tostring(data and data.propertyName or ''):gsub('^%s*(.-)%s*$', '%1')
@@ -2346,9 +2249,7 @@ end)
 
 ---Callback: Teleport to Property Entrance
 lib.callback.register('souh4il_dev:server:teleportToProperty', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local propId = tonumber(data and data.propertyId)
     if not propId then return { success = false, error = "INVALID_ID" } end
@@ -2369,9 +2270,7 @@ end)
 
 ---Callback: Give Property Keyholder Access (Double de Clé)
 lib.callback.register('souh4il_dev:server:givePropertyKey', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local propId = tonumber(data and data.propertyId)
     local toPlayerId = tonumber(data and data.toPlayerId)
@@ -2417,9 +2316,7 @@ end)
 
 ---Callback: Reset House Keyholders
 lib.callback.register('souh4il_dev:server:resetPropertyKeyholders', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local propId = tonumber(data and data.propertyId)
     if not propId then return { success = false, error = "INVALID_ID" } end
@@ -2431,9 +2328,7 @@ end)
 
 ---Callback: Transfer Property Ownership
 lib.callback.register('souh4il_dev:server:transferPlayerProperty', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local propId = tonumber(data and data.propertyId)
     local toPlayerId = tonumber(data and data.toPlayerId)
@@ -2479,9 +2374,7 @@ end)
 
 ---Callback: Open Vehicle Trunk Remotely (Works Active or in Garage)
 lib.callback.register('souh4il_dev:server:openVehicleTrunk', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     if #plate == 0 then return { success = false, error = "INVALID_PLATE" } end
@@ -2518,9 +2411,7 @@ end)
 
 ---Callback: Open Vehicle Glovebox Remotely (Works Active or in Garage)
 lib.callback.register('souh4il_dev:server:openVehicleGlovebox', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     if #plate == 0 then return { success = false, error = "INVALID_PLATE" } end
@@ -2556,9 +2447,7 @@ end)
 
 ---Callback: Bring Player Vehicle (Active or from Garage)
 lib.callback.register('souh4il_dev:server:bringPlayerVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     local model = tostring(data and data.model or 'adder')
@@ -2650,9 +2539,7 @@ end)
 
 ---Callback: Store Player Vehicle Back Into Garage (state = 1)
 lib.callback.register('souh4il_dev:server:storePlayerVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     if #plate == 0 then return { success = false, error = "INVALID_PLATE" } end
@@ -2680,9 +2567,7 @@ end)
 
 ---Callback: Repair & Wash Player Vehicle
 lib.callback.register('souh4il_dev:server:repairPlayerVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     local cleanPlate = string.gsub(plate, "%s+", ""):upper()
@@ -2710,9 +2595,7 @@ end)
 
 ---Callback: Transfer Player Vehicle
 lib.callback.register('souh4il_dev:server:transferPlayerVehicle', function(source, data)
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     local toPlayerId = tonumber(data and data.toPlayerId)
@@ -2902,9 +2785,7 @@ lib.callback.register('souh4il_dev:server:removeStaffMember', function(source, d
     local allowed, reason = Security.CheckRateLimit(source, 'staff_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff') then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     if not data or not data.license then
         return { success = false, error = "INVALID_LICENSE" }
@@ -3012,9 +2893,7 @@ lib.callback.register('souh4il_dev:server:spawnVehicleDirect', function(source, 
     local allowed, reason = Security.CheckRateLimit(source, 'vehicle_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.CanExecute(source, PermissionsConfig.ACES.ACCESS) and not Permissions.IsOwner(source) then
-        return { success = false, error = "ACCESS_DENIED" }
-    end
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local model = tostring(data and data.model or ''):lower()
     if #model == 0 then return { success = false, error = "INVALID_MODEL" } end

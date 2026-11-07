@@ -58,7 +58,7 @@ Config.Societies = {
             Access = { "boss", }
         },
         -- ['ambulance'] = { AccountNumber = "BEMS", Label = "Medical Services", Access = { "boss", 3 } },
-        -- ['mechanic'] = { AccountNumber = "BMECH", Label = "Mechanic", Access = { 2 } },
+        ['mechanic'] = { AccountNumber = "BMECH", Label = "Mechanic", Access = { 2 } },
     }
 }
 

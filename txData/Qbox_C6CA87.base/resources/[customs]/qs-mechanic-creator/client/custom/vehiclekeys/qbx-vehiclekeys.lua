@@ -7,11 +7,7 @@ function giveVehicleKeys(vehicle, plate)
 
     local plateText = plate or GetVehicleNumberPlateText(vehicle)
 
-    local success = pcall(function()
-        exports.qbx_vehiclekeys:GiveKeys(plateText)
-    end)
-
-    if not success then
-        TriggerEvent('qbx_vehiclekeys:client:AddKeys', plateText)
-    end
+    -- GiveKeys is a server-side export; from the client we must use the
+    -- qb-vehiclekeys bridge server event which handles proximity checks.
+    TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plateText)
 end

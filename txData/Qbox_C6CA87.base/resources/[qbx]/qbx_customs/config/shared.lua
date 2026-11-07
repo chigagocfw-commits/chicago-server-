@@ -24,6 +24,7 @@ return {
         -- Default GTA 5 Customs and Benny's Locations
         {
             hideBlip = false,
+            job = { 'mechanic' },
             blip = {
                 sprite = 72,
                 color = 3,
@@ -39,6 +40,7 @@ return {
         },
         {
             hideBlip = false,
+            job = { 'mechanic' },
             blip = {
                 sprite = 72,
                 color = 3,
@@ -55,6 +57,7 @@ return {
         },
         {
             hideBlip = false,
+            job = { 'mechanic' },
             blip = {
                 sprite = 72,
                 color = 3,
@@ -70,6 +73,7 @@ return {
         },
         {
             hideBlip = false,
+            job = { 'mechanic' },
             blip = {
                 sprite = 72,
                 color = 3,
@@ -85,6 +89,7 @@ return {
         },
         {
             hideBlip = false,
+            job = { 'mechanic' },
             blip = {
                 sprite = 72,
                 color = 3,
@@ -100,6 +105,7 @@ return {
         },
         {
             hideBlip = false,
+            job = { 'mechanic' },
             blip = {
                 sprite = 72,
                 color = 3,

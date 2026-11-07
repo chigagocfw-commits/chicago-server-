@@ -30,8 +30,8 @@ end
 
 local frameworks = {
     {'es_extended', 'esx'},
-    {'qb-core', 'qbcore'},
     {'qbx_core', 'qbox'},
+    {'qb-core', 'qbcore'},
 }
 
 local vehicleShops = {
