@@ -680,7 +680,7 @@ function Permissions.HasModulePermission(source, moduleName)
 
     -- Explicit security isolation: Money and Wipes NEVER inherit from generic broad permissions!
     if moduleName == 'manage_money' then
-        return perms.manage_money == true or perms.dash_self_cash == true or perms.arsenal_economy == true
+        return perms.manage_money == true or perms.arsenal_economy == true
     elseif moduleName == 'manage_wipes' then
         return perms.manage_wipes == true
     end
@@ -742,7 +742,7 @@ function Permissions.HasModulePermission(source, moduleName)
     elseif moduleName == 'dances_emotes' then
         return perms.dances_emotes == true or perms.manage_force_dance == true or perms.emotes_target_player == true or perms.emotes_target_all == true or perms.manage_skins == true or perms.characters == true
     elseif moduleName == 'staff_management' then
-        return perms.staff == true
+        return Permissions.IsOwner(source) or perms.staff_management == true
     end
 
     return false
@@ -776,12 +776,28 @@ end
 ---@param targetSource number
 ---@return boolean canTarget, string? reason
 function Permissions.CanTargetPlayer(staffSource, targetSource)
-    if staffSource == targetSource then
+    if not staffSource or tonumber(staffSource) == nil then return false, "INVALID_STAFF_SOURCE" end
+    if not targetSource or tonumber(targetSource) == nil then return false, "INVALID_TARGET_SOURCE" end
+
+    local sSource = tonumber(staffSource)
+    local tSource = tonumber(targetSource)
+
+    if sSource == tSource then
         return true -- Self actions allowed
     end
 
-    local staffRole = Permissions.GetStaffRole(staffSource)
-    local targetRole = Permissions.GetStaffRole(targetSource)
+    -- Canonical Owner has full administrative authority over everyone
+    if Permissions.IsOwner(sSource) then
+        return true
+    end
+
+    -- Protection: Under no circumstances may any staff member target Canonical Owner
+    if Permissions.IsOwner(tSource) then
+        return false, "CANNOT_TARGET_CANONICAL_OWNER"
+    end
+
+    local staffRole = Permissions.GetStaffRole(sSource)
+    local targetRole = Permissions.GetStaffRole(tSource)
 
     -- Hierarchy rank values
     local RANKS = {
@@ -795,7 +811,7 @@ function Permissions.CanTargetPlayer(staffSource, targetSource)
     local staffRank = RANKS[staffRole] or 0
     local targetRank = RANKS[targetRole] or 0
 
-    -- Staff cannot perform punitive actions on equal or higher rank
+    -- Staff cannot perform punitive or restrictive actions on equal or higher rank
     if staffRank <= targetRank and targetRank > 0 then
         return false, "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK"
     end
@@ -809,15 +825,55 @@ end
 ---@param role string
 ---@param permissions table
 ---@param granterName string
+---@param callerSource number?
 ---@return boolean success, string? err
-function Permissions.SaveStaff(license, name, role, permissions, granterName)
+function Permissions.SaveStaff(license, name, role, permissions, granterName, callerSource)
     if not license or license == "" then return false, "INVALID_LICENSE" end
     role = string.lower(role or 'moderator')
     local upperRole = string.upper(role)
 
+    -- Guard 1: Only Canonical Owner can assign or manage OWNER role
+    if upperRole == "OWNER" then
+        if not callerSource or not Permissions.IsOwner(callerSource) then
+            return false, "UNAUTHORIZED_OWNER_ROLE_ASSIGNMENT"
+        end
+        if license ~= Config.CanonicalOwnerLicense then
+            return false, "CANNOT_ASSIGN_OWNER_TO_NON_CANONICAL_LICENSE"
+        end
+    end
+
+    -- Guard 2: Canonical Owner license role cannot be demoted or altered
+    if license == Config.CanonicalOwnerLicense and upperRole ~= "OWNER" then
+        return false, "CANNOT_DEMOTE_CANONICAL_OWNER"
+    end
+
+    -- Guard 3: Non-owners cannot grant staff_management / staff or self-promote
+    if callerSource and not Permissions.IsOwner(callerSource) then
+        local callerLic = Identifiers.GetLicense(callerSource)
+        if callerLic and callerLic == license then
+            return false, "CANNOT_SELF_ASSIGN_PERMISSIONS"
+        end
+        if type(permissions) == 'table' and (permissions.staff == true or permissions.staff_management == true) then
+            return false, "CANNOT_DELEGATE_STAFF_MANAGEMENT"
+        end
+        local currentTarget = Permissions.StaffCache[license]
+        if currentTarget and (currentTarget.role == "OWNER" or currentTarget.role == "ADMIN") then
+            local callerRole = Permissions.GetStaffRole(callerSource)
+            if callerRole ~= "OWNER" then
+                return false, "CANNOT_MODIFY_EQUAL_OR_HIGHER_STAFF"
+            end
+        end
+    end
+
     -- If permissions is empty or not provided, load default for role
     if type(permissions) ~= 'table' or not next(permissions) then
         permissions = table.clone(Permissions.DEFAULT_ROLE_PERMS[role] or Permissions.DEFAULT_ROLE_PERMS.moderator)
+    end
+
+    -- Defense-in-depth: Never allow non-owner role configs to carry staff_management
+    if upperRole ~= "OWNER" then
+        permissions.staff_management = false
+        permissions.staff = false
     end
 
     local jsonPerms = json.encode(permissions)
@@ -854,11 +910,23 @@ end
 
 ---Removes a staff member from database and cache
 ---@param license string
+---@param callerSource number?
 ---@return boolean success, string? err
-function Permissions.RemoveStaff(license)
+function Permissions.RemoveStaff(license, callerSource)
     if not license or license == "" then return false, "INVALID_LICENSE" end
     if license == Config.CanonicalOwnerLicense then
         return false, "CANNOT_REMOVE_CANONICAL_OWNER"
+    end
+
+    if callerSource and not Permissions.IsOwner(callerSource) then
+        local callerLic = Identifiers.GetLicense(callerSource)
+        if callerLic and callerLic == license then
+            return false, "CANNOT_REMOVE_SELF"
+        end
+        local cachedTarget = Permissions.StaffCache[license]
+        if cachedTarget and (cachedTarget.role == "OWNER" or cachedTarget.role == "ADMIN") then
+            return false, "CANNOT_REMOVE_EQUAL_OR_HIGHER_STAFF"
+        end
     end
 
     local cached = Permissions.StaffCache[license]

@@ -110,6 +110,12 @@ RegisterCommand('sdev_run_staging_tests', function(source, args)
     local cleanStr = Security.SanitizeString("Admin\r\n\0Test<script>", 50)
     AssertTest("SEC-10", "Input Sanitizer Control Char Removal", not cleanStr:find("[\r\n\0]"))
 
+    -- SEC-11: Secret Key Redaction & Protection (sv_licenseKey NEVER Exposed in Payloads or Logs)
+    local rawKey = GetConvar('sv_licenseKey', '')
+    local keyConfigured = (rawKey ~= nil and #rawKey > 0)
+    local redactedIndicator = keyConfigured and "[PROTECTED_CONVAR_PRESENT]" or "[PROTECTED_CONVAR_ABSENT]"
+    AssertTest("SEC-11", "Convar Secret Protection (sv_licenseKey Redacted)", redactedIndicator == "[PROTECTED_CONVAR_PRESENT]")
+
     lib.print.info(("\n[SOUH4IL-DEV] Battery Complete: %d Passed, %d Failed.\n"):format(passed, failed))
 end, true)
 

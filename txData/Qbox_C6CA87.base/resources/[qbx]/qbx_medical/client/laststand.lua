@@ -16,6 +16,9 @@ function ResurrectPlayer()
     local heading = GetEntityHeading(cache.ped)
 
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z + 0.5, heading, true, false)
+    if GetEntityMaxHealth(cache.ped) < 200 then
+        SetEntityMaxHealth(cache.ped, 200)
+    end
     if cache.vehicle then
         SetPedIntoVehicle(cache.ped, cache.vehicle, cache.seat)
     end

@@ -99,7 +99,10 @@ function GetClosestPlayer()
 end
 
 function OnKeyPress(cb)
-    if IsControlJustPressed(0, 38) or IsDisabledControlJustPressed(0, 38) then
+    if IsControlJustPressed(0, 38) or IsDisabledControlJustPressed(0, 38)
+        or IsControlJustPressed(0, 51) or IsDisabledControlJustPressed(0, 51)
+        or IsControlJustPressed(0, 46) or IsDisabledControlJustPressed(0, 46)
+        or IsControlPressed(0, 38) or IsDisabledControlPressed(0, 38) then
         lib.hideTextUI()
         cb()
     end

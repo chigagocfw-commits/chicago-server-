@@ -2,7 +2,25 @@ local AllBlips = {
     garage = {
         openatthefirstlogin = false,
         blips = {
-
+            { label = 'Legion Square Parking', blipid = 357, blipcolor = 3, blipsize = 0.65, coords = vector3(215.46, -806.17, 30.80), },
+            { label = 'Vinewood Boulevard Garage', blipid = 357, blipcolor = 3, blipsize = 0.65, coords = vector3(-343.9, -874.2, 31.1), },
+            { label = 'Sandy Shores Garage', blipid = 357, blipcolor = 3, blipsize = 0.65, coords = vector3(1737.9, 3709.0, 34.1), },
+            { label = 'Paleto Bay Garage', blipid = 357, blipcolor = 3, blipsize = 0.65, coords = vector3(-211.4, 6206.5, 31.4), },
+            { label = 'Marina Boat Dock', blipid = 410, blipcolor = 3, blipsize = 0.65, coords = vector3(-772.9, -1431.5, 1.6), },
+            { label = 'LSIA Hangar Garage', blipid = 359, blipcolor = 3, blipsize = 0.65, coords = vector3(-1006.4, -3020.5, 13.9), },
+            { label = 'Davis Impound Lot', blipid = 68, blipcolor = 1, blipsize = 0.65, coords = vector3(400.7, -1630.5, 29.3), },
+            { label = 'Paleto Impound Lot', blipid = 68, blipcolor = 1, blipsize = 0.65, coords = vector3(-211.4, 6199.0, 31.4), },
+            { label = 'Los Santos Customs - Vinewood', blipid = 72, blipcolor = 47, blipsize = 0.65, coords = vector3(-344.36, -121.92, 38.60), },
+            { label = "Benny's Motorworks", blipid = 72, blipcolor = 47, blipsize = 0.65, coords = vector3(-203.55, -1311.26, 30.85), },
+        },
+    },
+    properties = {
+        openatthefirstlogin = false,
+        blips = {
+            { label = 'Del Perro Heights Apartments', blipid = 475, blipcolor = 3, blipsize = 0.65, coords = vector3(-1447.35, -537.84, 34.74), },
+            { label = '4 Integrity Way Apartments', blipid = 475, blipcolor = 3, blipsize = 0.65, coords = vector3(-59.4, -616.29, 37.36), },
+            { label = 'Richard Majestic Luxury Condos', blipid = 475, blipcolor = 3, blipsize = 0.65, coords = vector3(-936.15, -378.91, 38.96), },
+            { label = 'Tinsel Towers Apartments', blipid = 475, blipcolor = 3, blipsize = 0.65, coords = vector3(-614.58, 46.52, 43.59), },
         },
     },
     gasstation = {

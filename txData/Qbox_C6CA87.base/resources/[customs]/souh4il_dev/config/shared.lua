@@ -24,6 +24,7 @@ Config.RateLimits = {
     ['give_money'] = { capacity = 5.0, fillRatePerSec = 1.0 },
     ['vehicle_action'] = { capacity = 5.0, fillRatePerSec = 1.0 },
     ['set_job'] = { capacity = 3.0, fillRatePerSec = 0.5 },
+    ['set_gang'] = { capacity = 3.0, fillRatePerSec = 0.5 },
     ['clear_inventory'] = { capacity = 2.0, fillRatePerSec = 0.2 },
     ['broadcast'] = { capacity = 2.0, fillRatePerSec = 0.1 },
     ['set_time'] = { capacity = 3.0, fillRatePerSec = 0.5 },

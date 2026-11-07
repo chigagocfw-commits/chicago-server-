@@ -24,12 +24,11 @@ return {
         -- Default GTA 5 Customs and Benny's Locations
         {
             hideBlip = false,
-            job = { 'mechanic' },
             blip = {
                 sprite = 72,
-                color = 3,
+                color = 47,
                 scale = 0.8,
-                label = 'Los Santos Customs - Vinewood',
+                label = 'Los Santos Customs - Vinewood (Public)',
             },
             points = {
                 vec3(-344.36, -121.92, 38.60),
@@ -105,14 +104,13 @@ return {
         },
         {
             hideBlip = false,
-            job = { 'mechanic' },
             blip = {
                 sprite = 72,
-                color = 3,
+                color = 47,
                 scale = 0.8,
-                label = "Benny's Motorworks",
+                label = "Benny's Motorworks (Public)",
             },
-            blipColor = 5,
+            blipColor = 47,
             points = {
                 vec3(-203.55, -1311.26, 30.85),
                 vec3(-228.06, -1319.24, 30.85),

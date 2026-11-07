@@ -57,7 +57,7 @@ local CALLBACK_MODULES = {
     giveKeysToPlayer = { 'manage_assets', 'spawn_vehicles', 'player_vehicles', 'vehicles' },
     setVehiclePlate = { 'manage_assets', 'spawn_vehicles', 'vehicles' },
     getAllGameVehicles = { 'spawn_vehicles', 'manage_assets', 'vehicles' },
-    saveMyCurrentVehicle = { 'manage_assets', 'spawn_vehicles', 'vehicles' },
+    saveMyCurrentVehicle = { 'veh_save_garage' },
     seizePlayerVehicle = { 'manage_assets' },
     givePlayerOwnedVehicle = { 'manage_assets' },
     bringPlayerVehicle = { 'manage_assets', 'player_vehicles', 'vehicles' },
@@ -608,6 +608,12 @@ lib.callback.register('souh4il_dev:server:freezePlayer', function(source, target
         return { success = false, error = "TARGET_NOT_ONLINE" }
     end
 
+    -- P0-4: Enforce target hierarchy protection
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, target)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     local currentFrozen = Player(target).state.sdev_frozen == true
     local newState = (state ~= nil) and (state == true) or (not currentFrozen)
     Player(target).state:set('sdev_frozen', newState, true)
@@ -637,6 +643,13 @@ lib.callback.register('souh4il_dev:server:giveItem', function(source, data)
     local count = math.max(1, math.min(1000, tonumber(data.count) or 1))
     local targetId = tonumber(data.targetId) or source
 
+    if targetId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, targetId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     if #itemName == 0 then
         return { success = false, error = "INVALID_ITEM_NAME" }
     end
@@ -657,9 +670,43 @@ lib.callback.register('souh4il_dev:server:giveMoney', function(source, data)
 
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
-    local moneyType = data.moneyType == 'bank' and 'bank' or 'cash'
-    local amount = math.max(1, tonumber(data.amount) or 10000)
     local targetId = tonumber(data.targetId) or source
+    local moneyType = data.moneyType == 'bank' and 'bank' or 'cash'
+    local amount = math.floor(tonumber(data.amount) or 0)
+    if amount <= 0 then
+        return { success = false, error = "INVALID_AMOUNT" }
+    end
+
+    -- P0-6: Permission separation & Hard ceiling
+    local MAX_SELF_CASH = 50000 -- $50k maximum per action for quick self cash
+    local MAX_ADMIN_MONEY = 10000000 -- $10M hard ceiling per transaction for staff management
+
+    if targetId == source then
+        local hasSelfCash = Permissions.HasModulePermission(source, 'dash_self_cash')
+        local hasManageMoney = Permissions.HasModulePermission(source, 'manage_money')
+        if not Permissions.IsOwner(source) and not hasManageMoney and not hasSelfCash then
+            return { success = false, error = "ACCESS_DENIED" }
+        end
+        if not Permissions.IsOwner(source) and not hasManageMoney and hasSelfCash then
+            if amount > MAX_SELF_CASH then
+                return { success = false, error = ("SELF_CASH_EXCEEDS_LIMIT_MAX_%d"):format(MAX_SELF_CASH) }
+            end
+        elseif not Permissions.IsOwner(source) and amount > MAX_ADMIN_MONEY then
+            return { success = false, error = ("AMOUNT_EXCEEDS_MAX_LIMIT_%d"):format(MAX_ADMIN_MONEY) }
+        end
+    else
+        -- Targeting another player strictly requires explicit manage_money and hierarchy clearance
+        if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'manage_money') then
+            return { success = false, error = "ACCESS_DENIED" }
+        end
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, targetId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+        if not Permissions.IsOwner(source) and amount > MAX_ADMIN_MONEY then
+            return { success = false, error = ("AMOUNT_EXCEEDS_MAX_LIMIT_%d"):format(MAX_ADMIN_MONEY) }
+        end
+    end
 
     local player = exports.qbx_core:GetPlayer(targetId)
     if player then
@@ -696,6 +743,13 @@ lib.callback.register('souh4il_dev:server:setPlayerJob', function(source, data)
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local targetId = tonumber(data.targetId)
+    if targetId and targetId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, targetId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     local jobName = tostring(data.job or "unemployed"):lower():gsub("%s+", "")
     local gradeLevel = tonumber(data.grade) or 0
 
@@ -723,6 +777,13 @@ lib.callback.register('souh4il_dev:server:clearPlayerInventory', function(source
     local target = tonumber(targetId)
     if not target or not DoesPlayerExist(tostring(target)) then
         return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    if target ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, target)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
     end
 
     exports.ox_inventory:ClearInventory(target)
@@ -1158,6 +1219,10 @@ lib.callback.register('souh4il_dev:server:playEmoteOnTarget', function(source, d
         if not DoesPlayerExist(tostring(tId)) then
             return { success = false, error = "PLAYER_NOT_ONLINE" }
         end
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
     end
 
     TriggerClientEvent('souh4il_dev:client:receiveForceEmote', tId, payload)
@@ -1185,7 +1250,13 @@ lib.callback.register('souh4il_dev:server:stopEmoteOnTarget', function(source, d
     end
 
     local tId = tonumber(data and (data.targetId or data.target)) or source
-    if DoesPlayerExist(tostring(tId)) then
+    if tId ~= source and DoesPlayerExist(tostring(tId)) then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+        TriggerClientEvent('souh4il_dev:client:receiveStopEmote', tId)
+    elseif tId == source then
         TriggerClientEvent('souh4il_dev:client:receiveStopEmote', tId)
     end
     return { success = true, targetId = tId }
@@ -1582,6 +1653,13 @@ lib.callback.register('souh4il_dev:server:healPlayer', function(source, targetId
     local tId = tonumber(targetId) or source
     if not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     TriggerClientEvent('qbx_medical:client:playerRevived', tId)
     TriggerClientEvent('hospital:client:Revive', tId)
     TriggerClientEvent('souh4il_dev:client:receiveHeal', tId)
@@ -1649,6 +1727,13 @@ lib.callback.register('souh4il_dev:server:setPlayerGang', function(source, data)
     local player = exports.qbx_core:GetPlayer(tId)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     player.Functions.SetGang(data.gang or "none", tonumber(data.grade) or 0)
     Logger.Write("SET_GANG", source, tId, { gang = data.gang, grade = data.grade }, "SUCCESS")
     return { success = true }
@@ -1691,6 +1776,11 @@ lib.callback.register('souh4il_dev:server:warnPlayer', function(source, data)
     local msg = data.reason or "You have received an official staff warning."
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     TriggerClientEvent('souh4il_dev:client:receiveWarn', tId, msg)
     exports.qbx_core:Notify(tId, "⚠️ OFFICIAL WARNING: " .. msg, "error", 10000)
     Logger.Write("WARN_PLAYER", source, tId, { reason = msg }, "SUCCESS")
@@ -1705,6 +1795,11 @@ lib.callback.register('souh4il_dev:server:forceLogout', function(source, targetI
 
     local tId = tonumber(targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
 
     DropPlayer(tostring(tId), "Forced logout by Chicago RP Administration.")
     Logger.Write("FORCE_LOGOUT", source, tId, {}, "SUCCESS")
@@ -1740,6 +1835,11 @@ lib.callback.register('souh4il_dev:server:trollPlayer', function(source, data)
     local trollType = data.type
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     TriggerClientEvent('souh4il_dev:client:receiveTroll', tId, trollType)
     Logger.Write("TROLL_ACTION", source, tId, { type = trollType }, "SUCCESS")
     return { success = true }
@@ -1755,7 +1855,14 @@ lib.callback.register('souh4il_dev:server:openInventory', function(source, data)
     local target = data.target
 
     if invType == 'player' then
-        exports.ox_inventory:forceOpenInventory(source, 'player', tonumber(target))
+        local tId = tonumber(target)
+        if tId and tId ~= source then
+            local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+            if not canTarget then
+                return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+            end
+        end
+        exports.ox_inventory:forceOpenInventory(source, 'player', tId)
     elseif invType == 'trunk' then
         exports.ox_inventory:forceOpenInventory(source, 'trunk', 'trunk' .. tostring(target))
     elseif invType == 'glovebox' then
@@ -1930,6 +2037,13 @@ lib.callback.register('souh4il_dev:server:removePlayerItem', function(source, da
         return { success = false, error = "INVALID_PARAMS" }
     end
 
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     local ok = exports.ox_inventory:RemoveItem(tId, item, count, nil, slot)
     Logger.Write("REMOVE_ITEM_TARGET", source, tId, { item = item, count = count, slot = slot }, ok and "SUCCESS" or "REJECTED")
     return { success = ok == true }
@@ -1942,6 +2056,13 @@ lib.callback.register('souh4il_dev:server:givePlayerProperty', function(source, 
     local tId = tonumber(data and data.targetId)
     local propId = tonumber(data and data.propertyId)
     if not tId or not propId then return { success = false, error = "INVALID_PARAMS" } end
+
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
 
     local player = exports.qbx_core:GetPlayer(tId)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -2016,12 +2137,15 @@ end)
 
 ---Callback: Save Admin's Current Vehicle to Personal Garage
 lib.callback.register('souh4il_dev:server:saveMyCurrentVehicle', function(source, data)
-    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
+    -- P0-7: Server-side explicit permission check for veh_save_garage
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'veh_save_garage') then
+        return { success = false, error = "ACCESS_DENIED_GARAGE_SAVE_PERMISSION_REQUIRED" }
+    end
 
     local player = exports.qbx_core:GetPlayer(source)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
-    local model = tostring(data and data.model or ''):lower()
+    local model = tostring(data and data.model or ''):lower():gsub('^%s*(.-)%s*$', '%1')
     local plate = tostring(data and data.plate or ''):upper():gsub('^%s*(.-)%s*$', '%1')
     local mods = data and data.mods or {}
     local garage = tostring(data and data.garage or 'motel')
@@ -2061,6 +2185,11 @@ lib.callback.register('souh4il_dev:server:wipePlayer', function(source, data)
     local player = exports.qbx_core:GetPlayer(tId)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     if wipeType == 'cash' then
         player.Functions.SetMoney('cash', 0)
         player.Functions.SetMoney('bank', 0)
@@ -2090,6 +2219,11 @@ lib.callback.register('souh4il_dev:server:teleportPlayerToPlayer', function(sour
         return { success = false, error = "PLAYER_NOT_ONLINE" }
     end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, fromId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     local pedFrom = GetPlayerPed(tostring(fromId))
     local pedTo = GetPlayerPed(tostring(toId))
     local coords = GetEntityCoords(pedTo)
@@ -2106,13 +2240,27 @@ lib.callback.register('souh4il_dev:server:managePlayerMoney', function(source, d
     if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'manage_money') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
+
     local tId = tonumber(data.targetId)
     local player = exports.qbx_core:GetPlayer(tId)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     local moneyType = data.moneyType == 'bank' and 'bank' or 'cash'
-    local amount = tonumber(data.amount) or 0
+    local amount = math.floor(tonumber(data.amount) or 0)
     local action = data.moneyAction -- 'give', 'remove', 'set'
+
+    local MAX_ADMIN_MONEY = 10000000
+    if not Permissions.IsOwner(source) and amount > MAX_ADMIN_MONEY then
+        return { success = false, error = ("AMOUNT_EXCEEDS_MAX_LIMIT_%d"):format(MAX_ADMIN_MONEY) }
+    end
 
     if action == 'give' then
         player.Functions.AddMoney(moneyType, math.abs(amount), "souh4il_dev_admin")
@@ -2141,6 +2289,11 @@ lib.callback.register('souh4il_dev:server:giveItemToPlayer', function(source, da
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
     if item == '' then return { success = false, error = "INVALID_ITEM" } end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     local success, response = exports.ox_inventory:AddItem(tId, item, count)
     if success then
         Logger.Write("GIVE_ITEM_TARGET", source, tId, { item = item, count = count }, "SUCCESS")
@@ -2159,7 +2312,33 @@ lib.callback.register('souh4il_dev:server:controlPlayerVitals', function(source,
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
 
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
+
     local vType = data.vitalsType -- 'armor', 'feed', 'kill', 'godmode'
+
+    -- P0-5: Decouple player_heal from kill and godmode
+    if vType == 'kill' then
+        local canKill = Permissions.IsOwner(source) or Permissions.HasModulePermission(source, 'manage_trolls') or Permissions.HasModulePermission(source, 'god_powers')
+        if not canKill then
+            return { success = false, error = "ACCESS_DENIED_KILL_PERMISSION_REQUIRED" }
+        end
+    elseif vType == 'godmode' then
+        local canGod = Permissions.IsOwner(source) or Permissions.HasModulePermission(source, 'god_powers')
+        if not canGod then
+            return { success = false, error = "ACCESS_DENIED_GODMODE_PERMISSION_REQUIRED" }
+        end
+    elseif vType == 'armor' or vType == 'feed' then
+        local canHeal = Permissions.IsOwner(source) or Permissions.HasModulePermission(source, 'player_heal') or Permissions.HasModulePermission(source, 'manage_heal')
+        if not canHeal then
+            return { success = false, error = "ACCESS_DENIED" }
+        end
+    else
+        return { success = false, error = "INVALID_VITALS_TYPE" }
+    end
+
     TriggerClientEvent('souh4il_dev:client:receiveVitalsControl', tId, { type = vType, value = data.value })
     Logger.Write("CONTROL_PLAYER_VITALS", source, tId, { type = vType, value = data.value }, "SUCCESS")
     return { success = true }
@@ -2173,6 +2352,11 @@ lib.callback.register('souh4il_dev:server:controlPlayerVehicle', function(source
 
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+    end
 
     local vAction = data.vehAction -- 'repair', 'max_tune', 'eject', 'damage', 'delete'
     TriggerClientEvent('souh4il_dev:client:receiveVehicleControl', tId, vAction)
@@ -2188,6 +2372,13 @@ lib.callback.register('souh4il_dev:server:controlPlayerAppearance', function(sou
 
     local tId = tonumber(data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
 
     local aType = data.appType -- 'set_ped', 'clothing_menu', 'barber_menu', 'reload_skin', 'clean_ped'
     if aType == 'set_ped' then
@@ -2215,6 +2406,13 @@ lib.callback.register('souh4il_dev:server:setPlayerJobDirect', function(source, 
     local tId = tonumber(data.targetId)
     local player = exports.qbx_core:GetPlayer(tId)
     if not player then return { success = false, error = "PLAYER_NOT_FOUND" } end
+
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
 
     local job = tostring(data.job or 'unemployed')
     local grade = tonumber(data.grade) or 0
@@ -2265,6 +2463,14 @@ end)
 ---Callback: Give Vehicle Keys To Player (Qbox Compatible — Active or Garage)
 lib.callback.register('souh4il_dev:server:giveKeysToPlayer', function(source, data)
     local tId = tonumber(data and data.targetId) or source
+
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     local plate = tostring(data and data.plate or ''):gsub('^%s*(.-)%s*$', '%1')
     local cleanPlate = string.gsub(plate, "%s+", ""):upper()
     local found = false
@@ -2357,6 +2563,13 @@ lib.callback.register('souh4il_dev:server:seizePlayerVehicle', function(source, 
     local targetId = tonumber(data and data.targetId)
     local citizenid = data and data.citizenid
 
+    if targetId and targetId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, targetId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     if #plate == 0 then
         return { success = false, error = "INVALID_PLATE" }
     end
@@ -2394,6 +2607,13 @@ lib.callback.register('souh4il_dev:server:givePlayerOwnedVehicle', function(sour
     local tId = tonumber(data and data.targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then
         return { success = false, error = "PLAYER_NOT_FOUND" }
+    end
+
+    if tId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, tId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
     end
 
     local player = exports.qbx_core:GetPlayer(tId)
@@ -2479,6 +2699,13 @@ lib.callback.register('souh4il_dev:server:seizePlayerProperty', function(source,
     local propertyId = tonumber(data and data.propertyId)
     local targetId = tonumber(data and data.targetId)
     local citizenid = data and data.citizenid
+
+    if targetId and targetId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, targetId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
 
     if not propertyId then return { success = false, error = "INVALID_PROPERTY_ID" } end
 
@@ -2571,6 +2798,13 @@ lib.callback.register('souh4il_dev:server:givePropertyKey', function(source, dat
     local toPlayerId = tonumber(data and data.toPlayerId)
     if not propId or not toPlayerId then return { success = false, error = "INVALID_PARAMS" } end
 
+    if toPlayerId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, toPlayerId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     local target = exports.qbx_core:GetPlayer(toPlayerId)
     if not target then return { success = false, error = "TARGET_NOT_FOUND" } end
 
@@ -2628,6 +2862,13 @@ lib.callback.register('souh4il_dev:server:transferPlayerProperty', function(sour
     local propId = tonumber(data and data.propertyId)
     local toPlayerId = tonumber(data and data.toPlayerId)
     if not propId or not toPlayerId then return { success = false, error = "INVALID_PARAMS" } end
+
+    if toPlayerId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, toPlayerId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
 
     local target = exports.qbx_core:GetPlayer(toPlayerId)
     if not target then return { success = false, error = "TARGET_NOT_FOUND" } end
@@ -2896,6 +3137,13 @@ lib.callback.register('souh4il_dev:server:transferPlayerVehicle', function(sourc
     local toPlayerId = tonumber(data and data.toPlayerId)
     if not toPlayerId or #plate == 0 then return { success = false, error = "INVALID_PARAMS" } end
 
+    if toPlayerId ~= source then
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, toPlayerId)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
+    end
+
     local target = exports.qbx_core:GetPlayer(toPlayerId)
     if not target then return { success = false, error = "TARGET_NOT_FOUND" } end
 
@@ -3044,12 +3292,18 @@ lib.callback.register('souh4il_dev:server:saveStaffMember', function(source, dat
     local allowed, reason = Security.CheckRateLimit(source, 'staff_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff_management') and not Permissions.HasModulePermission(source, 'staff') then
+    -- P0-3: Only Canonical Owner or authorized staff management
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff_management') then
         return { success = false, error = "ACCESS_DENIED" }
     end
 
     if not data or not data.license or data.license == "" then
         return { success = false, error = "INVALID_LICENSE" }
+    end
+
+    local callerLic = Identifiers.GetLicense(source)
+    if not Permissions.IsOwner(source) and callerLic == data.license then
+        return { success = false, error = "CANNOT_SELF_ASSIGN_PERMISSIONS" }
     end
 
     -- Defense-in-depth: Non-owners cannot grant Owner role, modify Owner, or give staff_management
@@ -3063,10 +3317,14 @@ lib.callback.register('souh4il_dev:server:saveStaffMember', function(source, dat
         if data.permissions and (data.permissions.staff == true or data.permissions.staff_management == true) then
             return { success = false, error = "CANNOT_DELEGATE_STAFF_MANAGEMENT" }
         end
+        local currentTarget = Permissions.StaffCache[data.license]
+        if currentTarget and (currentTarget.role == "OWNER" or currentTarget.role == "ADMIN") then
+            return { success = false, error = "CANNOT_MODIFY_EQUAL_OR_HIGHER_STAFF" }
+        end
     end
 
     local granterName = GetPlayerName(source) or "Owner"
-    local ok, err = Permissions.SaveStaff(data.license, data.name or "Staff", data.role or "moderator", data.permissions or {}, granterName)
+    local ok, err = Permissions.SaveStaff(data.license, data.name or "Staff", data.role or "moderator", data.permissions or {}, granterName, source)
     if not ok then
         return { success = false, error = err }
     end
@@ -3092,7 +3350,10 @@ lib.callback.register('souh4il_dev:server:removeStaffMember', function(source, d
     local allowed, reason = Security.CheckRateLimit(source, 'staff_action')
     if not allowed then return { success = false, error = reason } end
 
-    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
+    -- P0-3: Only Canonical Owner or authorized staff management
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff_management') then
+        return { success = false, error = "ACCESS_DENIED" }
+    end
 
     if not data or not data.license then
         return { success = false, error = "INVALID_LICENSE" }
@@ -3102,7 +3363,12 @@ lib.callback.register('souh4il_dev:server:removeStaffMember', function(source, d
         return { success = false, error = "CANNOT_REMOVE_OWNER" }
     end
 
-    local ok, err = Permissions.RemoveStaff(data.license)
+    local callerLic = Identifiers.GetLicense(source)
+    if not Permissions.IsOwner(source) and callerLic == data.license then
+        return { success = false, error = "CANNOT_REMOVE_SELF" }
+    end
+
+    local ok, err = Permissions.RemoveStaff(data.license, source)
     if not ok then
         return { success = false, error = err }
     end

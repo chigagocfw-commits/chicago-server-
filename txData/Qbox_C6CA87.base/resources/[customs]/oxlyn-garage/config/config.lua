@@ -137,7 +137,7 @@ Config.Interaction = {
     --            from the driver seat. With no target resource running the
     --            E prompt keeps working, so nobody is locked out.
     -- 'both'   → prompt AND target
-    mode         = 'prompt',
+    mode         = 'both',
     key          = 38,          -- game control id (38 = E)
     keyLabel     = 'E',         -- what the keycap shows
     drawDistance = 60.0,        -- metres — world icons / prompt logic wake up inside this

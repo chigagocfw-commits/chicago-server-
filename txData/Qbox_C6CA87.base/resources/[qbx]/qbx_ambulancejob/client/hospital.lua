@@ -18,6 +18,10 @@ local function setBedCam()
         local pos = GetEntityCoords(cache.ped, true)
         NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
     end
+    if GetEntityMaxHealth(cache.ped) < 200 then
+        SetEntityMaxHealth(cache.ped, 200)
+    end
+    SetEntityHealth(cache.ped, 200)
 
     RequestCollisionAtCoord(bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z)
     bedObject = GetClosestObjectOfType(bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z, 1.0, bedOccupyingData.model, false, false, false)
@@ -71,8 +75,8 @@ local function putPlayerInBed(hospitalName, bedIndex, isRevive, skipOpenCheck)
             Wait(config.aiHealTimer * 1000)
             lib.callback.await('qbx_ambulancejob:server:completeTreatment')
             TriggerEvent('hospital:client:Revive')
-            lib.playAnim(cache.ped, InBedDict, InBedAnim, 8.0, 1.0, -1, 1, 0, false, false, false)
             CanLeaveBed = true
+            leaveBed()
         else
             CanLeaveBed = true
         end
@@ -255,14 +259,19 @@ else
 end
 
 ---Plays animation to get out of bed and resets variables
-local function leaveBed()
+function leaveBed()
+    if not IsInHospitalBed then return end
+    CanLeaveBed = false
+    lib.hideTextUI()
     lib.requestAnimDict('switch@franklin@bed', 10000)
     FreezeEntityPosition(cache.ped, false)
     SetEntityInvincible(cache.ped, false)
-    SetEntityHeading(cache.ped, bedOccupyingData.coords.w + 90)
+    if bedOccupyingData and bedOccupyingData.coords then
+        SetEntityHeading(cache.ped, bedOccupyingData.coords.w + 90)
+    end
     TaskPlayAnim(cache.ped, 'switch@franklin@bed', 'sleep_getup_rubeyes', 100.0, 1.0, -1, 8, -1, false, false, false)
     RemoveAnimDict('switch@franklin@bed')
-    Wait(4000)
+    Wait(2000)
     ClearPedTasks(cache.ped)
     TriggerServerEvent('qbx_ambulancejob:server:playerLeftBed', hospitalOccupying, bedIndexOccupying)
     if bedObject and bedObject ~= 0 then

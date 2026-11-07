@@ -8,11 +8,19 @@ local function getDoctorCount()
 end
 
 local function displayRespawnText()
-    qbx.drawText2d({
-        text = locale('info.respawn_revive', exports.qbx_medical:GetRespawnHoldTimeDeprecated(), sharedConfig.checkInCost),
-        coords = vec2(1.0, 1.44),
-        scale = 0.6
-    })
+    local deathTime = exports.qbx_medical:GetDeathTime()
+    if deathTime > 0 then
+        qbx.drawText2d({ text = locale('info.respawn_txt', math.ceil(deathTime), sharedConfig.checkInCost), coords = vec2(1.0, 1.44), scale = 0.6 })
+        if doctorCount > 0 then
+            handleRequestingEms()
+        end
+    else
+        qbx.drawText2d({
+            text = locale('info.respawn_revive', sharedConfig.checkInCost),
+            coords = vec2(1.0, 1.44),
+            scale = 0.6
+        })
+    end
 end
 
 ---@param ped number
