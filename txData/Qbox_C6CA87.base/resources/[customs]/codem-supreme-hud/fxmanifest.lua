@@ -72,7 +72,7 @@ client_scripts {
 -- Server scripts
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    '@vrp/lib/utils.lua',
+    -- '@vrp/lib/utils.lua',
     'server/config.lua',
     -- Framework bridges
     'modules/framework/qb/server/*.lua',

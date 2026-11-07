@@ -1704,7 +1704,7 @@ Config.ESXFramework = { -- ESX framework compatibility settings
 	resourcename = "es_extended" -- Name of your ESX resource folder
 }
 
-Config.QBCoreFrameworkResourceName = "qbx-core" -- QBCore resource name (change if your core resource has a different folder name)
+Config.QBCoreFrameworkResourceName = "qb-core" -- QBCore resource name (change if your core resource has a different folder name)
 
 function Notify(notifytype, title, text)
     SendNUIMessage({

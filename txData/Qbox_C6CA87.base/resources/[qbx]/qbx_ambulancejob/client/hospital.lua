@@ -24,14 +24,20 @@ local function setBedCam()
     SetEntityHealth(cache.ped, 200)
 
     RequestCollisionAtCoord(bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z)
+    SetEntityCoords(cache.ped, bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z + 0.05, true, true, true, false)
+    SetEntityHeading(cache.ped, bedOccupyingData.coords.w)
+    local startCol = GetGameTimer()
+    while not HasCollisionLoadedAroundEntity(cache.ped) and (GetGameTimer() - startCol < 3000) do
+        Wait(50)
+    end
+    FreezeEntityPosition(cache.ped, true)
+    SetEntityCoords(cache.ped, bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z + 0.05, true, true, true, false)
+    SetEntityHeading(cache.ped, bedOccupyingData.coords.w)
+
     bedObject = GetClosestObjectOfType(bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z, 1.0, bedOccupyingData.model, false, false, false)
     if bedObject and bedObject ~= 0 then
         FreezeEntityPosition(bedObject, true)
     end
-
-    SetEntityCoords(cache.ped, bedOccupyingData.coords.x, bedOccupyingData.coords.y, bedOccupyingData.coords.z + 0.02, true, true, true, false)
-    Wait(500)
-    FreezeEntityPosition(cache.ped, true)
 
     lib.playAnim(cache.ped, InBedDict, InBedAnim, 8.0, 1.0, -1, 1, 0, false, false, false)
     SetEntityHeading(cache.ped, bedOccupyingData.coords.w)
@@ -279,6 +285,11 @@ function leaveBed()
     end
     RenderScriptCams(false, true, 200, true, true)
     DestroyCam(cam, false)
+
+    if hospitalOccupying == 'pillbox' then
+        SetEntityCoords(cache.ped, 308.19, -592.5, 43.28, true, false, false, false)
+        SetEntityHeading(cache.ped, 180.0)
+    end
 
     hospitalOccupying = nil
     bedIndexOccupying = nil

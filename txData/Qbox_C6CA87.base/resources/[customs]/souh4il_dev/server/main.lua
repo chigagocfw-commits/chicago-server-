@@ -550,6 +550,11 @@ lib.callback.register('souh4il_dev:server:teleportAction', function(source, acti
         Logger.Write("TELEPORT_GOTO", source, target, { coords = coords }, "SUCCESS")
         return { success = true, action = 'goto', coords = coords }
     elseif action == 'bring' then
+        -- Target hierarchy protection: cannot bring equal or higher rank
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, target)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
         local coords = GetEntityCoords(srcPed)
         local tgtVeh = GetVehiclePedIsIn(tgtPed, false)
         local entityToMove = (tgtVeh ~= 0 and GetPedInVehicleSeat(tgtVeh, -1) == tgtPed) and tgtVeh or tgtPed
@@ -557,6 +562,11 @@ lib.callback.register('souh4il_dev:server:teleportAction', function(source, acti
         Logger.Write("TELEPORT_BRING", source, target, { coords = coords }, "SUCCESS")
         return { success = true, action = 'bring', coords = coords }
     elseif action == 'preset' and type(extraCoords) == 'table' and extraCoords.x then
+        -- Target hierarchy protection: cannot move equal or higher rank to preset
+        local canTarget, targetErr = Permissions.CanTargetPlayer(source, target)
+        if not canTarget then
+            return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
+        end
         local tgtVeh = GetVehiclePedIsIn(tgtPed, false)
         local entityToMove = (tgtVeh ~= 0 and GetPedInVehicleSeat(tgtVeh, -1) == tgtPed) and tgtVeh or tgtPed
         SetEntityCoords(entityToMove, tonumber(extraCoords.x), tonumber(extraCoords.y), tonumber(extraCoords.z), false, false, false, false)
@@ -579,6 +589,12 @@ lib.callback.register('souh4il_dev:server:getSpectateCoords', function(source, t
     local target = tonumber(targetId)
     if not target or not DoesPlayerExist(tostring(target)) then
         return { success = false, error = "TARGET_NOT_ONLINE" }
+    end
+
+    -- Target hierarchy protection: cannot spectate equal or higher rank
+    local canTarget, targetErr = Permissions.CanTargetPlayer(source, target)
+    if not canTarget then
+        return { success = false, error = targetErr or "CANNOT_TARGET_EQUAL_OR_HIGHER_RANK" }
     end
 
     local tgtPed = GetPlayerPed(target)
