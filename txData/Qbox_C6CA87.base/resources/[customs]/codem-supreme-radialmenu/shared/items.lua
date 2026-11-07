@@ -6,14 +6,6 @@ MenuItems = {
         icon = 'user',
         items = {
             {
-                id = 'givecontact',
-                label = _L('game.menu.givecontact'),
-                icon = 'address-book',
-                event = 'qb-phone:client:GiveContactDetails',
-                type = 'client',
-                shouldClose = true
-            },
-            {
                 id = 'trunk_actions',
                 label = _L('game.menu.trunk_actions'),
                 icon = 'car',
@@ -547,21 +539,6 @@ JobInteractions = {
             }
         }
     },
-    ['hotdog'] = {
-        id = 'hotdog',
-        label = _L('game.menu.hotdog_actions'),
-        icon = 'hotdog',
-        items = {
-            {
-                id = 'togglesell',
-                label = _L('game.menu.togglesell'),
-                icon = 'circle-dollar-to-slot',
-                event = 'qb-hotdogjob:client:ToggleSell',
-                type = 'client',
-                shouldClose = true
-            }
-        }
-    }
 }
 
 -- Vehicle door labels (used by main.lua for dynamic vehicle menu)
