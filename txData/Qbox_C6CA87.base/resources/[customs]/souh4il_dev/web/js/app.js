@@ -444,8 +444,30 @@ function updateSecurityStatus(status) {
         }
     }
 
-    // Dynamic Role-Based / Granular Permissions Tab Filtering ("nkhtar chkon user les iban lih ou nkhtar bach i9dr ikhdm")
+    // Dynamic Role-Based / Granular Permissions Tab Filtering
     const perms = status.permissions || {};
+
+    // Helper: check if user has ANY of these granular permission keys
+    const hasAny = (...keys) => keys.some(k => perms[k] === true);
+
+    // Granular tab → permission mapping
+    const TAB_PERM_MAP = {
+        'god':        () => hasAny('god_powers', 'god'),
+        'players':    () => hasAny('view_players', 'players'),
+        'manage':     () => hasAny('view_players', 'player_teleport', 'player_heal', 'manage_money', 'manage_assets', 'manage_jobs', 'manage_skins', 'manage_trolls', 'manage_wipes', 'player_inventory', 'spawn_items', 'players'),
+        'teleport':   () => hasAny('world_teleport', 'teleport'),
+        'items':      () => hasAny('spawn_items', 'manage_money', 'items'),
+        'vehicles':   () => hasAny('spawn_vehicles', 'vehicles'),
+        'characters': () => hasAny('manage_skins', 'characters'),
+        'jobs':       () => hasAny('manage_jobs', 'jobs'),
+        'arsenal':    () => hasAny('arsenal'),
+        'world':      () => hasAny('world_control', 'world'),
+        'devtools':   () => hasAny('devtools'),
+        'events':     () => hasAny('events'),
+        'logs':       () => hasAny('logs'),
+        'staff':      () => hasAny('staff_management', 'staff'),
+    };
+
     let activeTabVisible = false;
 
     document.querySelectorAll('.nav-item').forEach(btn => {
@@ -463,8 +485,8 @@ function updateSecurityStatus(status) {
             return;
         }
 
-        // Check if user has permission for this module ('manage' shares 'players' permission)
-        const hasPerm = (tab === 'manage') ? (perms['players'] === true || perms['manage'] === true) : (perms[tab] === true);
+        const checker = TAB_PERM_MAP[tab];
+        const hasPerm = checker ? checker() : false;
         btn.style.display = hasPerm ? '' : 'none';
         if (currentTab === tab && hasPerm) {
             activeTabVisible = true;
@@ -476,6 +498,13 @@ function updateSecurityStatus(status) {
         const dashBtn = document.querySelector('.nav-item[data-tab="dashboard"]');
         if (dashBtn) dashBtn.click();
     }
+
+    // Store active perms globally for filterPlayers & manage cards
+    window._activePerms = perms;
+    window._isOwner = status.isOwner;
+
+    // Dynamic Manage tab cards visibility based on granular perms
+    renderManageSectionVisibility(perms, status.isOwner);
 }
 
 // Tab Switching
@@ -1691,6 +1720,18 @@ function filterPlayers(query) {
         const freezeBtnLabel = p.isFrozen ? '❄️ Unfreeze' : 'Freeze';
         const freezeBtnStyle = p.isFrozen ? 'background: rgba(56,189,248,0.22); border-color: #38bdf8; color: #38bdf8; font-weight: 800;' : '';
 
+        // Granular permission-based button visibility
+        const gp = window._activePerms || {};
+        const ow = window._isOwner || false;
+        const canHeal     = ow || gp.player_heal === true || gp.players === true;
+        const canInv      = ow || gp.player_inventory === true || gp.items === true;
+        const canTp       = ow || gp.player_teleport === true || gp.teleport === true || gp.players === true;
+        const canFreeze   = ow || gp.player_freeze === true || gp.players === true;
+        const canSpectate = ow || gp.player_spectate === true || gp.players === true;
+        const canKick     = ow || gp.punish_kicks === true || gp.punishments === true;
+        const canBan      = ow || gp.punish_bans === true;
+        const canManage   = ow || gp.view_players === true || gp.players === true;
+
         return `
         <tr>
             <td><strong>#${p.id}</strong></td>
@@ -1714,16 +1755,16 @@ function filterPlayers(query) {
             </td>
             <td>
                 <div class="player-actions" style="flex-wrap: wrap; gap: 4px;">
-                    <button class="p-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700; padding: 4px 10px;" onclick="openPlayerManageModal(${p.id}, '${escapeHtml(p.name)}')">⚡ Manage</button>
-                    <button class="p-btn" style="background: rgba(0,230,118,0.16); color: #00e676; border: 1px solid rgba(0,230,118,0.35); font-weight: 700;" onclick="playerAction('heal', ${p.id})" title="Revive & Heal 100%">❤️ Revive</button>
-                    <button class="p-btn" style="background: rgba(250,204,21,0.14); color: #facc15; border: 1px solid rgba(250,204,21,0.35); font-weight: 700;" onclick="playerAction('open_inv', ${p.id})" title="Ouvrir Inventaire">🎒 Inv</button>
-                    <button class="p-btn goto" onclick="playerAction('goto', ${p.id})">Goto</button>
-                    <button class="p-btn bring" onclick="playerAction('bring', ${p.id})">Bring</button>
-                    <button class="p-btn freeze" style="${freezeBtnStyle}" onclick="playerAction('freeze', ${p.id})">${freezeBtnLabel}</button>
-                    <button class="p-btn spectate" onclick="playerAction('spectate', ${p.id})">Spectate</button>
+                    ${canManage ? `<button class="p-btn" style="background: var(--accent-cyan); color: #000; font-weight: 700; padding: 4px 10px;" onclick="openPlayerManageModal(${p.id}, '${escapeHtml(p.name)}')">⚡ Manage</button>` : ''}
+                    ${canHeal ? `<button class="p-btn" style="background: rgba(0,230,118,0.16); color: #00e676; border: 1px solid rgba(0,230,118,0.35); font-weight: 700;" onclick="playerAction('heal', ${p.id})" title="Revive & Heal 100%">❤️ Revive</button>` : ''}
+                    ${canInv ? `<button class="p-btn" style="background: rgba(250,204,21,0.14); color: #facc15; border: 1px solid rgba(250,204,21,0.35); font-weight: 700;" onclick="playerAction('open_inv', ${p.id})" title="Ouvrir Inventaire">🎒 Inv</button>` : ''}
+                    ${canTp ? `<button class="p-btn goto" onclick="playerAction('goto', ${p.id})">Goto</button>` : ''}
+                    ${canTp ? `<button class="p-btn bring" onclick="playerAction('bring', ${p.id})">Bring</button>` : ''}
+                    ${canFreeze ? `<button class="p-btn freeze" style="${freezeBtnStyle}" onclick="playerAction('freeze', ${p.id})">${freezeBtnLabel}</button>` : ''}
+                    ${canSpectate ? `<button class="p-btn spectate" onclick="playerAction('spectate', ${p.id})">Spectate</button>` : ''}
                     <button class="p-btn info" style="background: rgba(255,255,255,0.08); padding: 4px 8px;" onclick="openPlayerInfoModal(${p.id})">ℹ️ Info</button>
-                    <button class="p-btn kick" onclick="openKickModal(${p.id}, '${escapeHtml(p.name)}')">Kick</button>
-                    <button class="p-btn ban" onclick="openBanModal(${p.id}, '${escapeHtml(p.name)}')">Ban</button>
+                    ${canKick ? `<button class="p-btn kick" onclick="openKickModal(${p.id}, '${escapeHtml(p.name)}')">Kick</button>` : ''}
+                    ${canBan ? `<button class="p-btn ban" onclick="openBanModal(${p.id}, '${escapeHtml(p.name)}')">Ban</button>` : ''}
                 </div>
             </td>
         </tr>
@@ -2042,12 +2083,67 @@ window.switchManageSection = function(sec) {
     }
     document.querySelectorAll('#manage-sections-grid .manage-sec-card').forEach(card => {
         if (sec === 'all') {
-            card.style.display = '';
+            // Show only cards not hidden by permissions
+            card.style.display = card.dataset.permHidden === '1' ? 'none' : '';
         } else {
-            card.style.display = (card.getAttribute('data-sec') === sec) ? '' : 'none';
+            const match = card.getAttribute('data-sec') === sec;
+            card.style.display = (match && card.dataset.permHidden !== '1') ? '' : 'none';
         }
     });
 };
+
+// Granular Permission-Based Manage Card Visibility
+// Hides entire cards in the Manage tab based on what the staff member can actually do
+function renderManageSectionVisibility(perms, isOwnerFlag) {
+    if (!perms && !isOwnerFlag) return;
+    const gp = perms || {};
+    const ow = isOwnerFlag || false;
+    const hasAny = (...keys) => ow || keys.some(k => gp[k] === true);
+
+    // Card 01 (sec-tp): Téléportation Joueur
+    const card01 = document.querySelector('.manage-sec-card[data-sec="sec-tp"]');
+    if (card01) card01.dataset.permHidden = hasAny('player_teleport', 'teleport', 'players') ? '0' : '1';
+
+    // Card 02-03 (sec-econ): Argent, Inventaire & Items
+    const card02 = document.querySelector('.manage-sec-card[data-sec="sec-econ"]');
+    if (card02) card02.dataset.permHidden = hasAny('manage_money', 'spawn_items', 'player_inventory', 'items') ? '0' : '1';
+
+    // Card 04-05 (sec-char): Métiers, Gangs, Santé & Véhicule
+    const cards03 = document.querySelectorAll('.manage-sec-card[data-sec="sec-char"]');
+    cards03.forEach(c => {
+        c.dataset.permHidden = hasAny('manage_jobs', 'player_heal', 'spawn_vehicles', 'jobs', 'players', 'vehicles') ? '0' : '1';
+    });
+
+    // Card 6B (sec-assets): Patrimoine (Maisons & Voitures)
+    const card05 = document.querySelector('.manage-sec-card[data-sec="sec-assets"]');
+    if (card05) card05.dataset.permHidden = hasAny('manage_assets', 'vehicles', 'characters') ? '0' : '1';
+
+    // Card 7 (sec-skins): Skins & Peds
+    const card06 = document.querySelector('.manage-sec-card[data-sec="sec-skins"]');
+    if (card06) card06.dataset.permHidden = hasAny('manage_skins', 'characters') ? '0' : '1';
+
+    // Card 8 (sec-trolls): Trolls & Wipes
+    const card07 = document.querySelector('.manage-sec-card[data-sec="sec-trolls"]');
+    if (card07) card07.dataset.permHidden = hasAny('manage_trolls', 'manage_wipes', 'punish_kicks', 'god') ? '0' : '1';
+
+    // Apply now to currently visible cards
+    document.querySelectorAll('#manage-sections-grid .manage-sec-card').forEach(card => {
+        card.style.display = card.dataset.permHidden === '1' ? 'none' : '';
+    });
+
+    // Also hide dossier quick-buttons based on perms
+    const dossierBtns = document.querySelectorAll('.manage-dossier-quickbtns .dossier-qbtn');
+    dossierBtns.forEach(btn => {
+        const text = btn.innerText.toLowerCase();
+        if (text.includes('revive') || text.includes('heal')) {
+            btn.style.display = hasAny('player_heal', 'players') ? '' : 'none';
+        } else if (text.includes('goto') || text.includes('bring')) {
+            btn.style.display = hasAny('player_teleport', 'teleport', 'players') ? '' : 'none';
+        } else if (text.includes('inventaire') || text.includes('inv')) {
+            btn.style.display = hasAny('player_inventory', 'items') ? '' : 'none';
+        }
+    });
+}
 
 window.execPlayerDetailed = function(action, extra = {}) {
     const targetId = document.getElementById('manage-target-id').value;
@@ -2985,14 +3081,63 @@ let cachedOnlinePlayers = [];
 let staffViewMode = 'members'; // 'members' = ga3 les joueurs, 'staff' = only staff
 
 let rolePresetPerms = {
-    owner: { god: true, teleport: true, items: true, vehicles: true, characters: true, jobs: true, arsenal: true, players: true, punishments: true, devtools: true, world: true, logs: true, events: true, staff: true },
-    developer: { god: false, teleport: true, items: false, vehicles: true, characters: true, jobs: false, arsenal: false, players: true, punishments: false, devtools: true, world: true, logs: true, events: true, staff: false },
-    admin: { god: false, teleport: true, items: true, vehicles: true, characters: true, jobs: true, arsenal: false, players: true, punishments: true, devtools: false, world: true, logs: true, events: true, staff: false },
-    moderator: { god: false, teleport: true, items: false, vehicles: true, characters: false, jobs: false, arsenal: false, players: true, punishments: false, devtools: false, world: false, logs: false, events: false, staff: false },
-    custom: { god: false, teleport: true, items: false, vehicles: false, characters: false, jobs: false, arsenal: false, players: true, punishments: false, devtools: false, world: false, logs: false, events: false, staff: false }
+    owner: {
+        manage_money: true, manage_wipes: true, manage_assets: true, punish_bans: true, punish_kicks: true, manage_trolls: true,
+        view_players: true, player_spectate: true, player_freeze: true, player_teleport: true, player_heal: true, player_inventory: true,
+        spawn_vehicles: true, spawn_items: true, manage_jobs: true, manage_skins: true, world_teleport: true, world_control: true,
+        god_powers: true, staff_management: true, devtools: true, logs: true, events: true, arsenal: true,
+    },
+    developer: {
+        manage_money: false, manage_wipes: false, manage_assets: false, punish_bans: false, punish_kicks: false, manage_trolls: false,
+        view_players: true, player_spectate: true, player_freeze: false, player_teleport: true, player_heal: false, player_inventory: false,
+        spawn_vehicles: true, spawn_items: false, manage_jobs: false, manage_skins: true, world_teleport: true, world_control: true,
+        god_powers: false, staff_management: false, devtools: true, logs: true, events: true, arsenal: false,
+    },
+    admin: {
+        manage_money: false, manage_wipes: false, manage_assets: true, punish_bans: true, punish_kicks: true, manage_trolls: false,
+        view_players: true, player_spectate: true, player_freeze: true, player_teleport: true, player_heal: true, player_inventory: true,
+        spawn_vehicles: true, spawn_items: true, manage_jobs: true, manage_skins: true, world_teleport: true, world_control: true,
+        god_powers: false, staff_management: false, devtools: false, logs: true, events: true, arsenal: false,
+    },
+    moderator: {
+        manage_money: false, manage_wipes: false, manage_assets: false, punish_bans: false, punish_kicks: true, manage_trolls: false,
+        view_players: true, player_spectate: true, player_freeze: true, player_teleport: true, player_heal: true, player_inventory: false,
+        spawn_vehicles: true, spawn_items: false, manage_jobs: false, manage_skins: false, world_teleport: false, world_control: false,
+        god_powers: false, staff_management: false, devtools: false, logs: false, events: false, arsenal: false,
+    },
+    custom: {
+        manage_money: false, manage_wipes: false, manage_assets: false, punish_bans: false, punish_kicks: false, manage_trolls: false,
+        view_players: true, player_spectate: false, player_freeze: false, player_teleport: true, player_heal: false, player_inventory: false,
+        spawn_vehicles: false, spawn_items: false, manage_jobs: false, manage_skins: false, world_teleport: false, world_control: false,
+        god_powers: false, staff_management: false, devtools: false, logs: false, events: false, arsenal: false,
+    }
 };
 
-const ALL_PERM_KEYS = ['players', 'teleport', 'vehicles', 'punishments', 'items', 'characters', 'jobs', 'world', 'devtools', 'arsenal', 'god', 'logs', 'events', 'staff'];
+const ALL_PERM_KEYS = [
+    'manage_money', 'manage_wipes', 'manage_assets', 'punish_bans', 'punish_kicks', 'manage_trolls',
+    'view_players', 'player_spectate', 'player_freeze', 'player_teleport', 'player_heal', 'player_inventory',
+    'spawn_vehicles', 'spawn_items', 'manage_jobs', 'manage_skins', 'world_teleport', 'world_control',
+    'god_powers', 'staff_management', 'devtools', 'logs', 'events', 'arsenal'
+];
+
+// Legacy key → granular key mapping for permission display & backward compat
+const LEGACY_TO_GRANULAR = {
+    players: 'view_players', teleport: 'world_teleport', vehicles: 'spawn_vehicles',
+    punishments: 'punish_kicks', items: 'spawn_items', characters: 'manage_skins',
+    jobs: 'manage_jobs', world: 'world_control', god: 'god_powers', staff: 'staff_management',
+};
+
+// Human-readable labels for granular permission tags
+const PERM_LABELS = {
+    manage_money: '💰 Argent', manage_wipes: '⚡ Wipes', manage_assets: '🏛️ Patrimoine',
+    punish_bans: '🚫 Bans', punish_kicks: '👢 Kicks', manage_trolls: '🎭 Trolls',
+    view_players: '👁️ Joueurs', player_spectate: '🔭 Spectate', player_freeze: '❄️ Freeze',
+    player_teleport: '🚀 TP Joueur', player_heal: '❤️ Heal', player_inventory: '🎒 Inventaire',
+    spawn_vehicles: '🚗 Véhicules', spawn_items: '📦 Items', manage_jobs: '💼 Jobs',
+    manage_skins: '🎭 Skins', world_teleport: '🗺️ TP Map', world_control: '🌍 Monde',
+    god_powers: '⚡ Godmode', staff_management: '🛡️ Staff', devtools: '🔧 DevTools',
+    logs: '📜 Logs', events: '🎪 Events', arsenal: '🔫 Arsenal',
+};
 
 async function fetchNUI(endpoint, payload = {}) {
     const resourceName = window.GetParentResourceName ? window.GetParentResourceName() : 'souh4il_dev';
@@ -3090,7 +3235,7 @@ function renderMembersList(list, filter = '') {
         if (hasAccess) {
             ALL_PERM_KEYS.forEach(k => {
                 if (perms[k] === true) {
-                    const label = k.charAt(0).toUpperCase() + k.slice(1);
+                    const label = PERM_LABELS[k] || k.charAt(0).toUpperCase() + k.slice(1);
                     permsTagsHtml += `<span class="perm-tag active">${label}</span>`;
                 }
             });
@@ -3181,7 +3326,7 @@ function renderStaffList(list, filter = '') {
         let permsTagsHtml = '';
         ALL_PERM_KEYS.forEach(k => {
             if (perms[k] === true) {
-                const label = k.charAt(0).toUpperCase() + k.slice(1);
+                const label = PERM_LABELS[k] || k.charAt(0).toUpperCase() + k.slice(1);
                 permsTagsHtml += `<span class="perm-tag active">${label}</span>`;
             }
         });

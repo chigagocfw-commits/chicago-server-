@@ -2772,7 +2772,7 @@ lib.callback.register('souh4il_dev:server:getStaffData', function(source)
     local allowed, reason = Security.CheckRateLimit(source, 'get_staff')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff') then
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff_management') and not Permissions.HasModulePermission(source, 'staff') then
         return { success = false, error = "ACCESS_DENIED" }
     end
 
@@ -2855,12 +2855,25 @@ lib.callback.register('souh4il_dev:server:saveStaffMember', function(source, dat
     local allowed, reason = Security.CheckRateLimit(source, 'staff_action')
     if not allowed then return { success = false, error = reason } end
 
-    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff') then
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'staff_management') and not Permissions.HasModulePermission(source, 'staff') then
         return { success = false, error = "ACCESS_DENIED" }
     end
 
     if not data or not data.license or data.license == "" then
         return { success = false, error = "INVALID_LICENSE" }
+    end
+
+    -- Defense-in-depth: Non-owners cannot grant Owner role, modify Owner, or give staff_management
+    if not Permissions.IsOwner(source) then
+        if data.license == PermissionsConfig.CanonicalOwnerLicense then
+            return { success = false, error = "CANNOT_MODIFY_OWNER" }
+        end
+        if string.lower(data.role or '') == 'owner' then
+            return { success = false, error = "CANNOT_GRANT_OWNER_ROLE" }
+        end
+        if data.permissions and (data.permissions.staff == true or data.permissions.staff_management == true) then
+            return { success = false, error = "CANNOT_DELEGATE_STAFF_MANAGEMENT" }
+        end
     end
 
     local granterName = GetPlayerName(source) or "Owner"

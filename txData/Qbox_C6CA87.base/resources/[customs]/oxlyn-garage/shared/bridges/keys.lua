@@ -680,7 +680,8 @@ else
 
     -- Server -> client: perform a relayed give/remove
     RegisterNetEvent(resourceName .. ":keys:client", function(action, system, plate, model, netId, force, hookOk)
-        if source ~= 65535 or (action ~= "give" and action ~= "remove") then
+        local isServerSource = (source == "" or source == nil or source == 65535 or tostring(source) == "65535" or tostring(source) == "")
+        if not isServerSource or (action ~= "give" and action ~= "remove") then
             return
         end
 
@@ -725,7 +726,8 @@ else
 
     -- Server -> client: result of a non-relayed give/remove
     RegisterNetEvent(resourceName .. ":keys:result", function(action, plate, netId, ok)
-        if not (source == 65535 and (action == "give" or action == "remove") and type(plate) == "string") then
+        local isServerSource = (source == "" or source == nil or source == 65535 or tostring(source) == "65535" or tostring(source) == "")
+        if not (isServerSource and (action == "give" or action == "remove") and type(plate) == "string") then
             return
         end
 

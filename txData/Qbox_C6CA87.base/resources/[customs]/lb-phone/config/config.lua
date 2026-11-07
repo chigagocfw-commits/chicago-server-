@@ -204,6 +204,7 @@ Config.Companies.Management = {
 Config.CustomApps = {} 
 
 Config.Valet = {}
+Config.Valet.OxlynResource = 'oxlyn-garage'
 Config.Valet.Enabled = true 
 Config.Valet.VehicleTypes = { "car", "vehicle" }
 Config.Valet.Price = 100 

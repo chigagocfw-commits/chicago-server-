@@ -1856,134 +1856,197 @@
 
                     <!-- Categorized Granular Permissions Matrix -->
                     <div class="perm-categories-container">
-                        <!-- Category 1: Joueurs & Modération -->
-                        <div class="perm-cat-group">
-                            <div class="perm-cat-header">👥 1. GESTION DES JOUEURS & MODÉRATION</div>
+                        <!-- Category 1: Sécurité Haute & Économie -->
+                        <div class="perm-cat-group" style="border-color: rgba(255, 77, 77, 0.35);">
+                            <div class="perm-cat-header" style="color: #ff6b6b;">👑 1. SÉCURITÉ HAUTE, ÉCONOMIE & SANCTIONS (CRITIQUE)</div>
                             <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-players">
-                                    <input type="checkbox" id="perm-players" checked>
+                                <label class="perm-check-card" for="perm-manage_money">
+                                    <input type="checkbox" id="perm-manage_money">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Players Suite</span>
-                                        <span class="perm-check-card-desc">Heal, Revive, Freeze, Spectate, Goto, Bring, Warn</span>
+                                        <span class="perm-check-card-title">💰 Argent Cash & Banque</span>
+                                        <span class="perm-check-card-desc">Donner, retirer ou fixer le Cash & Banque aux joueurs</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-teleport">
-                                    <input type="checkbox" id="perm-teleport" checked>
+                                <label class="perm-check-card" for="perm-manage_wipes">
+                                    <input type="checkbox" id="perm-manage_wipes">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Téléportation</span>
-                                        <span class="perm-check-card-desc">Marqueur GPS, Coordonnées XYZ, Lieux enregistrés</span>
+                                        <span class="perm-check-card-title" style="color: #ff5252;">⚡ Wipe Personnage (Danger)</span>
+                                        <span class="perm-check-card-desc">Remise à zéro totale du joueur, wipe inventaire ou wipe argent</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-punishments">
-                                    <input type="checkbox" id="perm-punishments">
+                                <label class="perm-check-card" for="perm-manage_assets">
+                                    <input type="checkbox" id="perm-manage_assets">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Sanctions & Bans</span>
-                                        <span class="perm-check-card-desc">Kick, Bannissement temporaire/permanent, Ban Offline</span>
+                                        <span class="perm-check-card-title">🏛️ Patrimoine (Maisons & Voitures)</span>
+                                        <span class="perm-check-card-desc">Donner, saisir ou transférer des voitures et propriétés enregistrées</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-punish_bans">
+                                    <input type="checkbox" id="perm-punish_bans">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🚫 Bannissements (Ban / Unban)</span>
+                                        <span class="perm-check-card-desc">Bannir temporairement/définitivement, unban et ban offline</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-punish_kicks">
+                                    <input type="checkbox" id="perm-punish_kicks">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">👢 Kick & Avertissements (Warn)</span>
+                                        <span class="perm-check-card-desc">Kicker un joueur, envoyer un warn officiel ou forcer déconnexion</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-manage_trolls">
+                                    <input type="checkbox" id="perm-manage_trolls">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🎭 Trolls & Sanctions Fun</span>
+                                        <span class="perm-check-card-desc">Slap 50m, feu, ivre, pipi, caca, cage prison, son strident</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Category 2: Véhicules & Équipements -->
-                        <div class="perm-cat-group">
-                            <div class="perm-cat-header">🚗 2. VÉHICULES, ITEMS & ÉQUIPEMENTS</div>
+                        <!-- Category 2: Modération Joueurs en Direct -->
+                        <div class="perm-cat-group" style="border-color: rgba(0, 229, 255, 0.25);">
+                            <div class="perm-cat-header" style="color: var(--accent-cyan);">👥 2. MODÉRATION & SUIVI DES JOUEURS EN DIRECT</div>
                             <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-vehicles">
-                                    <input type="checkbox" id="perm-vehicles">
+                                <label class="perm-check-card" for="perm-view_players">
+                                    <input type="checkbox" id="perm-view_players" checked>
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Contrôle Véhicules</span>
-                                        <span class="perm-check-card-desc">Spawn 971+ véhicules, Bennys Max Mod, Réparation, Clés</span>
+                                        <span class="perm-check-card-title">👁️ Consulter Joueurs & Dossiers</span>
+                                        <span class="perm-check-card-desc">Liste des joueurs connectés, détails, ping, CID et cash affiché</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-items">
-                                    <input type="checkbox" id="perm-items">
+                                <label class="perm-check-card" for="perm-player_spectate">
+                                    <input type="checkbox" id="perm-player_spectate" checked>
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Items & Argent</span>
-                                        <span class="perm-check-card-desc">Donner items ox_inventory, armes, cash et banque</span>
+                                        <span class="perm-check-card-title">🔭 Mode Spectateur (Spectate)</span>
+                                        <span class="perm-check-card-desc">Observer un joueur en direct avec streaming OneSync et retour</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-arsenal">
-                                    <input type="checkbox" id="perm-arsenal">
+                                <label class="perm-check-card" for="perm-player_freeze">
+                                    <input type="checkbox" id="perm-player_freeze">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Arsenal Propriétaire</span>
-                                        <span class="perm-check-card-desc">Équipement tactique d'assaut et loadouts exclusifs</span>
+                                        <span class="perm-check-card-title">❄️ Freeze / Unfreeze Joueur</span>
+                                        <span class="perm-check-card-desc">Geler ou dégeler sur place un joueur suspecté de troll</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-player_teleport">
+                                    <input type="checkbox" id="perm-player_teleport" checked>
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🚀 TP Joueur (Goto / Bring / Amis)</span>
+                                        <span class="perm-check-card-desc">Se téléporter sur lui, le ramener ou l'envoyer à un ami connecté</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-player_heal">
+                                    <input type="checkbox" id="perm-player_heal">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">❤️ Revive & Soins (Heal)</span>
+                                        <span class="perm-check-card-desc">Réanimer, soigner 100%, armure, faim, soif et zéro stress</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-player_inventory">
+                                    <input type="checkbox" id="perm-player_inventory">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🎒 Fouille Inventaire (Inv)</span>
+                                        <span class="perm-check-card-desc">Ouvrir les poches en direct, coffre véhicule, boîte à gants et vider</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Category 3: Personnages & Métiers -->
+                        <!-- Category 3: Serveur, Véhicules & Métiers -->
                         <div class="perm-cat-group">
-                            <div class="perm-cat-header">🎭 3. PERSONNAGES, SKINS & MÉTIERS (JOBS)</div>
+                            <div class="perm-cat-header">🛠️ 3. SERVEUR, VÉHICULES & MÉTIERS</div>
                             <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-characters">
-                                    <input type="checkbox" id="perm-characters">
+                                <label class="perm-check-card" for="perm-spawn_vehicles">
+                                    <input type="checkbox" id="perm-spawn_vehicles">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">1,051+ Peds & Skins</span>
-                                        <span class="perm-check-card-desc">Changement immédiat de skin parmi tous les peds du serveur</span>
+                                        <span class="perm-check-card-title">🚗 Spawner Véhicules & Garage</span>
+                                        <span class="perm-check-card-desc">Spawner 971+ véhicules pour soi-même, réparer et max tuner</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-jobs">
-                                    <input type="checkbox" id="perm-jobs">
+                                <label class="perm-check-card" for="perm-spawn_items">
+                                    <input type="checkbox" id="perm-spawn_items">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Métiers & Gangs</span>
-                                        <span class="perm-check-card-desc">Assignation de métier, gang, gestion des salaires et grades</span>
+                                        <span class="perm-check-card-title">📦 Spawner Items</span>
+                                        <span class="perm-check-card-desc">Se donner ou donner des items du catalogue ox_inventory</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-manage_jobs">
+                                    <input type="checkbox" id="perm-manage_jobs">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">💼 Métiers & Gangs (Jobs)</span>
+                                        <span class="perm-check-card-desc">Définir ou modifier le métier (Job), le gang et les grades</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-manage_skins">
+                                    <input type="checkbox" id="perm-manage_skins">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🎭 Studio Skins & Peds (1051+)</span>
+                                        <span class="perm-check-card-desc">Changer de skin instantanément parmi tous les peds du serveur</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-world_teleport">
+                                    <input type="checkbox" id="perm-world_teleport">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🗺️ Téléportation Map (GPS / XYZ)</span>
+                                        <span class="perm-check-card-desc">Se téléporter au point GPS sur la carte ou coordonnées manuelles</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-world_control">
+                                    <input type="checkbox" id="perm-world_control">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🌍 Météo & Contrôle du Monde</span>
+                                        <span class="perm-check-card-desc">Météo, heure, annonces globales, blackout mondial, densité du trafic</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Category 4: Monde, Événements & Outils Dev -->
-                        <div class="perm-cat-group">
-                            <div class="perm-cat-header">🌍 4. MONDE, ÉVÉNEMENTS & OUTILS DEV</div>
+                        <!-- Category 4: Master Admin & Dev Tools -->
+                        <div class="perm-cat-group" style="border-color: rgba(255, 215, 0, 0.35);">
+                            <div class="perm-cat-header" style="color: #ffd700;">⚡ 4. MASTER ADMIN, GODMODE & DEV TOOLS</div>
                             <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-world">
-                                    <input type="checkbox" id="perm-world">
+                                <label class="perm-check-card" for="perm-god_powers">
+                                    <input type="checkbox" id="perm-god_powers">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Météo & Temps</span>
-                                        <span class="perm-check-card-desc">Contrôle du ciel, gel de l'heure, blackout mondial, clear zone</span>
+                                        <span class="perm-check-card-title">⚡ Master Godmode & Noclip</span>
+                                        <span class="perm-check-card-desc">Invincibilité, noclip, munitions illimitées, invisibilité, super saut</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-events">
-                                    <input type="checkbox" id="perm-events">
+                                <label class="perm-check-card" for="perm-staff_management">
+                                    <input type="checkbox" id="perm-staff_management">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Event Manager</span>
-                                        <span class="perm-check-card-desc">Lancement des events serveur (Purge, Fight Night, Drag Race)</span>
+                                        <span class="perm-check-card-title">🛡️ Gestion de l'Équipe Staff</span>
+                                        <span class="perm-check-card-desc">Autorisation d'ajouter des membres staff et d'éditer leurs accès</span>
                                     </div>
                                 </label>
                                 <label class="perm-check-card" for="perm-devtools">
                                     <input type="checkbox" id="perm-devtools">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Outils Développeur</span>
-                                        <span class="perm-check-card-desc">Spawner d'objets (props), stashes de gangs, inspecteur</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Category 5: Master Godmode & Administration Staff -->
-                        <div class="perm-cat-group" style="border-color: rgba(255, 215, 0, 0.3);">
-                            <div class="perm-cat-header" style="color: #ffd700;">👑 5. MASTER GODMODE & SUPER-ADMINISTRATION</div>
-                            <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-god">
-                                    <input type="checkbox" id="perm-god">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">God Powers & Trolls</span>
-                                        <span class="perm-check-card-desc">Godmode, Noclip, Munitions infinies, Invisibilité, Trolls fun</span>
+                                        <span class="perm-check-card-title">🔧 Outils Développeur</span>
+                                        <span class="perm-check-card-desc">Inspecteur coordonnées vectorielles, copy vec3/vec4, purge zone 50m</span>
                                     </div>
                                 </label>
                                 <label class="perm-check-card" for="perm-logs">
                                     <input type="checkbox" id="perm-logs">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Journaux d'Audit</span>
-                                        <span class="perm-check-card-desc">Inspection des logs de sécurité inviolables du panel</span>
+                                        <span class="perm-check-card-title">📜 Journaux d'Audit & Sécurité</span>
+                                        <span class="perm-check-card-desc">Inspection des logs d'audit inviolables et actions du staff</span>
                                     </div>
                                 </label>
-                                <label class="perm-check-card" for="perm-staff" style="grid-column: span 2;">
-                                    <input type="checkbox" id="perm-staff">
+                                <label class="perm-check-card" for="perm-events">
+                                    <input type="checkbox" id="perm-events">
                                     <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">Administration du Staff</span>
-                                        <span class="perm-check-card-desc">Autorisation de nommer, modifier ou révoquer les permissions des autres staff</span>
+                                        <span class="perm-check-card-title">🎪 Event Manager</span>
+                                        <span class="perm-check-card-desc">Lancer ou stopper des événements communautaires (Purge, Fight Night)</span>
+                                    </div>
+                                </label>
+                                <label class="perm-check-card" for="perm-arsenal">
+                                    <input type="checkbox" id="perm-arsenal">
+                                    <div class="perm-check-card-info">
+                                        <span class="perm-check-card-title">🔫 Arsenal Propriétaire</span>
+                                        <span class="perm-check-card-desc">Accès aux loadouts tactiques d'assaut et armes exclusives</span>
                                     </div>
                                 </label>
                             </div>
