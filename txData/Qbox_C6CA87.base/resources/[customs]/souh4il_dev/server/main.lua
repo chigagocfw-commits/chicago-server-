@@ -22,20 +22,20 @@ local Outbox = require 'server.outbox'
 local CALLBACK_MODULES = {
     -- players / moderation
     getPlayerDetails = { 'view_players', 'players' },
-    messagePlayer = { 'view_players', 'players' },
+    messagePlayer = { 'player_pm', 'view_players', 'players' },
     trollPlayer = { 'manage_trolls', 'god_powers', 'god' },
     healPlayer = { 'player_heal', 'players' },
-    controlPlayerVitals = { 'player_heal', 'players' },
+    controlPlayerVitals = { 'player_heal', 'manage_trolls', 'god_powers', 'players' },
     -- teleport
     teleportAction = { 'player_teleport', 'world_teleport', 'teleport' },
     teleportPlayerToPlayer = { 'player_teleport', 'teleport' },
-    teleportToProperty = { 'player_teleport', 'world_teleport', 'teleport' },
+    teleportToProperty = { 'manage_properties', 'manage_assets', 'player_teleport', 'world_teleport', 'teleport' },
     getSpectateCoords = { 'player_spectate', 'players' },
     -- punishments
     banPlayer = { 'punish_bans' },
     kickPlayer = { 'punish_kicks' },
     warnPlayer = { 'punish_kicks' },
-    freezePlayer = { 'player_freeze', 'players' },
+    freezePlayer = { 'player_freeze', 'player_spectate', 'players' },
     forceLogout = { 'punish_kicks' },
     banOfflinePlayer = { 'punish_bans' },
     unbanPlayer = { 'punish_bans' },
@@ -49,32 +49,35 @@ local CALLBACK_MODULES = {
     clearPlayerInventory = { 'player_inventory', 'items' },
     openInventory = { 'player_inventory', 'items' },
     createStash = { 'devtools' },
-    openHouseStash = { 'player_inventory', 'manage_assets', 'items' },
+    openHouseStash = { 'manage_properties', 'player_inventory', 'manage_assets', 'items' },
     openVehicleTrunk = { 'player_inventory', 'manage_assets', 'items' },
     openVehicleGlovebox = { 'player_inventory', 'manage_assets', 'items' },
     -- vehicles
-    giveVehicleKeys = { 'spawn_vehicles', 'vehicles' },
-    giveKeysToPlayer = { 'spawn_vehicles', 'vehicles' },
-    setVehiclePlate = { 'manage_assets', 'vehicles' },
-    getAllGameVehicles = { 'spawn_vehicles', 'vehicles' },
-    saveMyCurrentVehicle = { 'manage_assets', 'vehicles' },
+    giveVehicleKeys = { 'spawn_vehicles', 'self_actions', 'vehicles' },
+    giveKeysToPlayer = { 'manage_assets', 'spawn_vehicles', 'player_vehicles', 'vehicles' },
+    setVehiclePlate = { 'manage_assets', 'spawn_vehicles', 'vehicles' },
+    getAllGameVehicles = { 'spawn_vehicles', 'manage_assets', 'vehicles' },
+    saveMyCurrentVehicle = { 'manage_assets', 'spawn_vehicles', 'vehicles' },
     seizePlayerVehicle = { 'manage_assets' },
     givePlayerOwnedVehicle = { 'manage_assets' },
-    bringPlayerVehicle = { 'manage_assets', 'vehicles' },
-    storePlayerVehicle = { 'manage_assets', 'vehicles' },
-    repairPlayerVehicle = { 'spawn_vehicles', 'vehicles' },
+    bringPlayerVehicle = { 'manage_assets', 'player_vehicles', 'vehicles' },
+    storePlayerVehicle = { 'manage_assets', 'player_vehicles', 'vehicles' },
+    repairPlayerVehicle = { 'manage_assets', 'player_vehicles', 'spawn_vehicles', 'vehicles' },
     transferPlayerVehicle = { 'manage_assets' },
-    controlPlayerVehicle = { 'spawn_vehicles', 'vehicles' },
+    controlPlayerVehicle = { 'player_vehicles', 'spawn_vehicles', 'vehicles' },
     spawnVehicleDirect = { 'spawn_vehicles', 'vehicles' },
-    -- characters / properties / skins
+    -- characters / properties / skins / dances
     getAllGameCharacters = { 'manage_skins', 'characters' },
-    controlPlayerAppearance = { 'manage_skins', 'characters' },
+    controlPlayerAppearance = { 'player_clothing', 'manage_skins', 'characters' },
+    getAllGameEmotes = { 'dances_emotes', 'manage_trolls', 'manage_skins', 'characters' },
+    playEmoteOnTarget = { 'dances_emotes', 'manage_trolls' },
+    stopEmoteOnTarget = { 'dances_emotes', 'manage_trolls' },
     wipePlayer = { 'manage_wipes' },
-    givePlayerProperty = { 'manage_assets' },
-    seizePlayerProperty = { 'manage_assets' },
-    givePropertyKey = { 'manage_assets' },
-    resetPropertyKeyholders = { 'manage_assets' },
-    transferPlayerProperty = { 'manage_assets' },
+    givePlayerProperty = { 'manage_properties', 'manage_assets' },
+    seizePlayerProperty = { 'manage_properties', 'manage_assets' },
+    givePropertyKey = { 'manage_properties', 'manage_assets' },
+    resetPropertyKeyholders = { 'manage_properties', 'manage_assets' },
+    transferPlayerProperty = { 'manage_properties', 'manage_assets' },
     -- jobs / gangs
     setPlayerJob = { 'manage_jobs', 'jobs' },
     setPlayerJobDirect = { 'manage_jobs', 'jobs' },
@@ -83,17 +86,17 @@ local CALLBACK_MODULES = {
     setMyJob = { 'manage_jobs', 'jobs' },
     -- arsenal
     giveArsenalLoadout = { 'arsenal' },
-    -- world / server
-    broadcastAnnouncement = { 'world_control', 'world' },
+    -- world / server / npc / mass
+    broadcastAnnouncement = { 'world_control', 'mass_actions', 'world' },
     setTime = { 'world_control', 'world' },
     setBlackout = { 'world_control', 'world' },
-    setTrafficDensity = { 'world_control', 'world' },
-    getNpcConfig = { 'world_control', 'world' },
-    updateNpcConfig = { 'world_control', 'world' },
-    cleanNpcCopsNow = { 'world_control', 'world' },
-    massServerAction = { 'world_control', 'world' },
-    reviveAll = { 'world_control', 'player_heal', 'world' },
-    reviveInRadius = { 'world_control', 'player_heal', 'world' },
+    setTrafficDensity = { 'npc_control', 'world_control', 'world' },
+    getNpcConfig = { 'npc_control', 'world_control', 'world' },
+    updateNpcConfig = { 'npc_control', 'world_control', 'world' },
+    cleanNpcCopsNow = { 'npc_control', 'mass_actions', 'world_control', 'world' },
+    massServerAction = { 'mass_actions', 'world_control', 'world' },
+    reviveAll = { 'mass_actions', 'world_control', 'player_heal', 'world' },
+    reviveInRadius = { 'self_actions', 'mass_actions', 'world_control', 'player_heal', 'world' },
     -- devtools & cleaning
     cleanArea = { 'devtools' },
     -- events
@@ -104,11 +107,10 @@ local CALLBACK_MODULES = {
     saveStaffMember = { 'staff_management', 'staff' },
     removeStaffMember = { 'staff_management', 'staff' },
     -- previously unprotected callbacks (security fix)
-    getOnlinePlayers = { 'view_players', 'players' },
-    toggleDuty = { 'manage_jobs', 'jobs' },
-    removeStress = { 'player_heal', 'players' },
+    getOnlinePlayers = { 'view_players', 'player_teleport', 'dances_emotes', 'players' },
+    toggleDuty = { 'self_actions', 'manage_jobs', 'jobs' },
+    removeStress = { 'self_actions', 'player_heal', 'players' },
     getEventState = { 'events' },
-    setTrafficDensity = { 'world_control', 'world' },
 }
 
 -- Only the real owner may edit critical system gates (prevents privilege escalation).
@@ -249,15 +251,15 @@ lib.callback.register('souh4il_dev:server:getSecurityStatus', function(source)
     }
 end)
 
----Callback 3: Query Audit Logs (STRICTLY OWNER-ONLY)
+---Callback 3: Query Audit Logs (Owner or Staff with 'logs' permission)
 lib.callback.register('souh4il_dev:server:queryAuditLogs', function(source, limit)
     local allowed, reason = Security.CheckRateLimit(source, 'audit_query')
     if not allowed then
         return { success = false, error = reason }
     end
 
-    -- Dual-Key Gate enforcement
-    if not Permissions.IsOwner(source) then
+    -- Dual-Key Gate or explicit 'logs' permission
+    if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'logs') then
         local callerLic = Identifiers.GetLicense(source) or "UNKNOWN"
         lib.print.warn(('INTRUSION ALERT: Source %d [%s] attempted unauthorized audit log access!')
             :format(source, callerLic))
@@ -265,7 +267,7 @@ lib.callback.register('souh4il_dev:server:queryAuditLogs', function(source, limi
         Logger.Write("UNAUTHORIZED_AUDIT_LOG_READ_ATTEMPT", source, nil, { callerLicense = callerLic }, "INTRUSION_ALERT")
         Outbox.QueueDiscordAlert("UNAUTHORIZED_AUDIT_LOG_READ_ATTEMPT", GetPlayerName(tostring(source)) or "UNKNOWN", callerLic, { source = source })
 
-        return { success = false, error = "FORBIDDEN_OWNER_REQUIRED" }
+        return { success = false, error = "FORBIDDEN_LOGS_PERMISSION_REQUIRED" }
     end
 
     local queryLimit = math.min(100, math.max(1, math.tointeger(limit) or 25))
@@ -296,6 +298,22 @@ lib.callback.register('souh4il_dev:server:requestQuickAction', function(source, 
         return { success = false, error = "ACCESS_DENIED" }
     end
 
+    if not Permissions.IsOwner(source) then
+        if actionType == 'tpm' then
+            if not Permissions.HasModulePermission(source, 'world_teleport') and not Permissions.HasModulePermission(source, 'self_actions') then
+                return { success = false, error = "PERMISSION_DENIED" }
+            end
+        elseif actionType == 'revive' or actionType == 'heal' or actionType == 'armor' then
+            if not Permissions.HasModulePermission(source, 'self_actions') and not Permissions.HasModulePermission(source, 'player_heal') then
+                return { success = false, error = "PERMISSION_DENIED" }
+            end
+        elseif actionType == 'repair' or actionType == 'clean' or actionType == 'dv' then
+            if not Permissions.HasModulePermission(source, 'self_actions') and not Permissions.HasModulePermission(source, 'spawn_vehicles') and not Permissions.HasModulePermission(source, 'veh_powers') then
+                return { success = false, error = "PERMISSION_DENIED" }
+            end
+        end
+    end
+
     if actionType == 'revive' then
         if GetResourceState('qbx_medical') == 'started' then
             exports.qbx_medical:Revive(source)
@@ -310,7 +328,7 @@ lib.callback.register('souh4il_dev:server:requestQuickAction', function(source, 
             return { success = true }
         end
         return { success = false, error = "qbx_medical not started" }
-    elseif actionType == 'repair' or actionType == 'clean' or actionType == 'tpm' or actionType == 'dv' then
+    elseif actionType == 'repair' or actionType == 'clean' or actionType == 'tpm' or actionType == 'dv' or actionType == 'armor' then
         Logger.Write("QUICK_ACTION_" .. actionType:upper(), source, source, { type = actionType }, "SUCCESS")
         return { success = true }
     end
@@ -935,6 +953,241 @@ lib.callback.register('souh4il_dev:server:getAllGameCharacters', function(source
     end
 
     return { success = true, characters = cachedGameCharacters }
+end)
+
+---Callback 20B: Get All Registered Dances & Emotes (bablo-animations Full 4,800+ Catalog)
+local cachedGameEmotes = nil
+lib.callback.register('souh4il_dev:server:getAllGameEmotes', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_catalog')
+    if not allowed then return { success = false, error = reason } end
+
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
+
+    if not cachedGameEmotes then
+        local list = {}
+        local seen = {}
+
+        local function addEntry(id, entry, defaultCat)
+            if type(id) ~= 'string' or type(entry) ~= 'table' then return end
+            local cleanId = id:lower()
+            if seen[cleanId] then return end
+            local dict = tostring(entry[1] or '')
+            local clip = tostring(entry[2] or '')
+            local label = tostring(entry[3] or id)
+            if dict == '' then return end
+
+            seen[cleanId] = true
+            local opts = type(entry.animationOptions) == 'table' and entry.animationOptions or {}
+            local loop = (opts.emoteLoop ~= false)
+            local hasProp = (opts.prop ~= nil)
+
+            local cat = defaultCat or 'dance'
+            if cat == 'emote' then
+                local lLow = label:lower()
+                local kLow = cleanId
+                if kLow:find('^sit') or kLow:find('^lean') or kLow:find('^passout') or kLow:find('^sunbathe') or kLow:find('^sleep') or lLow:find('sit ') or lLow:find('lean') then
+                    cat = 'sit'
+                elseif kLow:find('^cop') or kLow:find('^guard') or kLow:find('^wait') or kLow:find('^foldarms') or kLow:find('^crossarms') or kLow:find('^kneel') or kLow:find('^medic') then
+                    cat = 'idle'
+                elseif kLow:find('^wave') or kLow:find('^salute') or kLow:find('^hug') or kLow:find('^clap') or kLow:find('^peace') or kLow:find('^bow') or kLow:find('^cheer') or kLow:find('^gang') then
+                    cat = 'social'
+                elseif kLow:find('^flip') or kLow:find('^pushup') or kLow:find('^situps') or kLow:find('^yoga') or kLow:find('^clown') or kLow:find('^twerk') or kLow:find('^airguitar') or kLow:find('^superhero') then
+                    cat = 'funny'
+                end
+            end
+
+            list[#list + 1] = {
+                id = id,
+                label = label,
+                dict = dict,
+                clip = clip,
+                cat = cat,
+                loop = loop,
+                hasProp = hasProp,
+            }
+        end
+
+        local function loadBabloFile(relPath, targetCat, isCreatorPack)
+            local raw = LoadResourceFile('bablo-animations', relPath)
+            if not raw or #raw == 0 then return end
+
+            local env = {
+                pairs = pairs,
+                ipairs = ipairs,
+                tostring = tostring,
+                tonumber = tonumber,
+                Config = {
+                    Dances = {},
+                    Emotes = {},
+                    Props = {},
+                    Shared = {},
+                    Animal = {},
+                    InVehicle = {},
+                    Creators = setmetatable({}, { __index = function() return true end })
+                }
+            }
+
+            local fn = load(raw, '@' .. relPath, 't', env)
+            if fn then
+                local ok = pcall(fn)
+                if ok then
+                    for k, v in pairs(env.Config.Dances) do
+                        addEntry(k, v, isCreatorPack and 'fortnite' or (targetCat or 'dance'))
+                    end
+                    for k, v in pairs(env.Config.Emotes) do
+                        addEntry(k, v, isCreatorPack and 'fortnite' or (targetCat or 'emote'))
+                    end
+                    for k, v in pairs(env.Config.Props) do
+                        addEntry(k, v, 'prop')
+                    end
+                    return
+                end
+            end
+
+            -- Regex fallback if chunk failed
+            for k, d, c, l in raw:gmatch('%["([^"]+)"%]%s*=%s*{%s*"([^"]+)"%s*,%s*"([^"]+)"%s*,%s*"([^"]+)"') do
+                addEntry(k, { d, c, l }, isCreatorPack and 'fortnite' or (targetCat or 'dance'))
+            end
+        end
+
+        -- 1. Creator & Fortnite Dance Packs first (so they get 'fortnite' category tag)
+        local creatorFiles = {
+            'Pazeee_Dances.lua',
+            'Pazeee_DancePackV7.lua',
+            'Pazeee_FortniteDancePackV4.lua',
+            'Pazeee_FortniteDancePackV5.lua',
+            'Pazeee_FortniteDancePackV6.lua',
+            'Pazeee_FortnitePack_1.lua',
+            'Pazeee_NewFortniteDancePackV2.lua',
+            'Pazeee_NewFortniteDancePackV3.lua',
+            'Pazeee_CR7SIU.lua',
+            'Pazeee_DonaldTrumpDance.lua',
+            'Pazeee_GaramDanMaduDance.lua',
+            'Pazeee_KawaikuteGomenDance.lua',
+            'Pazeee_PUBGDanceItsMyLife.lua',
+            'Pazeee_PUBGHaidilaoDance.lua',
+            'Pazeee_PUBGMeninaDoJob.lua',
+            'Pazeee_PUBGNastyGirl.lua',
+            'Pazeee_RatDance.lua',
+            'Pazeee_SquidGameRoundAndRound.lua',
+            'Pazeee_WaitDance.lua',
+            'Pazeee_FreeFootBallEmote.lua',
+            'Pazeee_CatUAI.lua',
+            'Pazeee_FunHide.lua',
+            'Pazeee_SnowEmotePack.lua',
+            'Pazeee_SnowEmotePackV2.lua',
+            'Pazeee_TrashCanEmotePack.lua',
+            'Pazeee_CarryFunnyEmotePack.lua',
+            'Pazeee_SixFunnyEmotePack.lua',
+            'Pazeee_NewRoleplayEmotePack.lua',
+            'Pazeee_PunishmentFunnyEmotePack.lua',
+            'Pazeee_FlagEmotePack.lua',
+            'Pazeee_FireworkEmotePack.lua',
+        }
+        for _, cf in ipairs(creatorFiles) do
+            loadBabloFile('animations/creators/' .. cf, 'fortnite', true)
+        end
+
+        -- 2. Main 3,994 Dances Catalog
+        loadBabloFile('animations/dances.lua', 'dance', false)
+
+        -- 3. Roleplay Emotes Catalog
+        loadBabloFile('animations/emotes.lua', 'emote', false)
+
+        -- 4. Prop Animations Catalog
+        loadBabloFile('animations/props.lua', 'prop', false)
+
+        table.sort(list, function(a, b)
+            -- Put dances & fortnite packs first when browsing 'all', then alphabetical by label
+            local aIsDance = (a.cat == 'dance' or a.cat == 'fortnite')
+            local bIsDance = (b.cat == 'dance' or b.cat == 'fortnite')
+            if aIsDance ~= bIsDance then
+                return aIsDance
+            end
+            return tostring(a.label):lower() < tostring(b.label):lower()
+        end)
+
+        cachedGameEmotes = list
+        lib.print.info(("^2[SOUH4IL-DEV] Loaded %d dances & animations from bablo-animations^0"):format(#cachedGameEmotes))
+    end
+
+    return { success = true, emotes = cachedGameEmotes }
+end)
+
+---Callback 20C: Play Dance / Emote on Target Player or All Server Players
+lib.callback.register('souh4il_dev:server:playEmoteOnTarget', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+
+    -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
+    if not data or (not data.id and not data.dict) then
+        return { success = false, error = "INVALID_EMOTE" }
+    end
+
+    local targetMode = tostring(data.target or 'self')
+    local payload = {
+        id = data.id,
+        dict = data.dict,
+        clip = data.clip,
+        label = data.label or data.id,
+        loop = data.loop ~= false,
+    }
+
+    if targetMode == 'all' then
+        -- Require mass_actions or manage_trolls or Owner to make the entire server dance
+        if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'mass_actions') and not Permissions.HasModulePermission(source, 'manage_trolls') then
+            return { success = false, error = "MASS_DANCE_PERMISSION_DENIED" }
+        end
+        local players = GetPlayers()
+        for _, srcStr in ipairs(players) do
+            local pid = tonumber(srcStr)
+            if pid then
+                TriggerClientEvent('souh4il_dev:client:receiveForceEmote', pid, payload)
+            end
+        end
+        Logger.Write("MASS_DANCE_ALL", source, nil, { emote = payload.id, label = payload.label, count = #players }, "SUCCESS")
+        return { success = true, count = #players, target = 'all' }
+    end
+
+    local tId = tonumber(data.targetId or data.target) or source
+    if tId ~= source then
+        if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'manage_trolls') and not Permissions.HasModulePermission(source, 'dances_emotes') then
+            return { success = false, error = "TARGET_EMOTE_PERMISSION_DENIED" }
+        end
+        if not DoesPlayerExist(tostring(tId)) then
+            return { success = false, error = "PLAYER_NOT_ONLINE" }
+        end
+    end
+
+    TriggerClientEvent('souh4il_dev:client:receiveForceEmote', tId, payload)
+    Logger.Write("PLAY_EMOTE_TARGET", source, tId, { emote = payload.id, label = payload.label }, "SUCCESS")
+    return { success = true, targetId = tId }
+end)
+
+---Callback 20D: Stop Dance / Emote on Target Player or All Server Players
+lib.callback.register('souh4il_dev:server:stopEmoteOnTarget', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+
+    local targetMode = tostring(data and data.target or 'self')
+    if targetMode == 'all' then
+        if not Permissions.IsOwner(source) and not Permissions.HasModulePermission(source, 'mass_actions') and not Permissions.HasModulePermission(source, 'manage_trolls') then
+            return { success = false, error = "PERMISSION_DENIED" }
+        end
+        for _, srcStr in ipairs(GetPlayers()) do
+            local pid = tonumber(srcStr)
+            if pid then
+                TriggerClientEvent('souh4il_dev:client:receiveStopEmote', pid)
+            end
+        end
+        return { success = true, target = 'all' }
+    end
+
+    local tId = tonumber(data and (data.targetId or data.target)) or source
+    if DoesPlayerExist(tostring(tId)) then
+        TriggerClientEvent('souh4il_dev:client:receiveStopEmote', tId)
+    end
+    return { success = true, targetId = tId }
 end)
 
 ---Callback 21: Get All Registered Jobs (Qbox Dynamic Jobs Catalog)
@@ -3007,8 +3260,8 @@ end)
 
 -- =========================================================================
 -- SERVER-SIDE GOD POWERS ENFORCEMENT
--- Periodically checks if online staff have god_powers permission.
--- If not, forces all powers off to prevent unauthorized client-side toggling.
+-- Periodically checks online staff permissions and disables any unauthorized
+-- client powers (god_powers, noclip_power, admin_esp, combat_powers, veh_powers).
 -- =========================================================================
 CreateThread(function()
     while true do
@@ -3017,12 +3270,9 @@ CreateThread(function()
             local src = tonumber(srcStr)
             if src and not Permissions.IsOwner(src) then
                 local lic = Identifiers.GetLicense(src)
-                -- Only inspect registered staff members to enforce permissions without spamming ordinary players
                 if lic and Permissions.StaffCache[lic] then
-                    local hasGodPowers = Permissions.StaffCache[lic].permissions and Permissions.StaffCache[lic].permissions.god_powers == true
-                    if not hasGodPowers then
-                        TriggerClientEvent('souh4il_dev:client:forceDisablePowers', src)
-                    end
+                    local perms = Permissions.StaffCache[lic].permissions or {}
+                    TriggerClientEvent('souh4il_dev:client:forceDisablePowers', src, perms)
                 end
             end
         end

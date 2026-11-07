@@ -611,20 +611,90 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Quick Actions
-document.getElementById('qa-revive')?.addEventListener('click', () => postNUI('quickAction', { action: 'revive' }));
-document.getElementById('qa-heal')?.addEventListener('click', () => postNUI('quickAction', { action: 'heal' }));
-document.getElementById('qa-armor')?.addEventListener('click', () => postNUI('quickAction', { action: 'armor' }));
-document.getElementById('qa-repair')?.addEventListener('click', () => postNUI('quickAction', { action: 'repair' }));
-document.getElementById('qa-clean')?.addEventListener('click', () => postNUI('quickAction', { action: 'clean' }));
-document.getElementById('qa-tpm')?.addEventListener('click', () => postNUI('quickAction', { action: 'tpm' }));
-document.getElementById('qa-dv')?.addEventListener('click', () => postNUI('quickAction', { action: 'dv' }));
-document.getElementById('qa-cash')?.addEventListener('click', () => postNUI('giveMoney', { amount: 50000, moneyType: 'cash' }));
+// In-Panel High-Tech Floating Toast Notification System
+window.showToast = function(title, message = '', type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
 
-// Full Super Powers Suite Toggles
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${type}`;
+
+    const icons = {
+        success: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+        error: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+        warning: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+        info: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+    };
+    const icon = icons[type] || icons.info;
+
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            ${message ? `<div class="toast-message">${message}</div>` : ''}
+        </div>
+        <button class="toast-close" type="button">&times;</button>
+        <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
+    `;
+
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+        toast.classList.remove('toast-show');
+        toast.classList.add('toast-hide');
+        setTimeout(() => toast.remove(), 250);
+    });
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('toast-show'));
+
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.classList.remove('toast-show');
+            toast.classList.add('toast-hide');
+            setTimeout(() => toast.remove(), 250);
+        }
+    }, duration);
+};
+
+// Quick Actions with Instant Feedback
+document.getElementById('qa-revive')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'revive' });
+    showToast('Auto-Réanimation', 'Santé et réanimation appliquées.', 'success');
+});
+document.getElementById('qa-heal')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'heal' });
+    showToast('Santé Maximale', 'Points de vie restaurés à 100%.', 'success');
+});
+document.getElementById('qa-armor')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'armor' });
+    showToast('Gilet Pare-balles', 'Armure restaurée à 100%.', 'success');
+});
+document.getElementById('qa-repair')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'repair' });
+    showToast('Réparation Véhicule', 'Moteur et carrosserie réparés.', 'success');
+});
+document.getElementById('qa-clean')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'clean' });
+    showToast('Nettoyage Véhicule', 'Véhicule lavé et nettoyé.', 'success');
+});
+document.getElementById('qa-tpm')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'tpm' });
+    showToast('Téléportation Waypoint', 'Téléporté au marqueur GPS.', 'info');
+});
+document.getElementById('qa-dv')?.addEventListener('click', () => {
+    postNUI('quickAction', { action: 'dv' });
+    showToast('Suppression Véhicule', 'Véhicule supprimé de la zone.', 'warning');
+});
+document.getElementById('qa-cash')?.addEventListener('click', () => {
+    postNUI('giveMoney', { amount: 50000, moneyType: 'cash' });
+    showToast('Injection Économie', '+50,000$ cash ajouté.', 'success');
+});
+
+// Full Super Powers Suite Toggles with Feedback
 const registerToggle = (id, power) => {
     document.getElementById(id)?.addEventListener('change', (e) => {
         postNUI('togglePower', { power, state: e.target.checked });
+        const pLabel = power.replace(/^is/, '').replace(/([A-Z])/g, ' $1').trim().toUpperCase();
+        showToast(pLabel, e.target.checked ? 'Pouvoir activé' : 'Pouvoir désactivé', e.target.checked ? 'success' : 'info', 2200);
     });
 };
 
@@ -887,8 +957,10 @@ window.giveItemDirect = function(itemName, count) {
     const targetId = document.getElementById('items-target-player-select')?.value;
     if (targetId) {
         postNUI('playerDetailedAction', { action: 'give_item_target', targetId: parseInt(targetId), item: itemName, count });
+        showToast('Inventaire', `Don de ${count}x ${itemName} au joueur #${targetId}`, 'success');
     } else {
         postNUI('giveCustomItem', { item: itemName, count });
+        showToast('Inventaire', `Ajout de ${count}x ${itemName} dans votre inventaire`, 'success');
     }
 };
 
@@ -959,11 +1031,13 @@ window.spawnVehicleDirect = function(model) {
     if (!model) return;
     const maxTune = document.getElementById('veh-max-tune')?.checked ?? true;
     postNUI('spawnVehicle', { model, maxTune });
+    showToast('Véhicule Spawner', `Génération du modèle '${model.toUpperCase()}'...`, 'info', 2200);
 };
 
 window.applyPedDirect = function(model) {
     if (!model) return;
     postNUI('setPedModel', { model });
+    showToast('Skin / Ped', `Apparence changée en '${model}'`, 'success', 2200);
 };
 
 // Visual Vehicles Rendering & Categories (Dynamic Qbox Vehicles Catalog)
@@ -1529,14 +1603,32 @@ document.querySelectorAll('.color-chip').forEach(chip => {
 });
 
 // Developer Tools: Coords
-document.getElementById('btn-copy-vec3')?.addEventListener('click', () => postNUI('copyCoords', { format: 'vec3' }));
-document.getElementById('btn-copy-vec4')?.addEventListener('click', () => postNUI('copyCoords', { format: 'vec4' }));
-document.getElementById('btn-copy-heading')?.addEventListener('click', () => postNUI('copyCoords', { format: 'heading' }));
+document.getElementById('btn-copy-vec3')?.addEventListener('click', () => {
+    postNUI('copyCoords', { format: 'vec3' });
+    showToast('Coordonnées', 'Format vector3 copié dans le presse-papier.', 'success');
+});
+document.getElementById('btn-copy-vec4')?.addEventListener('click', () => {
+    postNUI('copyCoords', { format: 'vec4' });
+    showToast('Coordonnées', 'Format vector4 copié dans le presse-papier.', 'success');
+});
+document.getElementById('btn-copy-heading')?.addEventListener('click', () => {
+    postNUI('copyCoords', { format: 'heading' });
+    showToast('Orientation (Heading)', 'Cap copié dans le presse-papier.', 'success');
+});
 
 // Developer Tools: Area Cleaning
-document.getElementById('btn-clear-veh')?.addEventListener('click', () => postNUI('clearArea', { type: 'vehicles' }));
-document.getElementById('btn-clear-peds')?.addEventListener('click', () => postNUI('clearArea', { type: 'peds' }));
-document.getElementById('btn-clear-props')?.addEventListener('click', () => postNUI('clearArea', { type: 'props' }));
+document.getElementById('btn-clear-veh')?.addEventListener('click', () => {
+    postNUI('clearArea', { type: 'vehicles' });
+    showToast('Nettoyage Zone', 'Véhicules abandonnés nettoyés.', 'warning');
+});
+document.getElementById('btn-clear-peds')?.addEventListener('click', () => {
+    postNUI('clearArea', { type: 'peds' });
+    showToast('Nettoyage Zone', 'PNJs errants nettoyés.', 'warning');
+});
+document.getElementById('btn-clear-props')?.addEventListener('click', () => {
+    postNUI('clearArea', { type: 'props' });
+    showToast('Nettoyage Zone', 'Objets et props nettoyés.', 'warning');
+});
 document.getElementById('btn-clear-all')?.addEventListener('click', () => postNUI('clearArea', { type: 'all' }));
 
 // Developer Tools: Skins
@@ -1608,6 +1700,8 @@ function renderPlayers(players) {
     onlinePlayersCache = players || [];
     const countElem = document.getElementById('dash-player-count');
     if (countElem) countElem.innerText = onlinePlayersCache.length;
+    const topbarPlayers = document.getElementById('topbar-players-count');
+    if (topbarPlayers) topbarPlayers.innerText = `${onlinePlayersCache.length} ONLINE`;
 
     // Live RP Service & Duty Counters on Dashboard
     let copsCount = 0;

@@ -13,6 +13,7 @@ Permissions.DEFAULT_ROLE_PERMS = {
         manage_money = true,
         manage_wipes = true,
         manage_assets = true,
+        manage_properties = true,
         punish_bans = true,
         punish_kicks = true,
         manage_trolls = true,
@@ -22,16 +23,27 @@ Permissions.DEFAULT_ROLE_PERMS = {
         player_freeze = true,
         player_teleport = true,
         player_heal = true,
+        player_pm = true,
+        player_vehicles = true,
         player_inventory = true,
-        -- Cat 3: Serveur & Véhicules
+        player_clothing = true,
+        -- Cat 3: Serveur, Véhicules & Animations
         spawn_vehicles = true,
         spawn_items = true,
         manage_jobs = true,
         manage_skins = true,
+        dances_emotes = true,
         world_teleport = true,
         world_control = true,
-        -- Cat 4: Master & Administration
+        npc_control = true,
+        -- Cat 4: Pouvoirs Staff, Self & Administration
         god_powers = true,
+        noclip_power = true,
+        admin_esp = true,
+        combat_powers = true,
+        veh_powers = true,
+        self_actions = true,
+        mass_actions = true,
         staff_management = true,
         devtools = true,
         logs = true,
@@ -45,6 +57,7 @@ Permissions.DEFAULT_ROLE_PERMS = {
         manage_money = false,
         manage_wipes = false,
         manage_assets = false,
+        manage_properties = false,
         punish_bans = false,
         punish_kicks = false,
         manage_trolls = false,
@@ -54,16 +67,27 @@ Permissions.DEFAULT_ROLE_PERMS = {
         player_freeze = false,
         player_teleport = true,
         player_heal = false,
+        player_pm = true,
+        player_vehicles = false,
         player_inventory = false,
-        -- Cat 3: Serveur & Véhicules
+        player_clothing = true,
+        -- Cat 3: Serveur, Véhicules & Animations
         spawn_vehicles = true,
         spawn_items = false,
         manage_jobs = false,
         manage_skins = true,
+        dances_emotes = true,
         world_teleport = true,
         world_control = true,
-        -- Cat 4: Master & Administration
+        npc_control = true,
+        -- Cat 4: Pouvoirs Staff, Self & Administration
         god_powers = false,
+        noclip_power = true,
+        admin_esp = true,
+        combat_powers = false,
+        veh_powers = true,
+        self_actions = true,
+        mass_actions = false,
         staff_management = false,
         devtools = true,
         logs = true,
@@ -77,6 +101,7 @@ Permissions.DEFAULT_ROLE_PERMS = {
         manage_money = false, -- Default protected against accidental money injection
         manage_wipes = false, -- Protected against accidental wipe
         manage_assets = true,
+        manage_properties = false,
         punish_bans = true,
         punish_kicks = true,
         manage_trolls = false,
@@ -86,16 +111,27 @@ Permissions.DEFAULT_ROLE_PERMS = {
         player_freeze = true,
         player_teleport = true,
         player_heal = true,
+        player_pm = true,
+        player_vehicles = true,
         player_inventory = true,
-        -- Cat 3: Serveur & Véhicules
+        player_clothing = true,
+        -- Cat 3: Serveur, Véhicules & Animations
         spawn_vehicles = true,
         spawn_items = true,
         manage_jobs = true,
         manage_skins = true,
+        dances_emotes = true,
         world_teleport = true,
         world_control = true,
-        -- Cat 4: Master & Administration
+        npc_control = false,
+        -- Cat 4: Pouvoirs Staff, Self & Administration
         god_powers = false,
+        noclip_power = true,
+        admin_esp = true,
+        combat_powers = false,
+        veh_powers = true,
+        self_actions = true,
+        mass_actions = false,
         staff_management = false,
         devtools = false,
         logs = true,
@@ -109,6 +145,7 @@ Permissions.DEFAULT_ROLE_PERMS = {
         manage_money = false,
         manage_wipes = false,
         manage_assets = false,
+        manage_properties = false,
         punish_bans = false, -- Moderators cannot ban by default
         punish_kicks = true, -- Can kick/warn
         manage_trolls = false,
@@ -118,16 +155,27 @@ Permissions.DEFAULT_ROLE_PERMS = {
         player_freeze = true,
         player_teleport = true,
         player_heal = true,
+        player_pm = true,
+        player_vehicles = false,
         player_inventory = false,
-        -- Cat 3: Serveur & Véhicules
+        player_clothing = true,
+        -- Cat 3: Serveur, Véhicules & Animations
         spawn_vehicles = true, -- Personal vehicle spawn
         spawn_items = false,
         manage_jobs = false,
         manage_skins = false,
+        dances_emotes = true,
         world_teleport = false,
         world_control = false,
-        -- Cat 4: Master & Administration
+        npc_control = false,
+        -- Cat 4: Pouvoirs Staff, Self & Administration
         god_powers = false,
+        noclip_power = true,
+        admin_esp = true,
+        combat_powers = false,
+        veh_powers = false,
+        self_actions = true,
+        mass_actions = false,
         staff_management = false,
         devtools = false,
         logs = false,
@@ -140,6 +188,7 @@ Permissions.DEFAULT_ROLE_PERMS = {
         manage_money = false,
         manage_wipes = false,
         manage_assets = false,
+        manage_properties = false,
         punish_bans = false,
         punish_kicks = false,
         manage_trolls = false,
@@ -148,14 +197,25 @@ Permissions.DEFAULT_ROLE_PERMS = {
         player_freeze = false,
         player_teleport = true,
         player_heal = false,
+        player_pm = false,
+        player_vehicles = false,
         player_inventory = false,
+        player_clothing = false,
         spawn_vehicles = false,
         spawn_items = false,
         manage_jobs = false,
         manage_skins = false,
+        dances_emotes = false,
         world_teleport = false,
         world_control = false,
+        npc_control = false,
         god_powers = false,
+        noclip_power = false,
+        admin_esp = false,
+        combat_powers = false,
+        veh_powers = false,
+        self_actions = false,
+        mass_actions = false,
         staff_management = false,
         devtools = false,
         logs = false,
@@ -333,20 +393,20 @@ function Permissions.HasModulePermission(source, moduleName)
     -- Legacy & Granular mapping fallbacks
     if moduleName == 'player_teleport' then
         return perms.teleport == true or perms.players == true
-    elseif moduleName == 'player_heal' or moduleName == 'player_freeze' or moduleName == 'player_spectate' or moduleName == 'view_players' then
+    elseif moduleName == 'player_heal' or moduleName == 'player_freeze' or moduleName == 'player_spectate' or moduleName == 'view_players' or moduleName == 'player_pm' then
         return perms.players == true
     elseif moduleName == 'player_inventory' then
         return perms.items == true
     elseif moduleName == 'spawn_items' then
         return perms.items == true
-    elseif moduleName == 'spawn_vehicles' then
+    elseif moduleName == 'spawn_vehicles' or moduleName == 'player_vehicles' then
         return perms.vehicles == true
-    elseif moduleName == 'manage_assets' then
+    elseif moduleName == 'manage_assets' or moduleName == 'manage_properties' then
         local lic = Identifiers.GetLicense(source)
         local role = (lic and Permissions.StaffCache[lic] and Permissions.StaffCache[lic].role) or "MODERATOR"
-        return (perms.vehicles == true or perms.characters == true) and (role == "OWNER" or role == "ADMIN")
-    elseif moduleName == 'manage_skins' then
-        return perms.characters == true
+        return (perms.vehicles == true or perms.characters == true or perms.manage_assets == true) and (role == "OWNER" or role == "ADMIN")
+    elseif moduleName == 'manage_skins' or moduleName == 'player_clothing' then
+        return perms.characters == true or perms.manage_skins == true
     elseif moduleName == 'manage_jobs' then
         return perms.jobs == true
     elseif moduleName == 'manage_trolls' then
@@ -359,10 +419,14 @@ function Permissions.HasModulePermission(source, moduleName)
         return perms.punishments == true
     elseif moduleName == 'world_teleport' then
         return perms.teleport == true
-    elseif moduleName == 'world_control' then
-        return perms.world == true
-    elseif moduleName == 'god_powers' then
-        return perms.god == true
+    elseif moduleName == 'world_control' or moduleName == 'npc_control' then
+        return perms.world == true or perms.world_control == true
+    elseif moduleName == 'god_powers' or moduleName == 'noclip_power' or moduleName == 'admin_esp' or moduleName == 'combat_powers' or moduleName == 'veh_powers' then
+        return perms.god == true or perms.god_powers == true
+    elseif moduleName == 'self_actions' then
+        return perms.player_heal == true or perms.god_powers == true
+    elseif moduleName == 'dances_emotes' then
+        return perms.dances_emotes == true or perms.manage_skins == true or perms.characters == true
     elseif moduleName == 'staff_management' then
         return perms.staff == true
     end

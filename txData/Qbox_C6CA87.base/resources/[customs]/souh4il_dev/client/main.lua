@@ -1334,6 +1334,16 @@ RegisterNUICallback('fetchAllCharacters', function(_, cb)
     cb('ok')
 end)
 
+-- Fetch All Server Dances & Emotes (bablo-animations 4,800+ Dynamic Catalog)
+RegisterNUICallback('fetchAllEmotes', function(_, cb)
+    lib.callback('souh4il_dev:server:getAllGameEmotes', false, function(response)
+        if response and response.success then
+            SendNUIMessage({ action = "updateAllEmotes", emotes = response.emotes })
+        end
+    end)
+    cb('ok')
+end)
+
 -- Fetch All Server Jobs (Qbox Dynamic Catalog)
 RegisterNUICallback('fetchAllJobs', function(_, cb)
     lib.callback('souh4il_dev:server:getAllGameJobs', false, function(response)
@@ -2522,50 +2532,111 @@ end)
 
 -- =========================================================================
 -- SERVER-ENFORCED GOD POWERS DISABLE
--- Received from server when periodic check detects no god_powers permission.
--- Forces all active powers off to prevent unauthorized client-side toggling.
+-- Received from server when periodic check inspects staff permissions.
+-- Forces off any active powers the staff member is not authorized to use.
 -- =========================================================================
-RegisterNetEvent('souh4il_dev:client:forceDisablePowers', function()
+RegisterNetEvent('souh4il_dev:client:forceDisablePowers', function(perms)
+    local p = type(perms) == 'table' and perms or {}
+    local hasGod = (p.god_powers == true or p.god == true)
+    local hasNoclip = (hasGod or p.noclip_power == true)
+    local hasEsp = (hasGod or p.admin_esp == true)
+    local hasCombat = (hasGod or p.combat_powers == true)
+    local hasVeh = (hasGod or p.veh_powers == true)
+
     local ped = PlayerPedId()
     local player = PlayerId()
+    local changed = false
 
-    if isGodmode then
-        isGodmode = false
-        SetEntityInvincible(ped, false)
-        SetPlayerInvincible(player, false)
-        SetPedCanRagdoll(ped, true)
-        SetPedDiesInWater(ped, true)
+    if not hasGod then
+        if isGodmode then
+            isGodmode = false
+            SetEntityInvincible(ped, false)
+            SetPlayerInvincible(player, false)
+            SetPedCanRagdoll(ped, true)
+            SetPedDiesInWater(ped, true)
+            changed = true
+        end
+        if isInvis then
+            isInvis = false
+            SetEntityVisible(ped, true, false)
+            ResetEntityAlpha(ped)
+            changed = true
+        end
+        if isAntiRagdoll then
+            isAntiRagdoll = false
+            SetPedCanRagdoll(ped, true)
+            changed = true
+        end
+        if isThermalVision then
+            isThermalVision = false
+            SetSeethrough(false)
+            changed = true
+        end
+        if isNightVision then
+            isNightVision = false
+            SetNightvision(false)
+            changed = true
+        end
     end
-    if isNoclip then
+
+    if not hasNoclip and isNoclip then
         isNoclip = false
         local veh = GetVehiclePedIsIn(ped, false)
         local entity = veh ~= 0 and veh or ped
         SetEntityCollision(entity, true, true)
         FreezeEntityPosition(entity, false)
         SetEntityInvincible(entity, isGodmode)
-    end
-    if isInfiniteAmmo then
-        isInfiniteAmmo = false
-        SetPedInfiniteAmmoClip(ped, false)
-        local weapon = GetSelectedPedWeapon(ped)
-        if weapon ~= `WEAPON_UNARMED` then SetPedInfiniteAmmo(ped, false, weapon) end
-    end
-    if isSuperDamage then
-        isSuperDamage = false
-        SetPlayerMeleeWeaponDamageModifier(player, 1.0)
-        SetPlayerWeaponDamageModifier(player, 1.0)
-    end
-    if isVehGodmode then
-        isVehGodmode = false
+        changed = true
     end
 
-    -- Sync UI to reflect disabled state
-    SendNUIMessage({
-        action = "syncToggles",
-        toggles = {
-            godmode = false, noclip = false, ammo = false, damage = false, vehgod = false,
-        }
-    })
+    if not hasEsp then
+        if isAdminTag then isAdminTag = false; changed = true end
+        if isPlayerNames then isPlayerNames = false; changed = true end
+        if isPlayerBlips then isPlayerBlips = false; changed = true end
+    end
+
+    if not hasCombat then
+        if isInfiniteAmmo then
+            isInfiniteAmmo = false
+            SetPedInfiniteAmmoClip(ped, false)
+            local weapon = GetSelectedPedWeapon(ped)
+            if weapon ~= `WEAPON_UNARMED` then SetPedInfiniteAmmo(ped, false, weapon) end
+            changed = true
+        end
+        if isSuperDamage then
+            isSuperDamage = false
+            SetPlayerMeleeWeaponDamageModifier(player, 1.0)
+            SetPlayerWeaponDamageModifier(player, 1.0)
+            changed = true
+        end
+        if isExpAmmo then isExpAmmo = false; changed = true end
+        if isExpPunch then isExpPunch = false; changed = true end
+        if isSuperSprint then isSuperSprint = false; SetRunSprintMultiplierForPlayer(player, 1.0); changed = true end
+        if isSuperJump then isSuperJump = false; changed = true end
+    end
+
+    if not hasVeh then
+        if isVehGodmode then isVehGodmode = false; changed = true end
+        if isVehBoost then isVehBoost = false; changed = true end
+        if isVehJump then isVehJump = false; changed = true end
+        if isVehDrift then isVehDrift = false; changed = true end
+        if isVehAutoFlip then isVehAutoFlip = false; changed = true end
+    end
+
+    if changed then
+        SendNUIMessage({
+            action = "syncToggles",
+            toggles = {
+                godmode = isGodmode, noclip = isNoclip, invis = isInvis,
+                ammo = isInfiniteAmmo, damage = isSuperDamage,
+                thermal = isThermalVision, nightvision = isNightVision,
+                sprint = isSuperSprint, jump = isSuperJump,
+                vehgod = isVehGodmode, vehboost = isVehBoost,
+                antiragdoll = isAntiRagdoll, exppunch = isExpPunch, expammo = isExpAmmo,
+                vehjump = isVehJump, vehdrift = isVehDrift, autoflip = isVehAutoFlip,
+            }
+        })
+    end
 end)
 
 -- Event Manager Client Blips & Waypoint
@@ -2659,7 +2730,7 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 -- =========================================================================
--- DANCES & EMOTES ENGINE
+-- DANCES & EMOTES ENGINE (Full bablo-animations 4,800+ Integration + Target/Server Dance)
 -- =========================================================================
 local currentEmoteDict = nil
 local currentEmoteClip = nil
@@ -2677,74 +2748,114 @@ local function LoadAnimDict(dict)
 end
 
 local function StopCurrentEmote()
-    if isEmotePlaying and currentEmoteDict and currentEmoteClip then
-        local ped = PlayerPedId()
-        StopAnimTask(ped, currentEmoteDict, currentEmoteClip, 3.0)
-        ClearPedTasks(ped)
+    local ped = PlayerPedId()
+    if GetResourceState('bablo-animations') == 'started' then
+        pcall(function()
+            exports['bablo-animations']:cancelAnimation()
+        end)
     end
+    if isEmotePlaying and currentEmoteDict and currentEmoteClip then
+        StopAnimTask(ped, currentEmoteDict, currentEmoteClip, 3.0)
+    end
+    ClearPedTasks(ped)
     currentEmoteDict = nil
     currentEmoteClip = nil
     isEmotePlaying = false
 end
 
-RegisterNUICallback('playEmote', function(data, cb)
+local function PlayLocalEmote(data)
+    if not data then return false end
+    local emoteId = data.id
     local dict = data.dict
     local clip = data.clip
-    local loop = data.loop ~= false -- default true
+    local loop = data.loop ~= false
 
-    if not dict or not clip then
-        cb('error')
-        return
-    end
-
-    -- Stop any running emote first
     StopCurrentEmote()
 
     local ped = PlayerPedId()
-
-    -- Must be on foot
     local veh = GetVehiclePedIsIn(ped, false)
     if veh ~= 0 then
-        lib.notify({ title = SharedConfig.PanelName, description = "Sort du véhicule pour danser!", type = 'error' })
-        cb('ok')
-        return
+        lib.notify({ title = SharedConfig.PanelName, description = "Sortez du véhicule pour danser !", type = 'error' })
+        return false
     end
 
-    local loaded = LoadAnimDict(dict)
-    if not loaded then
-        lib.notify({ title = SharedConfig.PanelName, description = "Failed to load animation: " .. dict, type = 'error' })
-        cb('ok')
-        return
-    end
-
-    local flag = loop and 1 or 0  -- 1 = loop, 0 = play once
-    TaskPlayAnim(ped, dict, clip, 8.0, -8.0, -1, flag, 0, false, false, false)
-
-    currentEmoteDict = dict
-    currentEmoteClip = clip
-    isEmotePlaying = true
-
-    -- Auto stop on movement
-    CreateThread(function()
-        local savedDict = dict
-        local savedClip = clip
-        Wait(500)
-        while isEmotePlaying and currentEmoteDict == savedDict and currentEmoteClip == savedClip do
-            local ped2 = PlayerPedId()
-            -- If player moves or enters vehicle, stop emote
-            if IsEntityMoving(ped2) or GetVehiclePedIsIn(ped2, false) ~= 0 then
-                StopCurrentEmote()
-                SendNUIMessage({ action = "emoteStopped" })
-                break
-            end
-            Wait(300)
+    -- 1. Try bablo-animations export first (supports 3D props, custom music, speed & all 4,800+ animations)
+    local playedViaBablo = false
+    if emoteId and GetResourceState('bablo-animations') == 'started' then
+        local ok, res = pcall(function()
+            return exports['bablo-animations']:playAnimation(ped, tostring(emoteId))
+        end)
+        if ok and res ~= false then
+            playedViaBablo = true
         end
-    end)
+    end
 
+    -- 2. Direct GTA Native Fallback if bablo-animations didn't handle it
+    if not playedViaBablo then
+        if not dict or dict == '' then
+            return false
+        end
+        if clip == 'Scenario' or dict:find('^WORLD_HUMAN_') or dict:find('^PROP_HUMAN_') or dict:find('^CODE_HUMAN_') then
+            TaskStartScenarioInPlace(ped, dict, 0, true)
+        else
+            local loaded = LoadAnimDict(dict)
+            if not loaded then
+                lib.notify({ title = SharedConfig.PanelName, description = "Animation introuvable : " .. tostring(dict), type = 'error' })
+                return false
+            end
+            local flag = loop and 1 or 0
+            TaskPlayAnim(ped, dict, clip, 8.0, -8.0, -1, flag, 0, false, false, false)
+        end
+    end
+
+    currentEmoteDict = dict or emoteId
+    currentEmoteClip = clip or emoteId
+    isEmotePlaying = true
+    return true
+end
+
+RegisterNetEvent('souh4il_dev:client:receiveForceEmote', function(data)
+    PlayLocalEmote(data)
+end)
+
+RegisterNetEvent('souh4il_dev:client:receiveStopEmote', function()
+    StopCurrentEmote()
+    SendNUIMessage({ action = "emoteStopped" })
+end)
+
+RegisterNUICallback('playEmote', function(data, cb)
+    local target = data and tostring(data.target or 'self') or 'self'
+    local myServerId = GetPlayerServerId(PlayerId())
+
+    if target ~= 'self' and tonumber(target) ~= myServerId then
+        lib.callback('souh4il_dev:server:playEmoteOnTarget', false, function(res)
+            if res and res.success then
+                local desc = target == 'all'
+                    and ("🕺 Dance Party lancée sur TOUT LE SERVEUR (%d joueurs) : %s !"):format(res.count or 0, data.label or data.id)
+                    or ("🕺 Animation '%s' lancée sur le joueur #%s !"):format(data.label or data.id, tostring(target))
+                lib.notify({ title = SharedConfig.PanelName, description = desc, type = 'success' })
+            else
+                lib.notify({ title = SharedConfig.PanelName, description = (res and res.error) or "Accès refusé pour forcer une danse.", type = 'error' })
+            end
+        end, data)
+        cb('ok')
+        return
+    end
+
+    PlayLocalEmote(data)
     cb('ok')
 end)
 
-RegisterNUICallback('stopEmote', function(_, cb)
+RegisterNUICallback('stopEmote', function(data, cb)
+    local target = data and data.target and tostring(data.target) or 'self'
+    local myServerId = GetPlayerServerId(PlayerId())
+
+    if target ~= 'self' and tonumber(target) ~= myServerId then
+        lib.callback('souh4il_dev:server:stopEmoteOnTarget', false, function()
+            lib.notify({ title = SharedConfig.PanelName, description = "⏹️ Animation arrêtée sur la cible.", type = 'inform' })
+        end, { target = target })
+    end
+
     StopCurrentEmote()
     SendNUIMessage({ action = "emoteStopped" })
     cb('ok')
