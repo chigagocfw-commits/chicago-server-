@@ -2631,6 +2631,9 @@ end)
 
 ---Callback: Toggle Job Duty
 lib.callback.register('souh4il_dev:server:toggleDuty', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'toggle_duty')
+    if not allowed then return { success = false, error = reason } end
+
     local player = exports.qbx_core:GetPlayer(source)
     if not player then return { success = false } end
     local currentDuty = player.PlayerData.job.onduty
@@ -2641,6 +2644,9 @@ end)
 
 ---Callback: Remove Stress
 lib.callback.register('souh4il_dev:server:removeStress', function(source, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'remove_stress')
+    if not allowed then return { success = false, error = reason } end
+
     local tId = tonumber(targetId) or source
     local player = exports.qbx_core:GetPlayer(tId)
     if player then
@@ -2885,6 +2891,9 @@ end)
 
 ---Callback: Get Event State
 lib.callback.register('souh4il_dev:server:getEventState', function(source)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_event_state')
+    if not allowed then return { success = false, error = reason } end
+
     return { success = true, activeEvent = ActiveEvent }
 end)
 
@@ -2935,6 +2944,30 @@ lib.callback.register('souh4il_dev:server:spawnVehicleDirect', function(source, 
     end
 
     return { success = false, error = "FAILED_TO_CREATE_VEHICLE" }
+end)
+
+-- =========================================================================
+-- SERVER-SIDE GOD POWERS ENFORCEMENT
+-- Periodically checks if online staff have god_powers permission.
+-- If not, forces all powers off to prevent unauthorized client-side toggling.
+-- =========================================================================
+CreateThread(function()
+    while true do
+        Wait(30000) -- Check every 30 seconds
+        for _, srcStr in ipairs(GetPlayers()) do
+            local src = tonumber(srcStr)
+            if src and not Permissions.IsOwner(src) then
+                local lic = Identifiers.GetLicense(src)
+                local hasGodPowers = false
+                if lic and Permissions.StaffCache[lic] and Permissions.StaffCache[lic].permissions then
+                    hasGodPowers = Permissions.StaffCache[lic].permissions.god_powers == true
+                end
+                if not hasGodPowers then
+                    TriggerClientEvent('souh4il_dev:client:forceDisablePowers', src)
+                end
+            end
+        end
+    end
 end)
 
 -- Clean shutdown handler

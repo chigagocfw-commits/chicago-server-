@@ -34,6 +34,9 @@ Config.RateLimits = {
     ['staff_action'] = { capacity = 5.0, fillRatePerSec = 1.0 },
     ['get_staff'] = { capacity = 10.0, fillRatePerSec = 2.0 },
     ['event_action'] = { capacity = 5.0, fillRatePerSec = 1.0 },
+    ['toggle_duty'] = { capacity = 3.0, fillRatePerSec = 0.5 },
+    ['remove_stress'] = { capacity = 5.0, fillRatePerSec = 1.0 },
+    ['get_event_state'] = { capacity = 10.0, fillRatePerSec = 2.0 },
 }
 
 -- Return config

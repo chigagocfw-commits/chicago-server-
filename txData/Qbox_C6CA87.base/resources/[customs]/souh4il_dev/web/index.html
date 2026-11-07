@@ -1182,12 +1182,12 @@
                                 </div>
 
                                 <div class="quick-actions-grid manage-compact-grid-6" style="margin-bottom: 12px;">
-                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Faire Pisser</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Faire Caca</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'pee' })"><span class="btn-icon">💦</span><span class="btn-text">Faire Pisser</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'poop' })"><span class="btn-icon">💩</span><span class="btn-text">Faire Caca</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
                                 </div>
 
                                 <div class="manage-troll-forms-grid">
@@ -1202,8 +1202,8 @@
                                         <label class="manage-box-label">⚠️ Avertissement Officiel & Déconnexion :</label>
                                         <div class="form-row" style="margin-bottom: 0;">
                                             <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement...">
-                                            <button class="primary-btn danger-btn" onclick="execPlayerDetailed('warn')">⚠️ Warn</button>
-                                            <button class="secondary-btn" onclick="execPlayerDetailed('force_logout')">🚪 Déco Perso</button>
+                                            <button class="primary-btn danger-btn" data-requires-perm="punish_kicks" onclick="execPlayerDetailed('warn')">⚠️ Warn</button>
+                                            <button class="secondary-btn" data-requires-perm="punish_kicks" onclick="execPlayerDetailed('force_logout')">🚪 Déco Perso</button>
                                         </div>
                                     </div>
                                 </div>

@@ -2508,6 +2508,54 @@ RegisterNetEvent('souh4il_dev:client:forceClosePanel', function()
     end
 end)
 
+-- =========================================================================
+-- SERVER-ENFORCED GOD POWERS DISABLE
+-- Received from server when periodic check detects no god_powers permission.
+-- Forces all active powers off to prevent unauthorized client-side toggling.
+-- =========================================================================
+RegisterNetEvent('souh4il_dev:client:forceDisablePowers', function()
+    local ped = PlayerPedId()
+    local player = PlayerId()
+
+    if isGodmode then
+        isGodmode = false
+        SetEntityInvincible(ped, false)
+        SetPlayerInvincible(player, false)
+        SetPedCanRagdoll(ped, true)
+        SetPedDiesInWater(ped, true)
+    end
+    if isNoclip then
+        isNoclip = false
+        local veh = GetVehiclePedIsIn(ped, false)
+        local entity = veh ~= 0 and veh or ped
+        SetEntityCollision(entity, true, true)
+        FreezeEntityPosition(entity, false)
+        SetEntityInvincible(entity, isGodmode)
+    end
+    if isInfiniteAmmo then
+        isInfiniteAmmo = false
+        SetPedInfiniteAmmoClip(ped, false)
+        local weapon = GetSelectedPedWeapon(ped)
+        if weapon ~= `WEAPON_UNARMED` then SetPedInfiniteAmmo(ped, false, weapon) end
+    end
+    if isSuperDamage then
+        isSuperDamage = false
+        SetPlayerMeleeWeaponDamageModifier(player, 1.0)
+        SetPlayerWeaponDamageModifier(player, 1.0)
+    end
+    if isVehGodmode then
+        isVehGodmode = false
+    end
+
+    -- Sync UI to reflect disabled state
+    SendNUIMessage({
+        action = "syncToggles",
+        toggles = {
+            godmode = false, noclip = false, ammo = false, damage = false, vehgod = false,
+        }
+    })
+end)
+
 -- Event Manager Client Blips & Waypoint
 local currentEventBlip = nil
 local currentEventRadiusBlip = nil
