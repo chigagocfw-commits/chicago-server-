@@ -614,6 +614,8 @@ end
 function firsData(serverSource, callback)
   local identifier = GetIdentifier(serverSource)
 
+  if not identifier then return end
+
   if playerJobData[identifier] then
     return
   end
