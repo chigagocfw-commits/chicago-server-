@@ -113,7 +113,7 @@ Config.GarbagejobSettings = {
         blipScale = 0.7
     },
 
-    ['job'] = 'all', --- 'all' or your perm
+    ['job'] = 'garbage', --- 'all' or your perm
 
     ['trashvehicle'] = 'trash2',
 

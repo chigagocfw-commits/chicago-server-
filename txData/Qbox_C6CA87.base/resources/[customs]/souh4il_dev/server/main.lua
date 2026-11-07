@@ -549,6 +549,8 @@ end)
 
 ---Callback 8B: Get Target Player Coords for Long-Range Spectate
 lib.callback.register('souh4il_dev:server:getSpectateCoords', function(source, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local target = tonumber(targetId)
@@ -1426,6 +1428,8 @@ end)
 
 ---Callback: Force Logout Player
 lib.callback.register('souh4il_dev:server:forceLogout', function(source, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(targetId)
@@ -1438,6 +1442,9 @@ end)
 
 ---Callback: Message Player
 lib.callback.register('souh4il_dev:server:messagePlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
+
     local tId = tonumber(data.targetId)
     local msg = data.message or ""
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1454,6 +1461,8 @@ end)
 
 ---Callback: Troll Action on Target Player
 lib.callback.register('souh4il_dev:server:trollPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data.targetId)
@@ -1467,6 +1476,8 @@ end)
 
 ---Callback: Open Target Inventory / Storage
 lib.callback.register('souh4il_dev:server:openInventory', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local invType = data.type
@@ -1487,6 +1498,8 @@ end)
 
 ---Callback: Create Custom Job or Gang Stash
 lib.callback.register('souh4il_dev:server:createStash', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'player_action')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local stashId = data.stashId or ("stash_" .. os.time())
@@ -1502,7 +1515,11 @@ end)
 
 ---Callback: Get Player Detailed Dossier (Player Info)
 lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, targetId)
+    local allowed, reason = Security.CheckRateLimit(source, 'get_players')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
+    -- Financial data redaction: only show cash/bank to staff with manage_money
+    local canSeeMoney = Permissions.IsOwner(source) or (Permissions.GetPermissions(source).manage_money == true)
 
     local tId = tonumber(targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -1607,8 +1624,8 @@ lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, ta
             id = tId,
             name = GetPlayerName(tostring(tId)) or "Unknown",
             citizenid = citizenid,
-            cash = cash,
-            bank = bank,
+            cash = canSeeMoney and cash or 0,
+            bank = canSeeMoney and bank or 0,
             job = job,
             jobGrade = jobGrade,
             gang = gang,
@@ -1628,6 +1645,8 @@ end)
 
 ---Callback: Remove Specific Item from Player Inventory
 lib.callback.register('souh4il_dev:server:removePlayerItem', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'clear_inventory')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local tId = tonumber(data and data.targetId)
@@ -1935,6 +1954,8 @@ end)
 
 ---Callback: Ban Offline Player
 lib.callback.register('souh4il_dev:server:banOfflinePlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'ban_player')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local identifier = data.identifier
@@ -1959,6 +1980,8 @@ end)
 
 ---Callback: Unban Player
 lib.callback.register('souh4il_dev:server:unbanPlayer', function(source, data)
+    local allowed, reason = Security.CheckRateLimit(source, 'ban_player')
+    if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
 
     local queryVal = data.identifier or data.id

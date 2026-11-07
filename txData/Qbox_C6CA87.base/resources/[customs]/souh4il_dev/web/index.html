@@ -1209,9 +1209,9 @@
                                 </div>
 
                                 <div class="quick-actions-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 12px;">
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent (Cash & Banque)</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Inventaire Complet</span></button>
-                                    <button class="action-btn danger" style="border-color: #ff3344; background: rgba(255,0,0,0.16);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total Personnage</span></button>
+                                    <button class="action-btn danger" data-requires-perm="manage_wipes" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent (Cash & Banque)</span></button>
+                                    <button class="action-btn danger" data-requires-perm="manage_wipes" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Inventaire Complet</span></button>
+                                    <button class="action-btn danger" data-requires-perm="manage_wipes" style="border-color: #ff3344; background: rgba(255,0,0,0.16);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total Personnage</span></button>
                                 </div>
                             </div>
 

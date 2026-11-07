@@ -10,12 +10,21 @@ Config.JobCategory = {
             society = "police", -- The name of the society that will receive the money when a player pay a bill
         },
         {
-            name = "sheriff",
+            name = "bcso",
             titleListLabel = "Sheriff List",
             color = "#a1823f",
             badge = "bcsd_badge", -- lspd_badge | bcsd_badge | fib_badge
             penalFilter = "police", -- The name of the penal code filter to separate the penal code by job
             colorHueDeg = 0, -- The hue degree of the color, 0 is the default color, you can change it to get a different color
+            society = "police", -- The name of the society that will receive the money when a player pay a bill
+        },
+        {
+            name = "sasp",
+            titleListLabel = "State Police List",
+            color = "#5a4e8c",
+            badge = "lspd_badge", -- lspd_badge | bcsd_badge | fib_badge
+            penalFilter = "police", -- The name of the penal code filter to separate the penal code by job
+            colorHueDeg = 240, -- The hue degree of the color, 0 is the default color, you can change it to get a different color
             society = "police", -- The name of the society that will receive the money when a player pay a bill
         },
     },

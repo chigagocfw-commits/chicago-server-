@@ -2131,6 +2131,15 @@ function renderManageSectionVisibility(perms, isOwnerFlag) {
         card.style.display = card.dataset.permHidden === '1' ? 'none' : '';
     });
 
+    // Individual button gating: elements with data-requires-perm are hidden if
+    // the staff member lacks that specific granular permission.
+    // This separates dangerous actions (wipes) from less harmful ones (trolls)
+    // within the same card.
+    document.querySelectorAll('[data-requires-perm]').forEach(el => {
+        const perm = el.getAttribute('data-requires-perm');
+        el.style.display = (ow || gp[perm] === true) ? '' : 'none';
+    });
+
     // Also hide dossier quick-buttons based on perms
     const dossierBtns = document.querySelectorAll('.manage-dossier-quickbtns .dossier-qbtn');
     dossierBtns.forEach(btn => {
