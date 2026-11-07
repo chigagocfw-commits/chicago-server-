@@ -2866,3 +2866,81 @@ local _origClose = nil
 AddEventHandler('__cfx_export_souh4il_dev_stopEmoteOnClose', function()
     StopCurrentEmote()
 end)
+
+-- ============================================================
+-- PAUSE MENU (MAP) REAL-TIME TELEMETRY (CASH & BANK EXACT DISPLAY)
+-- ============================================================
+local function formatPauseMoney(amount)
+    amount = tonumber(amount) or 0
+    local isNeg = amount < 0
+    local absVal = math.abs(math.floor(amount))
+    local formatted = (lib and lib.math and lib.math.groupdigits) and lib.math.groupdigits(absVal) or tostring(absVal)
+    if isNeg then
+        return '-' .. formatted .. '$'
+    end
+    return formatted .. '$'
+end
+
+local function syncPauseMenuStats()
+    local cash = 0
+    if GetResourceState('ox_inventory') == 'started' then
+        local oxCash = exports.ox_inventory:Search('count', 'money')
+        if oxCash ~= nil then
+            cash = oxCash
+        end
+    end
+
+    local bank = 0
+    local success, pData = pcall(function()
+        if exports.qbx_core then
+            return exports.qbx_core:GetPlayerData()
+        end
+        return nil
+    end)
+    if success and pData and pData.money then
+        bank = pData.money.bank or 0
+        if cash == 0 and pData.money.cash then
+            cash = pData.money.cash
+        end
+    end
+
+    local serverId = GetPlayerServerId(PlayerId())
+    local bankColor = bank < 0 and '~r~' or '~b~'
+    local header = ('CHICAGO RP ~s~| ~g~Cash: %s ~s~| %sBanque: %s ~s~| ~c~[ID: %s]'):format(
+        formatPauseMoney(cash),
+        bankColor,
+        formatPauseMoney(bank),
+        serverId
+    )
+    AddTextEntry('FE_THDR_GTAO', header)
+
+    pcall(function()
+        StatSetInt(`MP0_WALLET_BALANCE`, math.floor(cash), true)
+        StatSetInt(`MP1_WALLET_BALANCE`, math.floor(cash), true)
+        StatSetInt(`BANK_BALANCE`, math.floor(bank), true)
+    end)
+end
+
+CreateThread(function()
+    AddTextEntry('PM_SCR_MAP', 'Carte de la Ville')
+    AddTextEntry('PM_PANE_LEAVE', 'Se deconnecter')
+    AddTextEntry('PM_PANE_QUIT', 'Quitter vers le Bureau')
+
+    local wasPaused = false
+    while true do
+        local isPaused = IsPauseMenuActive()
+        if isPaused and not wasPaused then
+            syncPauseMenuStats()
+        end
+        wasPaused = isPaused
+        Wait(isPaused and 250 or 500)
+    end
+end)
+
+RegisterNetEvent('QBCore:Player:SetPlayerData', function()
+    syncPauseMenuStats()
+end)
+
+RegisterNetEvent('hud:client:OnMoneyChange', function()
+    syncPauseMenuStats()
+end)

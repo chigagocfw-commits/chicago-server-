@@ -36,3 +36,35 @@ function OpenStash(stashId)
         end
     end
 end
+
+exports('mechanic_tablet', function(data, slot)
+    exports.ox_inventory:useItem(data, function(used)
+        if used then
+            TriggerEvent('qs-mechanic-creator:client:openTablet')
+        end
+    end)
+end)
+
+exports('repairkit', function(data, slot)
+    exports.ox_inventory:useItem(data, function(used)
+        if used then
+            TriggerEvent('qs-mechanic-creator:client:useRepairkit')
+        end
+    end)
+end)
+
+exports('sponge', function(data, slot)
+    exports.ox_inventory:useItem(data, function(used)
+        if used then
+            TriggerEvent('qs-mechanic-creator:client:useSponge')
+        end
+    end)
+end)
+
+exports('rope', function(data, slot)
+    exports.ox_inventory:useItem(data, function(used)
+        if used then
+            TriggerEvent('qs-mechanic-creator:client:useRope')
+        end
+    end)
+end)

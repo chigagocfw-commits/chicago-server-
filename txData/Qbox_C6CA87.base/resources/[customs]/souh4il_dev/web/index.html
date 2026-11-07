@@ -829,12 +829,14 @@
                             </div>
 
                             <div class="manage-dossier-quickbtns">
-                                <button class="dossier-qbtn green" onclick="execPlayerDetailed('heal')" title="Heal & Revive">❤️ Revive</button>
-                                <button class="dossier-qbtn cyan" onclick="execPlayerDetailed('goto_target')" title="Se téléporter sur lui">📍 Goto</button>
-                                <button class="dossier-qbtn blue" onclick="execPlayerDetailed('bring_target')" title="Le téléporter sur moi">🧲 Bring</button>
-                                <button class="dossier-qbtn gold" onclick="execPlayerDetailed('open_inv')" title="Ouvrir son inventaire">🎒 Inventaire</button>
-                                <button class="dossier-qbtn purple" onclick="execPlayerDetailed('clothing_menu')" title="Ouvrir Menu Vêtements">👔 Vêtements</button>
-                                <button class="dossier-qbtn neutral" onclick="openPlayerInfoModal(document.getElementById('manage-target-id').value)" title="Fiche détaillée">ℹ️ Fiche</button>
+                                <button class="dossier-qbtn green" data-requires-perm="manage_heal,player_heal" onclick="execPlayerDetailed('heal')" title="Heal & Revive">❤️ Revive</button>
+                                <button class="dossier-qbtn cyan" data-requires-perm="manage_tp,player_teleport" onclick="execPlayerDetailed('goto_target')" title="Se téléporter sur lui">📍 Goto</button>
+                                <button class="dossier-qbtn blue" data-requires-perm="manage_tp,player_teleport" onclick="execPlayerDetailed('bring_target')" title="Le téléporter sur moi">🧲 Bring</button>
+                                <button class="dossier-qbtn gold" data-requires-perm="manage_inv,player_inventory" onclick="execPlayerDetailed('open_inv')" title="Ouvrir son inventaire">🎒 Inventaire</button>
+                                <button class="dossier-qbtn purple" data-requires-perm="player_clothing" onclick="execPlayerDetailed('clothing_menu')" title="Ouvrir Menu Vêtements">👔 Vêtements</button>
+                                <button class="dossier-qbtn neutral" data-requires-perm="view_players" onclick="openPlayerInfoModal(document.getElementById('manage-target-id').value)" title="Fiche détaillée">ℹ️ Fiche</button>
+                                <button class="dossier-qbtn" style="background: rgba(249, 115, 22, 0.16); border-color: rgba(249, 115, 22, 0.45); color: #fb923c;" data-requires-perm="manage_warn_kick,punish_kicks" onclick="openKickModal(document.getElementById('manage-target-id').value, document.getElementById('manage-target-name').value)" title="Expulser le joueur (Kick)">🚪 Kick</button>
+                                <button class="dossier-qbtn" style="background: rgba(255, 51, 102, 0.18); border-color: rgba(255, 51, 102, 0.5); color: #ff4d6d;" data-requires-perm="manage_ban,punish_bans" onclick="openBanModal(document.getElementById('manage-target-id').value, document.getElementById('manage-target-name').value)" title="Bannir le joueur (Ban)">🚫 Ban</button>
                             </div>
                         </div>
 
@@ -843,7 +845,8 @@
                             <button class="manage-subnav-btn active" data-section="all" onclick="switchManageSection('all')">⚡ Tout Afficher</button>
                             <button class="manage-subnav-btn" data-section="sec-tp" onclick="switchManageSection('sec-tp')">🚀 1. Téléport & Amis</button>
                             <button class="manage-subnav-btn" data-section="sec-econ" onclick="switchManageSection('sec-econ')">💰 2 & 3. Argent & Inventaire</button>
-                            <button class="manage-subnav-btn" data-section="sec-char" onclick="switchManageSection('sec-char')">💼 4, 5 & 6. Jobs, Santé & Véhicule</button>
+                            <button class="manage-subnav-btn" data-section="sec-char" onclick="switchManageSection('sec-char')">💼 4 & 5. Jobs & Santé</button>
+                            <button class="manage-subnav-btn" data-section="sec-veh" onclick="switchManageSection('sec-veh')">🚘 6. Véhicule Actuel</button>
                             <button class="manage-subnav-btn" data-section="sec-assets" onclick="switchManageSection('sec-assets')">🏛️ 6B. Maisons & Voitures</button>
                             <button class="manage-subnav-btn" data-section="sec-skins" onclick="switchManageSection('sec-skins')">🎭 7. Skins, Peds & Apparence</button>
                             <button class="manage-subnav-btn" data-section="sec-trolls" onclick="switchManageSection('sec-trolls')">⚠️ 8. Trolls & Sanctions</button>
@@ -864,7 +867,7 @@
                                     </div>
                                 </div>
 
-                                <div class="manage-inner-box">
+                                <div class="manage-inner-box" data-requires-perm="manage_tp,player_teleport">
                                     <label class="manage-box-label">🤝 Téléporter vers un ami / joueur en ligne (Nmofih 3nd sa7bo) :</label>
                                     <div class="form-row" style="margin-bottom: 8px;">
                                         <select id="manage-friend-select" class="search-input" style="flex: 1;">
@@ -877,14 +880,14 @@
                                     </div>
                                 </div>
 
-                                <label class="manage-box-label" style="margin-top: 12px;">📍 Téléportations Rapides :</label>
+                                <label class="manage-box-label" style="margin-top: 12px;">📍 Téléportations & Contrôles Rapides :</label>
                                 <div class="quick-actions-grid manage-compact-grid">
-                                    <button class="action-btn" onclick="execPlayerDetailed('goto_target')"><span class="btn-icon">📍</span><span class="btn-text">Se TP sur lui (Goto)</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('bring_target')"><span class="btn-icon">🧲</span><span class="btn-text">Le TP sur moi (Bring)</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">TP Hôpital Pillbox</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">TP Place Legion</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">Mettre en Cage</span></button>
-                                    <button class="action-btn" onclick="playerAction('freeze', document.getElementById('manage-target-id').value)"><span class="btn-icon">❄️</span><span class="btn-text">Freeze / Unfreeze</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_tp,player_teleport" onclick="execPlayerDetailed('goto_target')"><span class="btn-icon">📍</span><span class="btn-text">Se TP sur lui (Goto)</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_tp,player_teleport" onclick="execPlayerDetailed('bring_target')"><span class="btn-icon">🧲</span><span class="btn-text">Le TP sur moi (Bring)</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_tp,player_teleport" onclick="execPlayerDetailed('tp_preset', { location: 'pillbox' })"><span class="btn-icon">🏥</span><span class="btn-text">TP Hôpital Pillbox</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_tp,player_teleport" onclick="execPlayerDetailed('tp_preset', { location: 'legion' })"><span class="btn-icon">🌆</span><span class="btn-text">TP Place Legion</span></button>
+                                    <button class="action-btn danger" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'jailbox' })"><span class="btn-icon">🔒</span><span class="btn-text">Mettre en Cage</span></button>
+                                    <button class="action-btn" data-requires-perm="manage_freeze,player_freeze" onclick="playerAction('freeze', document.getElementById('manage-target-id').value)"><span class="btn-icon">❄️</span><span class="btn-text">Freeze / Unfreeze</span></button>
                                 </div>
                             </div>
 
@@ -900,7 +903,7 @@
                                     </div>
                                 </div>
 
-                                <div class="manage-inner-box">
+                                <div class="manage-inner-box" data-requires-perm="manage_money">
                                     <div class="manage-label-With-chips">
                                         <label class="manage-box-label" style="margin-bottom: 0;">💰 Gestion Cash & Banque :</label>
                                         <div class="manage-preset-pills">
@@ -922,7 +925,7 @@
                                     </div>
                                 </div>
 
-                                <div class="manage-inner-box" style="margin-top: 10px;">
+                                <div class="manage-inner-box" style="margin-top: 10px;" data-requires-perm="manage_give_item,spawn_items">
                                     <div class="manage-label-With-chips">
                                         <label class="manage-box-label" style="margin-bottom: 0;">🎒 Donner un Item (ox_inventory) :</label>
                                         <div class="manage-preset-pills">
@@ -933,11 +936,14 @@
                                             <button type="button" class="mini-preset-pill" onclick="quickFillManageItem('repairkit', 2)">🔧 Repairkit</button>
                                         </div>
                                     </div>
-                                    <div class="form-row" style="margin-top: 8px; margin-bottom: 8px;">
+                                    <div class="form-row" style="margin-top: 8px; margin-bottom: 0;">
                                         <input type="text" id="manage-item-name" class="search-input" placeholder="Nom item (ex: radio, burger, weapon_pistol)..." style="flex: 1;">
                                         <input type="number" id="manage-item-count" class="search-input count-input" value="1" min="1" max="500" style="width: 75px;">
                                         <button class="primary-btn" onclick="execPlayerDetailed('give_item_direct')">➕ Donner</button>
                                     </div>
+                                </div>
+
+                                <div class="manage-inner-box" style="margin-top: 10px;" data-requires-perm="manage_inv,player_inventory">
                                     <div class="quick-actions-grid manage-compact-grid-4" style="margin-bottom: 10px;">
                                         <button class="action-btn" onclick="execPlayerDetailed('open_inv')"><span class="btn-icon">🎒</span><span class="btn-text">Inventaire</span></button>
                                         <button class="action-btn" onclick="execPlayerDetailed('open_trunk')"><span class="btn-icon">🚘</span><span class="btn-text">Coffre Veh</span></button>
@@ -970,7 +976,7 @@
                                     </div>
                                 </div>
 
-                                <div class="manage-inner-box">
+                                <div class="manage-inner-box" data-requires-perm="manage_jobs">
                                     <div class="manage-label-With-chips">
                                         <label class="manage-box-label" style="margin-bottom: 0;">💼 Attribution Métier & Gang :</label>
                                         <div class="manage-preset-pills">
@@ -993,19 +999,21 @@
                                     </div>
                                 </div>
 
-                                <label class="manage-box-label" style="margin-top: 12px;">❤️ Contrôle Santé, Armure & Besoins :</label>
-                                <div class="quick-actions-grid manage-compact-grid">
-                                    <button class="action-btn" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Armure</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'feed' })"><span class="btn-icon">🍔</span><span class="btn-text">100% Faim & Soif</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Zéro Stress</span></button>
-                                    <button class="action-btn" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Godmode Joueur</span></button>
-                                    <button class="action-btn danger" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer (Slay)</span></button>
+                                <div data-requires-perm="manage_heal,player_heal" style="margin-top: 12px;">
+                                    <label class="manage-box-label">❤️ Contrôle Santé, Armure & Besoins :</label>
+                                    <div class="quick-actions-grid manage-compact-grid">
+                                        <button class="action-btn" data-requires-perm="manage_heal,player_heal" onclick="execPlayerDetailed('heal')"><span class="btn-icon">❤️</span><span class="btn-text">Heal & Revive</span></button>
+                                        <button class="action-btn" data-requires-perm="manage_heal,player_heal" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'armor' })"><span class="btn-icon">🛡️</span><span class="btn-text">100% Armure</span></button>
+                                        <button class="action-btn" data-requires-perm="manage_heal,player_heal" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'feed' })"><span class="btn-icon">🍔</span><span class="btn-text">100% Faim & Soif</span></button>
+                                        <button class="action-btn" data-requires-perm="manage_heal,player_heal" onclick="execPlayerDetailed('stress')"><span class="btn-icon">🧘</span><span class="btn-text">Zéro Stress</span></button>
+                                        <button class="action-btn" data-requires-perm="god_powers" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'godmode' })"><span class="btn-icon">⚡</span><span class="btn-text">Godmode Joueur</span></button>
+                                        <button class="action-btn danger" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('vitals_control', { vitalsType: 'kill' })"><span class="btn-icon">💀</span><span class="btn-text">Tuer (Slay)</span></button>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- CARD 6: Véhicule Actuel du Joueur -->
-                            <div class="perm-cat-group manage-sec-card" data-sec="sec-char">
+                            <div class="perm-cat-group manage-sec-card" data-sec="sec-veh">
                                 <div class="manage-card-head">
                                     <div class="manage-card-title">
                                         <span class="manage-sec-num blue">04</span>
@@ -1045,7 +1053,7 @@
 
                                 <div class="patrimoine-two-cols">
                                     <!-- Sub-section A: Véhicules Possédés -->
-                                    <div class="patrimoine-col">
+                                    <div class="patrimoine-col" data-requires-perm="manage_assets">
                                         <div class="asset-sub-header">
                                             <span>🚗 Garage & Véhicules Possédés</span>
                                             <span class="asset-sub-info">Clés • Bring • Coffre • Réparer • Transférer • Saisir</span>
@@ -1073,7 +1081,7 @@
                                     </div>
 
                                     <!-- Sub-section B: Maisons & Propriétés -->
-                                    <div class="patrimoine-col">
+                                    <div class="patrimoine-col" data-requires-perm="manage_properties">
                                         <div class="asset-sub-header">
                                             <span>🏠 Maisons & Propriétés Immobilières</span>
                                             <span class="asset-sub-info">Coffre Maison • TP • Reset Clés • Transférer • Saisir</span>
@@ -1108,7 +1116,7 @@
                                             <small>Cliquez sur la photo d'un Ped pour transformer le joueur instantanément ou ouvrez ses menus d'apparence</small>
                                         </div>
                                     </div>
-                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                    <div style="display: flex; gap: 8px; align-items: center;" data-requires-perm="manage_skins">
                                         <span id="manage-inline-ped-count" class="asset-count-badge" style="background: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7; color: #e9d5ff;">1051+ Peds</span>
                                         <button class="primary-btn" style="background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; font-weight: 700; padding: 7px 14px;" onclick="openPedPickerModal()">
                                             🖼️ Plein Écran
@@ -1118,42 +1126,42 @@
 
                                 <!-- 1-Click Appearance & Clothing Action Bar -->
                                 <div class="appearance-actions-bar">
-                                    <button class="app-studio-btn purple" onclick="execPlayerDetailed('clothing_menu')">
+                                    <button class="app-studio-btn purple" data-requires-perm="player_clothing" onclick="execPlayerDetailed('clothing_menu')">
                                         <span class="app-btn-icon">👔</span>
                                         <div class="app-btn-txt">
                                             <b>Menu Vêtements</b>
                                             <span>Ouvrir Clothing Shop</span>
                                         </div>
                                     </button>
-                                    <button class="app-studio-btn pink" onclick="execPlayerDetailed('barber_menu')">
+                                    <button class="app-studio-btn pink" data-requires-perm="player_clothing" onclick="execPlayerDetailed('barber_menu')">
                                         <span class="app-btn-icon">💈</span>
                                         <div class="app-btn-txt">
                                             <b>Coiffeur & Visage</b>
                                             <span>Personnaliser Apparence</span>
                                         </div>
                                     </button>
-                                    <button class="app-studio-btn cyan" onclick="execPlayerDetailed('reload_skin')">
+                                    <button class="app-studio-btn cyan" data-requires-perm="player_clothing" onclick="execPlayerDetailed('reload_skin')">
                                         <span class="app-btn-icon">🔄</span>
                                         <div class="app-btn-txt">
                                             <b>Skin Original</b>
                                             <span>Recharger depuis DB</span>
                                         </div>
                                     </button>
-                                    <button class="app-studio-btn blue" onclick="selectPedModel('mp_m_freemode_01', 'MP Homme')">
+                                    <button class="app-studio-btn blue" data-requires-perm="manage_skins" onclick="selectPedModel('mp_m_freemode_01', 'MP Homme')">
                                         <span class="app-btn-icon">🧍</span>
                                         <div class="app-btn-txt">
                                             <b>MP Freemode Homme</b>
                                             <span>mp_m_freemode_01</span>
                                         </div>
                                     </button>
-                                    <button class="app-studio-btn gold" onclick="selectPedModel('mp_f_freemode_01', 'MP Femme')">
+                                    <button class="app-studio-btn gold" data-requires-perm="manage_skins" onclick="selectPedModel('mp_f_freemode_01', 'MP Femme')">
                                         <span class="app-btn-icon">🧍‍♀️</span>
                                         <div class="app-btn-txt">
                                             <b>MP Freemode Femme</b>
                                             <span>mp_f_freemode_01</span>
                                         </div>
                                     </button>
-                                    <button class="app-studio-btn green" onclick="execPlayerDetailed('clean_ped')">
+                                    <button class="app-studio-btn green" data-requires-perm="player_clothing" onclick="execPlayerDetailed('clean_ped')">
                                         <span class="app-btn-icon">🧼</span>
                                         <div class="app-btn-txt">
                                             <b>Nettoyer Corps</b>
@@ -1163,7 +1171,7 @@
                                 </div>
 
                                 <!-- Search + Manual Model Input + Category Filter Tabs -->
-                                <div class="skins-studio-toolbar">
+                                <div class="skins-studio-toolbar" data-requires-perm="manage_skins">
                                     <div class="form-row" style="margin-bottom: 10px;">
                                         <input type="text" id="manage-inline-ped-search" class="search-input" placeholder="🔍 Rechercher un Ped en direct (ex: police, swat, ballas, michael, chop, médecin)..." style="flex: 1.5; border-color: rgba(168, 85, 247, 0.4);">
                                         <input type="text" id="manage-ped-model" class="search-input" placeholder="Ou code modèle exact (ex: s_m_y_cop_01)..." style="flex: 1;">
@@ -1183,7 +1191,7 @@
                                 </div>
 
                                 <!-- Large Embedded Visual Ped Cards Grid -->
-                                <div id="manage-inline-ped-grid" class="manage-inline-ped-grid"></div>
+                                <div id="manage-inline-ped-grid" class="manage-inline-ped-grid" data-requires-perm="manage_skins"></div>
                             </div>
 
                             <!-- CARD 8: Trolls & Sanctions (FULL WIDTH) -->
@@ -1192,13 +1200,13 @@
                                     <div class="manage-card-title">
                                         <span class="manage-sec-num red">07</span>
                                         <div>
-                                            <h5>TROLLS, AVERTISSEMENTS & WIPES STAFF</h5>
-                                            <small>Actions fun, messages privés en jeu, avertissements et remise à zéro (Wipe)</small>
+                                            <h5>TROLLS, DANSES FORCÉES, AVERTISSEMENTS & WIPES STAFF</h5>
+                                            <small>Actions fun, danses forcées, messages privés en jeu, avertissements et remise à zéro (Wipe)</small>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="quick-actions-grid manage-compact-grid-6" style="margin-bottom: 12px;">
+                                <div class="quick-actions-grid manage-compact-grid-6" style="margin-bottom: 12px;" data-requires-perm="manage_trolls">
                                     <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'slap' })"><span class="btn-icon">🚀</span><span class="btn-text">Slap Ciel (50m)</span></button>
                                     <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'fire' })"><span class="btn-icon">🔥</span><span class="btn-text">Mettre en Feu</span></button>
                                     <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'drunk' })"><span class="btn-icon">🍺</span><span class="btn-text">Rendre Ivre</span></button>
@@ -1207,25 +1215,47 @@
                                     <button class="action-btn" data-requires-perm="manage_trolls" onclick="execPlayerDetailed('troll', { trollType: 'sound' })"><span class="btn-icon">🔊</span><span class="btn-text">Cri Strident</span></button>
                                 </div>
 
+                                <!-- Quick Force Dance / Emote on Target Player -->
+                                <div class="manage-inner-box" style="margin-bottom: 12px;" data-requires-perm="manage_force_dance,dances_emotes">
+                                    <div class="manage-label-With-chips">
+                                        <label class="manage-box-label" style="margin-bottom: 0;">🕺 Forcer une Danse / Animation sur ce Joueur (4,800+ Danses) :</label>
+                                        <div class="manage-preset-pills">
+                                            <button type="button" class="mini-preset-pill" onclick="forceDanceOnManagedPlayer('dance')">💃 Dance</button>
+                                            <button type="button" class="mini-preset-pill" onclick="forceDanceOnManagedPlayer('dancef')">💃 Dance F</button>
+                                            <button type="button" class="mini-preset-pill" onclick="forceDanceOnManagedPlayer('silly9')">🕺 Fortnite</button>
+                                            <button type="button" class="mini-preset-pill" onclick="forceDanceOnManagedPlayer('twerk')">🍑 Twerk</button>
+                                            <button type="button" class="mini-preset-pill" onclick="forceDanceOnManagedPlayer('cr7siu')">⚽ CR7 SIUU</button>
+                                            <button type="button" class="mini-preset-pill" onclick="openEmotesTabForManagedPlayer()" style="border-color: var(--accent-cyan); color: var(--accent-cyan);">🕺 Ouvrir Catalogue 4800+ Danses</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-row" style="margin-top: 8px; margin-bottom: 0;">
+                                        <input type="text" id="manage-force-emote-input" class="search-input" placeholder="Code danse/emote (ex: dance, dance2, zdance1, pdance1, silly9, pushup)..." style="flex: 1;">
+                                        <button class="primary-btn" onclick="forceDanceOnManagedPlayer(document.getElementById('manage-force-emote-input').value)">🕺 Faire Danser</button>
+                                        <button class="secondary-btn" onclick="stopDanceOnManagedPlayer()">⏹️ Stop Danse</button>
+                                    </div>
+                                </div>
+
                                 <div class="manage-troll-forms-grid">
-                                    <div class="manage-inner-box">
+                                    <div class="manage-inner-box" data-requires-perm="player_pm">
                                         <label class="manage-box-label">💬 Message Privé Staff (Affiché à l'écran du joueur) :</label>
                                         <div class="form-row" style="margin-bottom: 0;">
                                             <input type="text" id="manage-pm-msg" class="search-input" placeholder="Écrire un message privé au joueur...">
                                             <button class="primary-btn" onclick="execPlayerDetailed('message')">💬 Envoyer PM</button>
                                         </div>
                                     </div>
-                                    <div class="manage-inner-box">
-                                        <label class="manage-box-label">⚠️ Avertissement Officiel & Déconnexion :</label>
-                                        <div class="form-row" style="margin-bottom: 0;">
-                                            <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement...">
-                                            <button class="primary-btn danger-btn" data-requires-perm="punish_kicks" onclick="execPlayerDetailed('warn')">⚠️ Warn</button>
-                                            <button class="secondary-btn" data-requires-perm="punish_kicks" onclick="execPlayerDetailed('force_logout')">🚪 Déco Perso</button>
+                                    <div class="manage-inner-box" data-requires-perm="manage_warn_kick,punish_kicks,manage_ban,punish_bans">
+                                        <label class="manage-box-label">⚠️ Avertissement, Kick & Bannissement :</label>
+                                        <div class="form-row" style="margin-bottom: 0; flex-wrap: wrap;">
+                                            <input type="text" id="manage-warn-msg" class="search-input" placeholder="Raison de l'avertissement..." style="flex: 1; min-width: 170px;">
+                                            <button class="primary-btn danger-btn" data-requires-perm="manage_warn_kick,punish_kicks" onclick="execPlayerDetailed('warn')">⚠️ Warn</button>
+                                            <button class="secondary-btn" data-requires-perm="manage_warn_kick,punish_kicks" onclick="execPlayerDetailed('force_logout')">🚪 Déco Perso</button>
+                                            <button class="secondary-btn" style="border-color: rgba(249,115,22,0.5); color: #fb923c; font-weight: 700;" data-requires-perm="manage_warn_kick,punish_kicks" onclick="openKickModal(document.getElementById('manage-target-id').value, document.getElementById('manage-target-name').value)">👢 Kick</button>
+                                            <button class="primary-btn danger-btn" style="background: rgba(255,51,102,0.22); border-color: #ff3366; color: #ff4d6d; font-weight: 800;" data-requires-perm="manage_ban,punish_bans" onclick="openBanModal(document.getElementById('manage-target-id').value, document.getElementById('manage-target-name').value)">🚫 Ban</button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="quick-actions-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 12px;">
+                                <div class="quick-actions-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 12px;" data-requires-perm="manage_wipes">
                                     <button class="action-btn danger" data-requires-perm="manage_wipes" onclick="execPlayerDetailed('wipe', { wipeType: 'cash' })"><span class="btn-icon">💸</span><span class="btn-text">Wipe Argent (Cash & Banque)</span></button>
                                     <button class="action-btn danger" data-requires-perm="manage_wipes" onclick="execPlayerDetailed('wipe', { wipeType: 'inventory' })"><span class="btn-icon">🧹</span><span class="btn-text">Wipe Inventaire Complet</span></button>
                                     <button class="action-btn danger" data-requires-perm="manage_wipes" style="border-color: #ff3344; background: rgba(255,0,0,0.16);" onclick="execPlayerDetailed('wipe', { wipeType: 'full' })"><span class="btn-icon">⚡</span><span class="btn-text">Wipe Total Personnage</span></button>
@@ -1653,30 +1683,43 @@
                     <!-- Tab: Dances & Emotes -->
                     <section class="tab-pane" id="pane-emotes">
                         <div class="section-card">
-                            <div class="section-header">
-                                <h4>🕺 DANCES & EMOTES</h4>
-                                <span>Jouez des animations sur votre personnage — arrêtez en bougeant ou en cliquant Stop</span>
+                            <div class="section-header" style="flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <h4>🕺 DANCES & EMOTES STUDIO (CATALOGUE COMPLET BABLO-ANIMATIONS)</h4>
+                                    <span style="display:block; margin-top:3px;">Toutes les danses, packs Fortnite/Créateurs, props 3D et emotes RP — jouez-les sur vous-même, un joueur ou tout le serveur !</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <span id="emote-total-badge" class="asset-count-badge" style="background: rgba(0, 229, 255, 0.16); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">4,800+ DANCES & EMOTES</span>
+                                    <select id="emote-target-select" class="search-input" style="min-width: 230px; padding: 6px 12px; font-size: 0.78rem; border-color: var(--accent-cyan); font-weight: 700;">
+                                        <option value="self">👤 Cible : Moi-même (Self)</option>
+                                        <option value="all">🌐 Cible : Tout le Serveur (Dance Party !)</option>
+                                    </select>
+                                    <button class="action-btn danger" id="emote-stop-btn" style="min-width:130px; padding: 7px 14px;" onclick="stopEmote()">
+                                        <span class="btn-icon">⏹</span><span class="btn-text">Stop Animation</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Stop button + search + filters -->
-                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-                                <button class="action-btn danger" id="emote-stop-btn" style="min-width:120px;" onclick="stopEmote()">
-                                    <span class="btn-icon">⏹</span><span class="btn-text">Stop Emote</span>
-                                </button>
-                                <input type="text" id="emote-search" class="search-input" placeholder="🔍 Rechercher une animation..." oninput="renderEmotes()" style="flex:1; min-width:180px;">
-                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                    <button class="filter-btn active" data-emote-cat="all"    onclick="setEmoteCat(this,'all')">Tous</button>
-                                    <button class="filter-btn"        data-emote-cat="dance"  onclick="setEmoteCat(this,'dance')">💃 Danses</button>
-                                    <button class="filter-btn"        data-emote-cat="sit"    onclick="setEmoteCat(this,'sit')">🪑 Assis</button>
-                                    <button class="filter-btn"        data-emote-cat="idle"   onclick="setEmoteCat(this,'idle')">💤 Idles</button>
-                                    <button class="filter-btn"        data-emote-cat="social" onclick="setEmoteCat(this,'social')">👋 Social</button>
-                                    <button class="filter-btn"        data-emote-cat="funny"  onclick="setEmoteCat(this,'funny')">😂 Funny</button>
+                            <!-- Search + Category Filters -->
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+                                <input type="text" id="emote-search" class="search-input" placeholder="🔍 Rechercher par nom ou commande (ex: dance, dance250, zdance1, pdance1, silly9, cr7, twerk, sit)..." oninput="resetEmoteLimitAndRender()" style="flex:1; min-width:240px;">
+                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                    <button class="filter-btn"        data-emote-cat="favorites" onclick="setEmoteCat(this,'favorites')">⭐ Favoris</button>
+                                    <button class="filter-btn active" data-emote-cat="all"       onclick="setEmoteCat(this,'all')">🌐 Tous</button>
+                                    <button class="filter-btn"        data-emote-cat="dance"     onclick="setEmoteCat(this,'dance')">💃 Danses (3994+)</button>
+                                    <button class="filter-btn"        data-emote-cat="fortnite"  onclick="setEmoteCat(this,'fortnite')">🔥 Fortnite & Packs</button>
+                                    <button class="filter-btn"        data-emote-cat="prop"      onclick="setEmoteCat(this,'prop')">📦 Props 3D</button>
+                                    <button class="filter-btn"        data-emote-cat="sit"       onclick="setEmoteCat(this,'sit')">🪑 Assis / Couché</button>
+                                    <button class="filter-btn"        data-emote-cat="idle"      onclick="setEmoteCat(this,'idle')">🧍 Postures</button>
+                                    <button class="filter-btn"        data-emote-cat="social"    onclick="setEmoteCat(this,'social')">👋 Social</button>
+                                    <button class="filter-btn"        data-emote-cat="funny"     onclick="setEmoteCat(this,'funny')">😂 Fun & Sport</button>
                                 </div>
                             </div>
 
                             <!-- Now playing bar -->
-                            <div id="emote-now-playing" style="display:none; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:8px 14px; margin-bottom:14px; font-size:0.82rem; color:#00e5ff;">
-                                ▶ En cours: <b id="emote-now-label">—</b>
+                            <div id="emote-now-playing" style="display:none; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:8px 14px; margin-bottom:14px; font-size:0.82rem; color:#00e5ff; align-items:center; justify-content:space-between;">
+                                <span>▶ Animation active : <b id="emote-now-label">—</b></span>
+                                <span style="font-size:0.75rem; color:var(--text-muted);">Cliquez sur ⏹ Stop Animation pour arrêter</span>
                             </div>
 
                             <!-- Emotes grid -->
@@ -1687,41 +1730,55 @@
                     <!-- Tab: Staff & Permissions Management -->
                     <section class="tab-pane" id="pane-staff">
                         <div class="section-card">
-                            <div class="section-header">
+                            <div class="section-header" style="flex-wrap: wrap; gap: 12px;">
                                 <div>
-                                    <h4>STAFF ACCESS & GRANULAR PERMISSIONS</h4>
-                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Gérer qui a accès à SOUH4IL-DEV et choisir exactement quels pouvoirs et fonctionnalités sont autorisés.</p>
+                                    <h4>🛡️ STUDIO DE GESTION DU STAFF & PERMISSIONS PAR ONGLET</h4>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Choisissez exactement quels onglets (Dashboard, Teleport, Items, Players, Manage...) sont visibles pour chaque staff et quelles actions (Ban, Kick, Argent, Armes...) il peut utiliser à l'intérieur.</p>
                                 </div>
-                                <div style="display: flex; gap: 10px;">
-                                    <button class="secondary-btn" id="btn-refresh-staff">Refresh List</button>
-                                    <button class="primary-btn" id="btn-open-add-staff">+ Grant Staff Access</button>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button class="secondary-btn" id="btn-refresh-staff">🔄 Actualiser</button>
+                                    <button class="primary-btn" id="btn-open-add-staff" style="box-shadow: 0 0 16px rgba(0, 229, 255, 0.3);">➕ Ajouter / Configurer un Staff</button>
                                 </div>
                             </div>
 
                             <div class="metrics-grid" style="margin-bottom: 16px;">
                                 <div class="metric-card">
-                                    <span class="metric-label">TOTAL PLAYERS ONLINE</span>
+                                    <span class="metric-label">JOUEURS EN LIGNE</span>
                                     <span class="metric-value text-cyan" id="metric-total-members">--</span>
                                 </div>
                                 <div class="metric-card">
-                                    <span class="metric-label">STAFF WITH ACCESS</span>
+                                    <span class="metric-label">STAFFS AUTORISÉS</span>
                                     <span class="metric-value text-green" id="metric-total-staff">--</span>
                                 </div>
                                 <div class="metric-card">
-                                    <span class="metric-label">YOUR ACTIVE ROLE</span>
+                                    <span class="metric-label">VOTRE GRADE ACTUEL</span>
                                     <span class="metric-value" style="color: #ffd700;" id="metric-your-role">OWNER</span>
+                                </div>
+                                <div class="metric-card">
+                                    <span class="metric-label">SYSTÈME DE CONTRÔLE</span>
+                                    <span class="metric-value" style="color: #a855f7; font-size: 1.05rem;">16 ONGLETS • 65+ PERMS</span>
                                 </div>
                             </div>
 
-                            <!-- Dual View Mode: All Members vs Staff Only -->
-                            <div style="display: flex; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                                <button class="secondary-btn" id="btn-view-members" style="background: rgba(0, 229, 255, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">👥 TOUS LES MEMBRES CONNECTÉS (GA3 LES JOUEURS)</button>
-                                <button class="secondary-btn" id="btn-view-staff" style="font-weight: 600;">🛡️ STAFF ENREGISTRÉS SEULEMENT</button>
+                            <!-- Dual View Mode + Role Filter Pills -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="secondary-btn" id="btn-view-members" style="background: rgba(0, 229, 255, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">👥 TOUS LES JOUEURS EN LIGNE (GA3 LES JOUEURS)</button>
+                                    <button class="secondary-btn" id="btn-view-staff" style="font-weight: 600;">🛡️ ÉQUIPE STAFF ENREGISTRÉE</button>
+                                </div>
+                                <div class="item-filter-tabs" id="staff-role-filter-pills">
+                                    <button type="button" class="filter-chip active" data-srole="all" onclick="setStaffRoleFilter('all')">🌐 Tous</button>
+                                    <button type="button" class="filter-chip" data-srole="owner" onclick="setStaffRoleFilter('owner')">👑 Owner</button>
+                                    <button type="button" class="filter-chip" data-srole="admin" onclick="setStaffRoleFilter('admin')">⚖️ Admin</button>
+                                    <button type="button" class="filter-chip" data-srole="developer" onclick="setStaffRoleFilter('developer')">🛠️ Dev</button>
+                                    <button type="button" class="filter-chip" data-srole="moderator" onclick="setStaffRoleFilter('moderator')">🛡️ Mod</button>
+                                    <button type="button" class="filter-chip" data-srole="custom" onclick="setStaffRoleFilter('custom')">✨ Custom</button>
+                                </div>
                             </div>
 
-                            <div class="staff-header-actions">
-                                <input type="text" id="staff-search-input" class="search-input" placeholder="🔍 Rechercher un joueur/staff par nom, license, ID..." style="max-width: 340px;">
-                                <span style="font-size: 0.8rem; color: var(--text-muted);" id="staff-view-hint">💡 Cliquez sur un joueur pour lui attribuer ou modifier ses permissions dans SOUH4IL-DEV.</span>
+                            <div class="staff-header-actions" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                                <input type="text" id="staff-search-input" class="search-input" placeholder="🔍 Rechercher un joueur ou staff par nom, license, ID, métier..." style="max-width: 380px; flex: 1;">
+                                <span style="font-size: 0.78rem; color: var(--text-muted);" id="staff-view-hint">💡 Cliquez sur « Modifier Perms » ou « Configurer les accès » pour choisir ses onglets et ses boutons.</span>
                             </div>
 
                             <div id="staff-list-container" class="staff-grid">
@@ -1853,261 +1910,84 @@
             </div>
         </div>
 
-        <!-- Staff & Granular Permissions Modal -->
+        <!-- Staff & Granular Permissions Modal (Tab-by-Tab + Sub-Permissions Studio) -->
         <div id="staff-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-box modal-large">
-                <div class="modal-header">
+            <div class="modal-box modal-large perm-studio-modal">
+                <div class="modal-header perm-studio-modal-header">
                     <div>
-                        <h3 id="staff-modal-title">🛡️ GESTION DU STAFF & PERMISSIONS AVANCÉES</h3>
-                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Définissez un rôle préétabli ou activez manuellement chaque module ("bach i9dr ikhdm").</p>
+                        <h3 id="staff-modal-title">🛡️ STUDIO DES PERMISSIONS STAFF (ONGLETS & BOUTONS)</h3>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">Choisissez quels onglets (Dashboard, Teleport, Items, Players...) s'affichent dans son menu et quelles actions (Ban, Kick, Argent, Armes...) il peut exécuter dans chaque onglet.</p>
                     </div>
-                    <button class="modal-close" id="staff-modal-close">&times;</button>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span id="staff-perm-live-summary" class="perm-live-summary-badge">0/16 Onglets • 0 Actions</span>
+                        <button class="modal-close" id="staff-modal-close">&times;</button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <!-- Quick Select from Online Players -->
-                    <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Sélectionner un Joueur Connecté :</label>
-                        <select id="staff-select-player" class="search-input">
-                            <option value="">-- Choisir un joueur connecté ou saisir manuellement la license ci-dessous --</option>
-                        </select>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="modal-body perm-studio-modal-body">
+                    <!-- Top Identity & Role Configuration Row -->
+                    <div class="perm-studio-identity-grid">
                         <div class="form-group">
-                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Nom / Pseudo Staff :</label>
+                            <label>🎯 Joueur Connecté :</label>
+                            <select id="staff-select-player" class="search-input">
+                                <option value="">-- Choisir un joueur connecté ou saisir la license --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>👤 Nom / Pseudo Staff :</label>
                             <input type="text" id="staff-input-name" class="search-input" placeholder="Ex: SOUH4IL">
                         </div>
                         <div class="form-group">
-                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Rôle Attribué :</label>
+                            <label>🎖️ Grade / Rôle :</label>
                             <select id="staff-select-role" class="search-input">
-                                <option value="moderator">MODERATOR (Modération Joueurs)</option>
-                                <option value="admin">ADMIN (Administration Complète)</option>
-                                <option value="developer">DEVELOPER (Dev & Outils Serveur)</option>
-                                <option value="owner">OWNER (Master Godmode & Tout)</option>
-                                <option value="custom">CUSTOM (Sélection Sur-Mesure)</option>
+                                <option value="moderator">🛡️ MODERATOR (Modération)</option>
+                                <option value="admin">⚖️ ADMIN (Administration)</option>
+                                <option value="developer">🛠️ DEVELOPER (Dev & Outils)</option>
+                                <option value="owner">👑 OWNER (Accès Total)</option>
+                                <option value="custom">✨ CUSTOM (Sur-Mesure)</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label>🔑 Rockstar License :</label>
+                            <input type="text" id="staff-input-license" class="search-input" placeholder="license:385f488fdcdc..." style="font-family: var(--font-mono); font-size: 0.76rem;">
+                        </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 16px;">
-                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Rockstar License Identifier :</label>
-                        <input type="text" id="staff-input-license" class="search-input" placeholder="license:385f488fdcdc30a24c28b7a333ba9cbbffed5044" style="font-family: var(--font-mono); font-size: 0.8rem;">
+                    <!-- 1-Click Role Presets + Global Select All / Clear All -->
+                    <div class="perm-studio-presets-row">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span class="perm-presets-label">⚡ Presets Rapides :</span>
+                            <button type="button" class="preset-btn" id="preset-btn-mod">🛡️ MODÉRATEUR</button>
+                            <button type="button" class="preset-btn" id="preset-btn-admin">⚖️ ADMINISTRATEUR</button>
+                            <button type="button" class="preset-btn" id="preset-btn-dev">🛠️ DÉVELOPPEUR</button>
+                            <button type="button" class="preset-btn" id="preset-btn-owner">👑 FULL OWNER</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="preset-btn" id="preset-btn-all-tabs" style="border-color: rgba(0, 230, 118, 0.45); color: #00e676;">✅ TOUT ACTIVER</button>
+                            <button type="button" class="preset-btn" id="preset-btn-clear" style="border-color: rgba(255, 77, 77, 0.45); color: #ff6b6b;">🧹 TOUT DÉCOCHER</button>
+                        </div>
                     </div>
 
-                    <!-- Role Presets Quick Bar -->
-                    <div style="margin-bottom: 6px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Presets Rapides 1-Click :</span>
-                    </div>
-                    <div class="role-presets-bar">
-                        <button type="button" class="preset-btn" id="preset-btn-mod">🛡️ MODÉRATEUR</button>
-                        <button type="button" class="preset-btn" id="preset-btn-admin">⚖️ ADMINISTRATEUR</button>
-                        <button type="button" class="preset-btn" id="preset-btn-dev">🛠️ DÉVELOPPEUR</button>
-                        <button type="button" class="preset-btn" id="preset-btn-owner">👑 FULL OWNER</button>
-                        <button type="button" class="preset-btn" id="preset-btn-clear" style="border-color: rgba(255, 77, 77, 0.4); color: #ff6b6b;">🧹 TOUT DÉCOCHER</button>
+                    <!-- Search & Quick Tab Filter Bar -->
+                    <div class="perm-studio-filter-bar">
+                        <div class="perm-tab-pills-scroll" id="staff-perm-tab-pills">
+                            <!-- Populated dynamically by JS with "Tous les Onglets (16)" + each of the 16 tabs -->
+                        </div>
+                        <input type="text" id="staff-perm-search" class="search-input" placeholder="🔍 Chercher une permission (ex: ban, kick, teleport, argent, armes, véhicule, dashboard)..." style="max-width: 310px;">
                     </div>
 
-                    <!-- Categorized Granular Permissions Matrix -->
-                    <div class="perm-categories-container">
-                        <!-- Category 1: Sécurité Haute & Économie -->
-                        <div class="perm-cat-group" style="border-color: rgba(255, 77, 77, 0.35);">
-                            <div class="perm-cat-header" style="color: #ff6b6b;">👑 1. SÉCURITÉ HAUTE, ÉCONOMIE & SANCTIONS (CRITIQUE)</div>
-                            <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-manage_money">
-                                    <input type="checkbox" id="perm-manage_money">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">💰 Argent Cash & Banque</span>
-                                        <span class="perm-check-card-desc">Donner, retirer ou fixer le Cash & Banque aux joueurs</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-manage_wipes">
-                                    <input type="checkbox" id="perm-manage_wipes">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title" style="color: #ff5252;">⚡ Wipe Personnage (Danger)</span>
-                                        <span class="perm-check-card-desc">Remise à zéro totale du joueur, wipe inventaire ou wipe argent</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-manage_assets">
-                                    <input type="checkbox" id="perm-manage_assets">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🏛️ Patrimoine (Maisons & Voitures)</span>
-                                        <span class="perm-check-card-desc">Donner, saisir ou transférer des voitures et propriétés enregistrées</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-punish_bans">
-                                    <input type="checkbox" id="perm-punish_bans">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🚫 Bannissements (Ban / Unban)</span>
-                                        <span class="perm-check-card-desc">Bannir temporairement/définitivement, unban et ban offline</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-punish_kicks">
-                                    <input type="checkbox" id="perm-punish_kicks">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">👢 Kick & Avertissements (Warn)</span>
-                                        <span class="perm-check-card-desc">Kicker un joueur, envoyer un warn officiel ou forcer déconnexion</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-manage_trolls">
-                                    <input type="checkbox" id="perm-manage_trolls">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🎭 Trolls & Sanctions Fun</span>
-                                        <span class="perm-check-card-desc">Slap 50m, feu, ivre, pipi, caca, cage prison, son strident</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Category 2: Modération Joueurs en Direct -->
-                        <div class="perm-cat-group" style="border-color: rgba(0, 229, 255, 0.25);">
-                            <div class="perm-cat-header" style="color: var(--accent-cyan);">👥 2. MODÉRATION & SUIVI DES JOUEURS EN DIRECT</div>
-                            <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-view_players">
-                                    <input type="checkbox" id="perm-view_players" checked>
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">👁️ Consulter Joueurs & Dossiers</span>
-                                        <span class="perm-check-card-desc">Liste des joueurs connectés, détails, ping, CID et cash affiché</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-player_spectate">
-                                    <input type="checkbox" id="perm-player_spectate" checked>
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🔭 Mode Spectateur (Spectate)</span>
-                                        <span class="perm-check-card-desc">Observer un joueur en direct avec streaming OneSync et retour</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-player_freeze">
-                                    <input type="checkbox" id="perm-player_freeze">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">❄️ Freeze / Unfreeze Joueur</span>
-                                        <span class="perm-check-card-desc">Geler ou dégeler sur place un joueur suspecté de troll</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-player_teleport">
-                                    <input type="checkbox" id="perm-player_teleport" checked>
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🚀 TP Joueur (Goto / Bring / Amis)</span>
-                                        <span class="perm-check-card-desc">Se téléporter sur lui, le ramener ou l'envoyer à un ami connecté</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-player_heal">
-                                    <input type="checkbox" id="perm-player_heal">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">❤️ Revive & Soins (Heal)</span>
-                                        <span class="perm-check-card-desc">Réanimer, soigner 100%, armure, faim, soif et zéro stress</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-player_inventory">
-                                    <input type="checkbox" id="perm-player_inventory">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🎒 Fouille Inventaire (Inv)</span>
-                                        <span class="perm-check-card-desc">Ouvrir les poches en direct, coffre véhicule, boîte à gants et vider</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Category 3: Serveur, Véhicules & Métiers -->
-                        <div class="perm-cat-group">
-                            <div class="perm-cat-header">🛠️ 3. SERVEUR, VÉHICULES & MÉTIERS</div>
-                            <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-spawn_vehicles">
-                                    <input type="checkbox" id="perm-spawn_vehicles">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🚗 Spawner Véhicules & Garage</span>
-                                        <span class="perm-check-card-desc">Spawner 971+ véhicules pour soi-même, réparer et max tuner</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-spawn_items">
-                                    <input type="checkbox" id="perm-spawn_items">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">📦 Spawner Items</span>
-                                        <span class="perm-check-card-desc">Se donner ou donner des items du catalogue ox_inventory</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-manage_jobs">
-                                    <input type="checkbox" id="perm-manage_jobs">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">💼 Métiers & Gangs (Jobs)</span>
-                                        <span class="perm-check-card-desc">Définir ou modifier le métier (Job), le gang et les grades</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-manage_skins">
-                                    <input type="checkbox" id="perm-manage_skins">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🎭 Studio Skins & Peds (1051+)</span>
-                                        <span class="perm-check-card-desc">Changer de skin instantanément parmi tous les peds du serveur</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-world_teleport">
-                                    <input type="checkbox" id="perm-world_teleport">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🗺️ Téléportation Map (GPS / XYZ)</span>
-                                        <span class="perm-check-card-desc">Se téléporter au point GPS sur la carte ou coordonnées manuelles</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-world_control">
-                                    <input type="checkbox" id="perm-world_control">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🌍 Météo & Contrôle du Monde</span>
-                                        <span class="perm-check-card-desc">Météo, heure, annonces globales, blackout mondial, densité du trafic</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Category 4: Master Admin & Dev Tools -->
-                        <div class="perm-cat-group" style="border-color: rgba(255, 215, 0, 0.35);">
-                            <div class="perm-cat-header" style="color: #ffd700;">⚡ 4. MASTER ADMIN, GODMODE & DEV TOOLS</div>
-                            <div class="perm-cards-grid">
-                                <label class="perm-check-card" for="perm-god_powers">
-                                    <input type="checkbox" id="perm-god_powers">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">⚡ Master Godmode & Noclip</span>
-                                        <span class="perm-check-card-desc">Invincibilité, noclip, munitions illimitées, invisibilité, super saut</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-staff_management">
-                                    <input type="checkbox" id="perm-staff_management">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🛡️ Gestion de l'Équipe Staff</span>
-                                        <span class="perm-check-card-desc">Autorisation d'ajouter des membres staff et d'éditer leurs accès</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-devtools">
-                                    <input type="checkbox" id="perm-devtools">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🔧 Outils Développeur</span>
-                                        <span class="perm-check-card-desc">Inspecteur coordonnées vectorielles, copy vec3/vec4, purge zone 50m</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-logs">
-                                    <input type="checkbox" id="perm-logs">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">📜 Journaux d'Audit & Sécurité</span>
-                                        <span class="perm-check-card-desc">Inspection des logs d'audit inviolables et actions du staff</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-events">
-                                    <input type="checkbox" id="perm-events">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🎪 Event Manager</span>
-                                        <span class="perm-check-card-desc">Lancer ou stopper des événements communautaires (Purge, Fight Night)</span>
-                                    </div>
-                                </label>
-                                <label class="perm-check-card" for="perm-arsenal">
-                                    <input type="checkbox" id="perm-arsenal">
-                                    <div class="perm-check-card-info">
-                                        <span class="perm-check-card-title">🔫 Arsenal Propriétaire</span>
-                                        <span class="perm-check-card-desc">Accès aux loadouts tactiques d'assaut et armes exclusives</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
+                    <!-- Dynamic 16-Tab & Sub-Permissions Matrix -->
+                    <div id="staff-perm-tabs-matrix" class="perm-tabs-matrix">
+                        <!-- Rendered dynamically from STAFF_TAB_SCHEMA in app.js -->
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 16px 24px; background: var(--bg-primary); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
-                    <button class="secondary-btn" id="btn-cancel-staff" style="padding: 10px 20px;">Annuler</button>
-                    <button class="primary-btn" id="btn-save-staff" style="padding: 10px 25px; font-weight: 700; background: var(--accent-cyan); color: #000; box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);">💾 Enregistrer les Accès</button>
+                <div class="modal-footer perm-studio-modal-footer">
+                    <div style="font-size: 0.74rem; color: var(--text-muted);">
+                        💡 Astuce : Désactivez le switch principal <b>« Afficher l'onglet »</b> pour masquer complètement la page du menu à ce staff.
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="secondary-btn" id="btn-cancel-staff" style="padding: 10px 20px;">Annuler</button>
+                        <button class="primary-btn" id="btn-save-staff" style="padding: 10px 26px; font-weight: 800; background: var(--accent-cyan); color: #000; box-shadow: 0 0 18px rgba(0, 229, 255, 0.4);">💾 Enregistrer les Permissions</button>
+                    </div>
                 </div>
             </div>
         </div>

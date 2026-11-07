@@ -56,9 +56,65 @@ lib.callback.register('qbx_core:client:setHealth', function(health)
     SetEntityHealth(cache.ped, health)
 end)
 
-local mapText = require 'config.client'.pauseMapText
-if mapText == '' or type(mapText) ~= 'string' then mapText = 'FiveM' end
-AddTextEntry('FE_THDR_GTAO', mapText)
+local function formatMoney(amount)
+    amount = tonumber(amount) or 0
+    local isNeg = amount < 0
+    local absVal = math.abs(math.floor(amount))
+    local formatted = (lib.math and lib.math.groupdigits) and lib.math.groupdigits(absVal) or tostring(absVal)
+    if isNeg then
+        return '-' .. formatted .. '$'
+    end
+    return formatted .. '$'
+end
+
+function UpdatePauseMenuHeader()
+    local cash = 0
+    if GetResourceState('ox_inventory') == 'started' then
+        local oxCash = exports.ox_inventory:Search('count', 'money')
+        if oxCash ~= nil then
+            cash = oxCash
+        end
+    elseif QBX and QBX.PlayerData and QBX.PlayerData.money then
+        cash = QBX.PlayerData.money.cash or 0
+    end
+
+    local bank = 0
+    if QBX and QBX.PlayerData and QBX.PlayerData.money then
+        bank = QBX.PlayerData.money.bank or 0
+    end
+
+    local serverId = cache.serverId or GetPlayerServerId(PlayerId())
+    local bankColor = bank < 0 and '~r~' or '~b~'
+    local header = ('CHICAGO RP ~s~| ~g~Cash: %s ~s~| %sBanque: %s ~s~| ~c~[ID: %s]'):format(
+        formatMoney(cash),
+        bankColor,
+        formatMoney(bank),
+        serverId
+    )
+    AddTextEntry('FE_THDR_GTAO', header)
+
+    pcall(function()
+        StatSetInt(`MP0_WALLET_BALANCE`, math.floor(cash), true)
+        StatSetInt(`MP1_WALLET_BALANCE`, math.floor(cash), true)
+        StatSetInt(`BANK_BALANCE`, math.floor(bank), true)
+    end)
+end
+
+CreateThread(function()
+    AddTextEntry('PM_SCR_MAP', 'Carte de la Ville')
+    AddTextEntry('PM_PANE_LEAVE', 'Se deconnecter')
+    AddTextEntry('PM_PANE_QUIT', 'Quitter vers le Bureau')
+
+    local wasPaused = false
+    while true do
+        local isPaused = IsPauseMenuActive()
+        if isPaused and not wasPaused then
+            UpdatePauseMenuHeader()
+        end
+        wasPaused = isPaused
+        Wait(isPaused and 250 or 500)
+    end
+end)
 
 CreateThread(function()
     for _, v in pairs(GetVehiclesByName()) do

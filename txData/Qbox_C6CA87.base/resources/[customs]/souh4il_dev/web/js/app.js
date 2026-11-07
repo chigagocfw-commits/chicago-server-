@@ -260,6 +260,9 @@ const VISUAL_ITEMS = [
     { name: 'thermite', label: 'Thermite Bomb', category: 'tool' },
 ];
 
+let allServerEmotes = [];
+let currentEmoteLimit = 120;
+
 // Listen for NUI Messages from Client Lua
 window.addEventListener('message', (event) => {
     const data = event.data;
@@ -275,13 +278,14 @@ window.addEventListener('message', (event) => {
             const p = s.permissions || {};
             const isO = s.isOwner === true;
 
-            if (isO || p.view_players || p.players) postNUI('fetchPlayers');
+            if (isO || p.view_players || p.player_teleport || p.dances_emotes || p.players) postNUI('fetchPlayers');
             if (isO || p.logs) postNUI('fetchLogs');
-            if (isO || p.world_control || p.world) postNUI('getNpcConfig');
+            if (isO || p.world_control || p.npc_control || p.world) postNUI('getNpcConfig');
             if (isO || p.spawn_items || p.items) postNUI('fetchAllItems');
-            if (isO || p.spawn_vehicles || p.vehicles) postNUI('fetchAllVehicles');
+            if (isO || p.spawn_vehicles || p.manage_assets || p.vehicles) postNUI('fetchAllVehicles');
             if (isO || p.manage_skins || p.characters) postNUI('fetchAllCharacters');
             if (isO || p.manage_jobs || p.jobs) postNUI('fetchAllJobs');
+            if (isO || p.dances_emotes || p.manage_trolls || p.manage_skins || p.characters) postNUI('fetchAllEmotes');
             renderVisualItems();
             renderVisualVehicles();
             renderVisualCharacters();
@@ -321,6 +325,13 @@ window.addEventListener('message', (event) => {
             renderVisualCharacters(query);
             const inlineQuery = document.getElementById('manage-inline-ped-search')?.value || '';
             renderManageInlinePedGrid(inlineQuery);
+        }
+    } else if (data.action === 'updateAllEmotes') {
+        if (data.emotes && Array.isArray(data.emotes) && data.emotes.length > 0) {
+            allServerEmotes = data.emotes;
+            const badge = document.getElementById('emote-total-badge');
+            if (badge) badge.innerText = `${allServerEmotes.length.toLocaleString()} DANCES & EMOTES`;
+            if (typeof renderEmotes === 'function') renderEmotes();
         }
     } else if (data.action === 'updateAllJobs') {
         if (data.jobs && Array.isArray(data.jobs) && data.jobs.length > 0) {
@@ -448,43 +459,52 @@ function updateSecurityStatus(status) {
         }
     }
 
-    // Dynamic Role-Based / Granular Permissions Tab Filtering
+    // Dynamic Role-Based / Granular Permissions Tab Filtering (Master Tab + Sub-Perms)
     const perms = status.permissions || {};
 
     // Helper: check if user has ANY of these granular permission keys
     const hasAny = (...keys) => keys.some(k => perms[k] === true);
 
-    // Granular tab → permission mapping
+    // Granular tab → permission mapping:
+    // If explicit master key `tab_<name>` is boolean (true/false), obey it directly!
+    // Otherwise (legacy DB record without `tab_<name>`), fallback to checking sub-permissions.
+    const checkTabVisible = (tabKey, ...fallbackSubKeys) => {
+        const masterKey = `tab_${tabKey}`;
+        if (typeof perms[masterKey] === 'boolean') {
+            return perms[masterKey];
+        }
+        return hasAny(...fallbackSubKeys);
+    };
+
     const TAB_PERM_MAP = {
-        'god':        () => hasAny('god_powers', 'god'),
-        'players':    () => hasAny('view_players', 'players'),
-        'manage':     () => hasAny('view_players', 'player_teleport', 'player_heal', 'manage_money', 'manage_assets', 'manage_jobs', 'manage_skins', 'manage_trolls', 'manage_wipes', 'player_inventory', 'spawn_items', 'players'),
-        'teleport':   () => hasAny('world_teleport', 'teleport'),
-        'items':      () => hasAny('spawn_items', 'manage_money', 'items'),
-        'vehicles':   () => hasAny('spawn_vehicles', 'vehicles'),
-        'characters': () => hasAny('manage_skins', 'characters'),
-        'jobs':       () => hasAny('manage_jobs', 'jobs'),
-        'arsenal':    () => hasAny('arsenal'),
-        'world':      () => hasAny('world_control', 'world'),
-        'devtools':   () => hasAny('devtools'),
-        'events':     () => hasAny('events'),
-        'logs':       () => hasAny('logs'),
-        'staff':      () => hasAny('staff_management', 'staff'),
+        'dashboard':  () => checkTabVisible('dashboard', 'dash_metrics', 'self_actions', 'dash_self_veh', 'dash_self_tp', 'dash_self_cash', 'mass_actions', 'dash_purge_cops', 'dash_announce', 'dash_logs_feed', 'view_players', 'logs'),
+        'god':        () => checkTabVisible('god', 'god_powers', 'noclip_power', 'admin_esp', 'combat_powers', 'veh_powers', 'god_self_utils', 'god_area_clean', 'self_actions', 'god'),
+        'players':    () => checkTabVisible('players', 'view_players', 'players_view_money', 'players_btn_manage', 'player_teleport', 'player_spectate', 'player_freeze', 'player_heal', 'player_inventory', 'punish_kicks', 'punish_bans', 'players'),
+        'manage':     () => checkTabVisible('manage', 'manage_tp', 'manage_freeze', 'manage_money', 'manage_give_item', 'manage_inv', 'manage_jobs', 'manage_heal', 'player_vehicles', 'manage_assets', 'manage_properties', 'player_clothing', 'manage_skins', 'manage_trolls', 'manage_force_dance', 'player_pm', 'manage_warn_kick', 'manage_ban', 'manage_wipes', 'view_players', 'player_teleport', 'player_heal', 'player_inventory', 'spawn_items', 'dances_emotes', 'punish_kicks', 'punish_bans', 'players'),
+        'teleport':   () => checkTabVisible('teleport', 'world_teleport', 'tp_players', 'tp_locations', 'tp_bookmarks', 'tp_coords', 'player_teleport', 'teleport'),
+        'items':      () => checkTabVisible('items', 'spawn_items', 'items_weapons', 'items_give_others', 'items_custom_spawn', 'items_weapon_tint', 'items'),
+        'vehicles':   () => checkTabVisible('vehicles', 'spawn_vehicles', 'veh_manual_spawn', 'veh_workshop', 'veh_save_garage', 'vehicles'),
+        'characters': () => checkTabVisible('characters', 'chars_catalog', 'chars_custom_hash', 'manage_skins', 'characters'),
+        'jobs':       () => checkTabVisible('jobs', 'jobs_catalog', 'manage_jobs', 'jobs'),
+        'arsenal':    () => checkTabVisible('arsenal', 'arsenal', 'arsenal_give_others', 'arsenal_economy'),
+        'world':      () => checkTabVisible('world', 'world_control', 'world_announce', 'npc_control', 'world_props_cmd', 'world_offline_ban', 'world'),
+        'devtools':   () => checkTabVisible('devtools', 'devtools', 'devtools_clean', 'devtools_skins'),
+        'events':     () => checkTabVisible('events', 'events', 'events_custom'),
+        'emotes':     () => checkTabVisible('emotes', 'dances_emotes', 'emotes_target_player', 'emotes_target_all'),
+        'logs':       () => checkTabVisible('logs', 'logs'),
+        'staff':      () => checkTabVisible('staff', 'staff_management', 'staff'),
     };
 
     let activeTabVisible = false;
+    let firstVisibleNavBtn = null;
 
     document.querySelectorAll('.nav-item').forEach(btn => {
         const tab = btn.getAttribute('data-tab');
         if (!tab) return;
-        if (tab === 'dashboard') {
-            btn.style.display = '';
-            if (currentTab === 'dashboard') activeTabVisible = true;
-            return;
-        }
 
         if (status.isOwner) {
             btn.style.display = '';
+            if (!firstVisibleNavBtn) firstVisibleNavBtn = btn;
             if (currentTab === tab) activeTabVisible = true;
             return;
         }
@@ -492,23 +512,46 @@ function updateSecurityStatus(status) {
         const checker = TAB_PERM_MAP[tab];
         const hasPerm = checker ? checker() : false;
         btn.style.display = hasPerm ? '' : 'none';
+        if (hasPerm && !firstVisibleNavBtn) {
+            firstVisibleNavBtn = btn;
+        }
         if (currentTab === tab && hasPerm) {
             activeTabVisible = true;
         }
     });
 
-    // If current active tab was hidden due to lack of permission, fallback to dashboard
-    if (!activeTabVisible) {
-        const dashBtn = document.querySelector('.nav-item[data-tab="dashboard"]');
-        if (dashBtn) dashBtn.click();
+    // Hide sidebar section labels (.nav-section-label) if all nav items under them are hidden
+    const sidebarMenu = document.querySelector('.sidebar-menu');
+    if (sidebarMenu) {
+        const children = Array.from(sidebarMenu.children);
+        for (let i = 0; i < children.length; i++) {
+            const el = children[i];
+            if (el.classList.contains('nav-section-label')) {
+                let anyVisibleInGroup = false;
+                for (let j = i + 1; j < children.length; j++) {
+                    if (children[j].classList.contains('nav-section-label')) break;
+                    if (children[j].classList.contains('nav-item') && children[j].style.display !== 'none') {
+                        anyVisibleInGroup = true;
+                        break;
+                    }
+                }
+                el.style.display = anyVisibleInGroup ? '' : 'none';
+            }
+        }
     }
 
-    // Store active perms globally for filterPlayers & manage cards
+    // Store active perms globally for filterPlayers & manage cards before switching tabs
     window._activePerms = perms;
     window._isOwner = status.isOwner;
 
-    // Dynamic Manage tab cards visibility based on granular perms
+    // If current active tab was hidden due to lack of permission, switch to first allowed tab
+    if (!activeTabVisible && firstVisibleNavBtn) {
+        firstVisibleNavBtn.click();
+    }
+
+    // Dynamic Manage tab cards + Dashboard + God Powers + Teleport + Items + Vehicles + World visibility
     renderManageSectionVisibility(perms, status.isOwner);
+    renderAllPanesGranularVisibility(perms, status.isOwner);
 }
 
 // Tab Switching
@@ -534,7 +577,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             const p = window._activePerms || {};
             if (isO || p.view_players || p.players) postNUI('fetchPlayers');
             if (isO || p.logs) postNUI('fetchLogs');
-            if (isO || p.world_control || p.world) postNUI('getNpcConfig');
+            if (isO || p.world_control || p.npc_control || p.world) postNUI('getNpcConfig');
         } else if (tab === 'logs') {
             postNUI('fetchLogs');
         } else if (tab === 'players' || tab === 'teleport') {
@@ -575,6 +618,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         } else if (tab === 'staff') {
             fetchStaffData();
         } else if (tab === 'emotes') {
+            postNUI('fetchPlayers');
+            if (!allServerEmotes || allServerEmotes.length === 0) postNUI('fetchAllEmotes');
             renderEmotes();
         }
     });
@@ -830,6 +875,7 @@ const Favorites = {
         vehicles: new Set(JSON.parse(localStorage.getItem('sdev_fav_vehicles') || '[]')),
         characters: new Set(JSON.parse(localStorage.getItem('sdev_fav_characters') || '[]')),
         items: new Set(JSON.parse(localStorage.getItem('sdev_fav_items') || '[]')),
+        emotes: new Set(JSON.parse(localStorage.getItem('sdev_fav_emotes') || '[]')),
     },
     has(type, id) {
         if (!id) return false;
@@ -863,6 +909,8 @@ window.toggleFavorite = function(type, id) {
     } else if (type === 'items') {
         const q = document.getElementById('item-search-input')?.value || '';
         renderVisualItems(q);
+    } else if (type === 'emotes') {
+        renderEmotes();
     }
 };
 
@@ -875,10 +923,20 @@ function renderVisualItems(searchQuery = '') {
     const q = searchQuery.toLowerCase().trim();
     const isSearching = q.length > 0;
 
+    const gp = window._activePerms || {};
+    const ow = window._isOwner || false;
+    const allowGeneralItems = ow || gp.spawn_items === true || gp.items === true;
+    const allowWeaponsAmmo  = ow || gp.items_weapons === true || (typeof gp.items_weapons === 'undefined' && allowGeneralItems);
+
     const filtered = sourceList.filter(item => {
         const itemName = item.name.toLowerCase();
         const itemLabel = (item.label || item.name).toLowerCase();
         const cat = (item.category || 'tool').toLowerCase();
+        const isWeaponOrAmmo = cat === 'weapon' || cat === 'ammo' || itemName.startsWith('weapon_') || itemName.includes('ammo');
+
+        // Sub-permission filtering inside Items & Weapons tab
+        if (isWeaponOrAmmo && !allowWeaponsAmmo) return false;
+        if (!isWeaponOrAmmo && !allowGeneralItems) return false;
 
         // 1. Instant 1st letter match check
         const matchesSearch = !isSearching || itemName.includes(q) || itemLabel.includes(q);
@@ -1743,6 +1801,29 @@ function renderPlayers(players) {
         });
     });
 
+    // Populate Emotes Target Player Selector
+    const emoteSel = document.getElementById('emote-target-select');
+    if (emoteSel) {
+        const prevEmoteVal = emoteSel.value || 'self';
+        const gp = window._activePerms || {};
+        const ow = window._isOwner || false;
+        const canAllDance = ow || gp.mass_actions === true || gp.manage_trolls === true;
+        const canTargetDance = ow || gp.manage_trolls === true || gp.dances_emotes === true;
+        emoteSel.innerHTML = `<option value="self">👤 Moi-même (Mon Personnage)</option>`;
+        if (canAllDance) {
+            emoteSel.innerHTML += `<option value="all" ${prevEmoteVal === 'all' ? 'selected' : ''}>🌐 Tout le Serveur (Force Dance Party)</option>`;
+        }
+        if (canTargetDance) {
+            onlinePlayersCache.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = `🎯 #${p.id} — ${p.name} (${p.charName || p.job || 'Player'})`;
+                if (String(p.id) === String(prevEmoteVal)) opt.selected = true;
+                emoteSel.appendChild(opt);
+            });
+        }
+    }
+
     const curSearch = document.getElementById('player-search')?.value.toLowerCase().trim() || '';
     filterPlayers(curSearch);
     filterTeleportPlayers('');
@@ -1814,9 +1895,10 @@ function filterPlayers(query) {
         const freezeBtnLabel = p.isFrozen ? '❄️ Unfreeze' : 'Freeze';
         const freezeBtnStyle = p.isFrozen ? 'background: rgba(56,189,248,0.22); border-color: #38bdf8; color: #38bdf8; font-weight: 800;' : '';
 
-        // Granular permission-based button visibility
+        // Granular permission-based button & money visibility inside Players tab
         const gp = window._activePerms || {};
         const ow = window._isOwner || false;
+        const canSeeMoney = ow || gp.manage_money === true || gp.players_view_money === true;
         const canHeal     = ow || gp.player_heal === true || gp.players === true;
         const canInv      = ow || gp.player_inventory === true || gp.items === true;
         const canTp       = ow || gp.player_teleport === true || gp.teleport === true || gp.players === true;
@@ -1824,7 +1906,16 @@ function filterPlayers(query) {
         const canSpectate = ow || gp.player_spectate === true || gp.players === true;
         const canKick     = ow || gp.punish_kicks === true || gp.punishments === true;
         const canBan      = ow || gp.punish_bans === true;
-        const canManage   = ow || gp.view_players === true || gp.players === true;
+        const canInfo     = ow || gp.view_players === true || gp.players === true;
+        const manageTabAllowed = ow || (typeof gp.tab_manage === 'boolean' ? gp.tab_manage : true);
+        const canManage   = manageTabAllowed && (ow || gp.players_btn_manage === true || (typeof gp.players_btn_manage === 'undefined' && canInfo));
+
+        const moneyCellHtml = canSeeMoney
+            ? `<div style="font-size: 0.74rem; line-height: 1.3;">
+                    <span style="color: #00e676; font-weight: 700;">💵 ${cashFormatted}</span><br>
+                    <span style="color: #ffd700; font-weight: 600;">🏦 ${bankFormatted}</span>
+               </div>`
+            : `<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">🔒 Masqué</span>`;
 
         return `
         <tr>
@@ -1836,10 +1927,7 @@ function filterPlayers(query) {
                 ${gangBadge}
             </td>
             <td>
-                <div style="font-size: 0.74rem; line-height: 1.3;">
-                    <span style="color: #00e676; font-weight: 700;">💵 ${cashFormatted}</span><br>
-                    <span style="color: #ffd700; font-weight: 600;">🏦 ${bankFormatted}</span>
-                </div>
+                ${moneyCellHtml}
             </td>
             <td>
                 <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -1856,7 +1944,7 @@ function filterPlayers(query) {
                     ${canTp ? `<button class="p-btn bring" onclick="playerAction('bring', ${p.id})">Bring</button>` : ''}
                     ${canFreeze ? `<button class="p-btn freeze" style="${freezeBtnStyle}" onclick="playerAction('freeze', ${p.id})">${freezeBtnLabel}</button>` : ''}
                     ${canSpectate ? `<button class="p-btn spectate" onclick="playerAction('spectate', ${p.id})">Spectate</button>` : ''}
-                    <button class="p-btn info" style="background: rgba(255,255,255,0.08); padding: 4px 8px;" onclick="openPlayerInfoModal(${p.id})">ℹ️ Info</button>
+                    ${canManage ? `<button class="p-btn info" style="background: rgba(255,255,255,0.08); padding: 4px 8px;" onclick="openPlayerInfoModal(${p.id})">ℹ️ Info</button>` : ''}
                     ${canKick ? `<button class="p-btn kick" onclick="openKickModal(${p.id}, '${escapeHtml(p.name)}')">Kick</button>` : ''}
                     ${canBan ? `<button class="p-btn ban" onclick="openBanModal(${p.id}, '${escapeHtml(p.name)}')">Ban</button>` : ''}
                 </div>
@@ -2187,65 +2275,309 @@ window.switchManageSection = function(sec) {
 };
 
 // Granular Permission-Based Manage Card Visibility
-// Hides entire cards in the Manage tab based on what the staff member can actually do
+// Hides entire cards, subnav tabs, and sub-buttons in the Manage tab based on what the staff member can actually do
 function renderManageSectionVisibility(perms, isOwnerFlag) {
     if (!perms && !isOwnerFlag) return;
     const gp = perms || {};
     const ow = isOwnerFlag || false;
     const hasAny = (...keys) => ow || keys.some(k => gp[k] === true);
 
-    // Card 01 (sec-tp): Téléportation Joueur
-    const card01 = document.querySelector('.manage-sec-card[data-sec="sec-tp"]');
-    if (card01) card01.dataset.permHidden = hasAny('player_teleport', 'teleport', 'players') ? '0' : '1';
+    const secRules = {
+        'sec-tp':     () => hasAny('manage_tp', 'manage_freeze', 'player_teleport', 'player_freeze', 'manage_trolls', 'teleport', 'players'),
+        'sec-econ':   () => hasAny('manage_money', 'manage_give_item', 'manage_inv', 'spawn_items', 'player_inventory', 'items'),
+        'sec-char':   () => hasAny('manage_jobs', 'manage_heal', 'player_heal', 'god_powers', 'manage_trolls', 'jobs', 'players'),
+        'sec-veh':    () => hasAny('player_vehicles', 'spawn_vehicles', 'vehicles'),
+        'sec-assets': () => hasAny('manage_assets', 'manage_properties', 'vehicles', 'characters'),
+        'sec-skins':  () => hasAny('manage_skins', 'player_clothing', 'characters'),
+        'sec-trolls': () => hasAny('manage_trolls', 'manage_force_dance', 'manage_warn_kick', 'manage_ban', 'manage_wipes', 'punish_kicks', 'punish_bans', 'player_pm', 'dances_emotes', 'god'),
+    };
 
-    // Card 02-03 (sec-econ): Argent, Inventaire & Items
-    const card02 = document.querySelector('.manage-sec-card[data-sec="sec-econ"]');
-    if (card02) card02.dataset.permHidden = hasAny('manage_money', 'spawn_items', 'player_inventory', 'items') ? '0' : '1';
-
-    // Card 04-05 (sec-char): Métiers, Gangs, Santé & Véhicule
-    const cards03 = document.querySelectorAll('.manage-sec-card[data-sec="sec-char"]');
-    cards03.forEach(c => {
-        c.dataset.permHidden = hasAny('manage_jobs', 'player_heal', 'spawn_vehicles', 'jobs', 'players', 'vehicles') ? '0' : '1';
+    Object.entries(secRules).forEach(([secKey, checkFn]) => {
+        const allowed = checkFn();
+        document.querySelectorAll(`.manage-sec-card[data-sec="${secKey}"]`).forEach(c => {
+            c.dataset.permHidden = allowed ? '0' : '1';
+        });
+        document.querySelectorAll(`#manage-subnav .manage-subnav-btn[data-section="${secKey}"]`).forEach(btn => {
+            btn.style.display = allowed ? '' : 'none';
+        });
     });
-
-    // Card 6B (sec-assets): Patrimoine (Maisons & Voitures)
-    const card05 = document.querySelector('.manage-sec-card[data-sec="sec-assets"]');
-    if (card05) card05.dataset.permHidden = hasAny('manage_assets', 'vehicles', 'characters') ? '0' : '1';
-
-    // Card 7 (sec-skins): Skins & Peds
-    const card06 = document.querySelector('.manage-sec-card[data-sec="sec-skins"]');
-    if (card06) card06.dataset.permHidden = hasAny('manage_skins', 'characters') ? '0' : '1';
-
-    // Card 8 (sec-trolls): Trolls & Wipes
-    const card07 = document.querySelector('.manage-sec-card[data-sec="sec-trolls"]');
-    if (card07) card07.dataset.permHidden = hasAny('manage_trolls', 'manage_wipes', 'punish_kicks', 'god') ? '0' : '1';
 
     // Apply now to currently visible cards
+    const activeSecBtn = document.querySelector('#manage-subnav .manage-subnav-btn.active');
+    const activeSec = activeSecBtn ? activeSecBtn.getAttribute('data-section') : 'all';
     document.querySelectorAll('#manage-sections-grid .manage-sec-card').forEach(card => {
-        card.style.display = card.dataset.permHidden === '1' ? 'none' : '';
-    });
-
-    // Individual button gating: elements with data-requires-perm are hidden if
-    // the staff member lacks that specific granular permission.
-    // This separates dangerous actions (wipes) from less harmful ones (trolls)
-    // within the same card.
-    document.querySelectorAll('[data-requires-perm]').forEach(el => {
-        const perm = el.getAttribute('data-requires-perm');
-        el.style.display = (ow || gp[perm] === true) ? '' : 'none';
-    });
-
-    // Also hide dossier quick-buttons based on perms
-    const dossierBtns = document.querySelectorAll('.manage-dossier-quickbtns .dossier-qbtn');
-    dossierBtns.forEach(btn => {
-        const text = btn.innerText.toLowerCase();
-        if (text.includes('revive') || text.includes('heal')) {
-            btn.style.display = hasAny('player_heal', 'players') ? '' : 'none';
-        } else if (text.includes('goto') || text.includes('bring')) {
-            btn.style.display = hasAny('player_teleport', 'teleport', 'players') ? '' : 'none';
-        } else if (text.includes('inventaire') || text.includes('inv')) {
-            btn.style.display = hasAny('player_inventory', 'items') ? '' : 'none';
+        if (activeSec === 'all') {
+            card.style.display = card.dataset.permHidden === '1' ? 'none' : '';
+        } else {
+            const match = card.getAttribute('data-sec') === activeSec;
+            card.style.display = (match && card.dataset.permHidden !== '1') ? '' : 'none';
         }
     });
+
+    // Individual button & sub-box gating: elements with data-requires-perm are hidden if
+    // the staff member lacks that specific granular permission (supports comma-separated OR keys).
+    document.querySelectorAll('[data-requires-perm]').forEach(el => {
+        const raw = el.getAttribute('data-requires-perm') || '';
+        const keys = raw.split(',').map(s => s.trim()).filter(Boolean);
+        const allowed = ow || keys.some(k => gp[k] === true);
+        el.style.display = allowed ? '' : 'none';
+    });
+
+    // Hide Cash/Bank chips in Dossier header if staff lacks manage_money & players_view_money
+    const canSeeMoneyInDossier = hasAny('manage_money', 'players_view_money');
+    const cashChip = document.getElementById('manage-live-cash')?.closest('.dossier-stat-chip');
+    const bankChip = document.getElementById('manage-live-bank')?.closest('.dossier-stat-chip');
+    if (cashChip) cashChip.style.display = canSeeMoneyInDossier ? '' : 'none';
+    if (bankChip) bankChip.style.display = canSeeMoneyInDossier ? '' : 'none';
+}
+
+// Comprehensive Granular UI Visibility across ALL Panes (Dashboard, God, Teleport, Items, Vehicles, Characters, Jobs, Arsenal, World, DevTools, Events, Emotes)
+function renderAllPanesGranularVisibility(perms, isOwnerFlag) {
+    const gp = perms || {};
+    const ow = isOwnerFlag || false;
+    const hasAny = (...keys) => ow || keys.some(k => gp[k] === true);
+    // Helper that checks explicit sub-key first if boolean, or falls back to legacy/shared keys
+    const checkSub = (primaryKey, ...fallbackKeys) => {
+        if (ow) return true;
+        if (typeof gp[primaryKey] === 'boolean') return gp[primaryKey];
+        return hasAny(...fallbackKeys);
+    };
+    const setVis = (el, show) => { if (el) el.style.display = show ? '' : 'none'; };
+
+    // 1. DASHBOARD (#pane-dashboard)
+    const canDashMetrics  = checkSub('dash_metrics', 'view_players', 'self_actions');
+    const canSelfHeal     = checkSub('self_actions', 'player_heal', 'god_powers', 'god');
+    const canSelfVeh      = checkSub('dash_self_veh', 'self_actions', 'spawn_vehicles', 'veh_powers', 'vehicles');
+    const canSelfTp       = checkSub('dash_self_tp', 'world_teleport', 'self_actions', 'teleport');
+    const canSelfCash     = checkSub('dash_self_cash', 'manage_money');
+    const canMass         = checkSub('mass_actions', 'world_control', 'world');
+    const canPurgeCops    = checkSub('dash_purge_cops', 'npc_control', 'mass_actions', 'world_control');
+    const canDashAnnounce = checkSub('dash_announce', 'mass_actions', 'world_announce', 'world_control');
+    const canDashLogs     = checkSub('dash_logs_feed', 'logs');
+
+    setVis(document.querySelector('#pane-dashboard .metrics-grid'), canDashMetrics);
+    setVis(document.querySelector('#pane-dashboard .dash-services-strip'), canDashMetrics);
+
+    ['qa-revive', 'qa-heal', 'qa-armor'].forEach(id => setVis(document.getElementById(id), canSelfHeal));
+    ['qa-repair', 'qa-clean', 'qa-dv'].forEach(id => setVis(document.getElementById(id), canSelfVeh));
+    setVis(document.getElementById('qa-tpm'), canSelfTp);
+    setVis(document.getElementById('qa-cash'), canSelfCash);
+
+    const qaCard = document.getElementById('qa-revive')?.closest('.section-card');
+    if (qaCard) {
+        setVis(qaCard, canSelfHeal || canSelfVeh || canSelfTp || canSelfCash);
+    }
+
+    const dashMassCard = document.getElementById('dash-quick-announce')?.closest('.section-card');
+    if (dashMassCard) {
+        dashMassCard.querySelectorAll('.quick-actions-grid button').forEach(btn => {
+            const oc = btn.getAttribute('onclick') || '';
+            if (oc.includes('cleanNpcCopsNow')) {
+                setVis(btn, canPurgeCops);
+            } else {
+                setVis(btn, canMass);
+            }
+        });
+        const announceRow = document.getElementById('dash-quick-announce')?.parentElement;
+        setVis(announceRow, canDashAnnounce);
+        setVis(dashMassCard, canMass || canPurgeCops || canDashAnnounce);
+    }
+
+    const dashLogsCard = document.getElementById('dash-recent-logs')?.closest('.section-card');
+    setVis(dashLogsCard, canDashLogs);
+
+    // 2. GOD POWERS & SELF TOOLS (#pane-god)
+    const godTogglePerms = {
+        'toggle-godmode':     () => hasAny('god_powers', 'god'),
+        'toggle-invis':       () => hasAny('god_powers', 'god'),
+        'toggle-wanted':      () => hasAny('god_powers', 'npc_control', 'god'),
+        'toggle-thermal':     () => hasAny('god_powers', 'admin_esp', 'god'),
+        'toggle-nightvision': () => hasAny('god_powers', 'admin_esp', 'god'),
+        'toggle-antiragdoll': () => hasAny('god_powers', 'god'),
+        'toggle-infoxygen':   () => hasAny('god_powers', 'god'),
+        'toggle-infstamina':  () => hasAny('god_powers', 'god'),
+        'toggle-fastswim':    () => hasAny('god_powers', 'god'),
+        'toggle-hidehud':     () => hasAny('devtools', 'god_powers', 'self_actions', 'god'),
+        'toggle-noclip':      () => hasAny('noclip_power', 'god_powers', 'god'),
+        'toggle-noclip2':     () => hasAny('noclip_power', 'god_powers', 'god'),
+        'toggle-admintag':    () => hasAny('admin_esp', 'god_powers', 'god'),
+        'toggle-names':       () => hasAny('admin_esp', 'god_powers', 'god'),
+        'toggle-blips':       () => hasAny('admin_esp', 'god_powers', 'god'),
+        'toggle-minimap':     () => hasAny('admin_esp', 'god_powers', 'god'),
+        'toggle-coordshud':   () => hasAny('admin_esp', 'devtools', 'god_powers', 'god'),
+        'toggle-ammo':        () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-infammo':     () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-damage':      () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-sprint':      () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-jump':        () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-exppunch':    () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-expammo':     () => hasAny('combat_powers', 'god_powers', 'god'),
+        'toggle-vehgod':      () => hasAny('veh_powers', 'god_powers', 'god'),
+        'toggle-vehboost':    () => hasAny('veh_powers', 'god_powers', 'god'),
+        'toggle-vehjump':     () => hasAny('veh_powers', 'god_powers', 'god'),
+        'toggle-vehdrift':    () => hasAny('veh_powers', 'god_powers', 'god'),
+        'toggle-autoflip':    () => hasAny('veh_powers', 'god_powers', 'god'),
+        'toggle-inspector':   () => hasAny('devtools', 'god_powers', 'god'),
+        'toggle-blackout':    () => hasAny('world_control', 'god_powers', 'world', 'god'),
+    };
+
+    let anyGodToggleVisible = false;
+    Object.entries(godTogglePerms).forEach(([inputId, checkFn]) => {
+        const el = document.getElementById(inputId);
+        const card = el?.closest('.toggle-card') || el?.closest('.power-toggle-card');
+        const vis = checkFn();
+        setVis(card, vis);
+        if (vis && card?.closest('#pane-god')) anyGodToggleVisible = true;
+    });
+    const godFirstCard = document.querySelector('#pane-god .section-card:first-child');
+    setVis(godFirstCard, anyGodToggleVisible);
+
+    const canGodUtils = checkSub('god_self_utils', 'self_actions', 'veh_powers', 'god_powers');
+    const canGodArea  = checkSub('god_area_clean', 'devtools_clean', 'devtools', 'mass_actions', 'god_powers');
+
+    const godBtnPerms = {
+        'btn-clothes-menu':  () => canGodUtils || hasAny('player_clothing', 'manage_skins'),
+        'btn-bennys-tune':   () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-refuel-tank':   () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-clean-ped':     () => canGodUtils || hasAny('self_actions', 'player_heal'),
+        'btn-flip-car':      () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-fix-wash-car':  () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-toggle-duty':   () => canGodUtils || hasAny('manage_jobs', 'self_actions'),
+        'btn-remove-stress': () => canGodUtils || hasAny('self_actions', 'player_heal'),
+        'btn-revive-radius': () => canGodArea || hasAny('player_heal', 'mass_actions'),
+        'btn-revive-all':    () => canGodArea || hasAny('mass_actions', 'world_control'),
+        'btn-veh-lock':      () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-veh-unlock':    () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-veh-engine':    () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+        'btn-veh-freeze':    () => canGodUtils || hasAny('veh_powers', 'spawn_vehicles'),
+    };
+    let anyGodBtnVisible = false;
+    Object.entries(godBtnPerms).forEach(([btnId, checkFn]) => {
+        const vis = checkFn();
+        setVis(document.getElementById(btnId), vis);
+        if (vis) anyGodBtnVisible = true;
+    });
+    // Also handle area clear buttons inside #pane-god
+    document.querySelectorAll('#pane-god #btn-clear-veh, #pane-god #btn-clear-peds, #pane-god #btn-clear-props').forEach(btn => {
+        setVis(btn, canGodArea);
+        if (canGodArea) anyGodBtnVisible = true;
+    });
+    const godSecondCard = document.getElementById('btn-clothes-menu')?.closest('.section-card');
+    setVis(godSecondCard, anyGodBtnVisible);
+
+    // 3. TELEPORT (#pane-teleport)
+    const canTpWaypoint  = checkSub('world_teleport', 'teleport');
+    const canTpPlayers   = checkSub('tp_players', 'player_teleport', 'teleport', 'players');
+    const canTpLocations = checkSub('tp_locations', 'world_teleport', 'teleport');
+    const canTpBookmarks = checkSub('tp_bookmarks', 'world_teleport', 'teleport');
+    const canTpCoords    = checkSub('tp_coords', 'world_teleport', 'teleport');
+
+    setVis(document.getElementById('btn-tp-waypoint')?.closest('.section-card'), canTpWaypoint);
+    setVis(document.getElementById('tp-players-container')?.closest('.section-card'), canTpPlayers);
+    setVis(document.querySelector('#pane-teleport .teleport-btn[data-loc="legion"]')?.closest('.section-card'), canTpLocations);
+    setVis(document.getElementById('tp-bookmarks-container')?.closest('.section-card'), canTpBookmarks);
+    setVis(document.getElementById('tp-x')?.closest('.section-card'), canTpCoords);
+
+    // 4. ITEMS & WEAPONS (#pane-items)
+    const canItemsGeneral = checkSub('spawn_items', 'items');
+    const canItemsWeapons = checkSub('items_weapons', 'spawn_items', 'items');
+    const canItemsOthers  = checkSub('items_give_others', 'manage_give_item', 'player_inventory', 'spawn_items');
+    const canItemsCustom  = checkSub('items_custom_spawn', 'spawn_items', 'items');
+    const canItemsTint    = checkSub('items_weapon_tint', 'items_weapons', 'combat_powers', 'arsenal');
+
+    setVis(document.getElementById('visual-items-container')?.closest('.section-card'), canItemsGeneral || canItemsWeapons);
+    setVis(document.getElementById('items-target-player-select'), canItemsOthers);
+    setVis(document.querySelector('#pane-items .filter-chip[data-cat="weapon"]'), canItemsWeapons);
+    setVis(document.querySelector('#pane-items .filter-chip[data-cat="ammo"]'), canItemsWeapons);
+    setVis(document.querySelector('#pane-items .filter-chip[data-cat="food"]'), canItemsGeneral);
+    setVis(document.querySelector('#pane-items .filter-chip[data-cat="medical"]'), canItemsGeneral);
+    setVis(document.querySelector('#pane-items .filter-chip[data-cat="tool"]'), canItemsGeneral);
+    setVis(document.getElementById('custom-item-name')?.closest('.section-card'), canItemsCustom);
+    setVis(document.querySelector('#pane-items button[onclick*="upgradeCurrentWeapon"]')?.closest('.section-card'), canItemsTint);
+    if (currentTab === 'items') {
+        renderVisualItems(document.getElementById('item-search-input')?.value || '');
+    }
+
+    // 5. VEHICLES & WORKSHOP (#pane-vehicles)
+    const canVehShowcase = checkSub('spawn_vehicles', 'vehicles');
+    const canVehManual   = checkSub('veh_manual_spawn', 'spawn_vehicles', 'vehicles');
+    const canVehWorkshop = checkSub('veh_workshop', 'veh_powers', 'spawn_vehicles', 'vehicles');
+    const canVehSaveGar  = checkSub('veh_save_garage', 'manage_assets', 'spawn_vehicles');
+
+    setVis(document.getElementById('visual-vehicles-container')?.closest('.section-card'), canVehShowcase);
+    setVis(document.getElementById('veh-model-input')?.closest('.section-card'), canVehManual);
+    setVis(document.getElementById('veh-plate-input')?.closest('.section-card'), canVehWorkshop || canVehSaveGar);
+    setVis(document.querySelector('#pane-vehicles button[onclick*="saveCurrentVehToMyGarage"]'), canVehSaveGar);
+
+    // 6. CHARACTERS & SKINS (#pane-characters)
+    const canCharsCatalog = checkSub('chars_catalog', 'manage_skins', 'characters');
+    const canCharsCustom  = checkSub('chars_custom_hash', 'manage_skins', 'characters');
+    setVis(document.getElementById('visual-characters-container')?.closest('.section-card'), canCharsCatalog);
+    setVis(document.getElementById('btn-apply-custom-skin')?.closest('.section-card'), canCharsCustom);
+
+    // 7. JOBS & RANKS (#pane-jobs)
+    const canJobsCatalog = checkSub('jobs_catalog', 'manage_jobs', 'jobs');
+    setVis(document.getElementById('visual-jobs-container')?.closest('.section-card'), canJobsCatalog);
+
+    // 8. OWNER ARSENAL (#pane-arsenal)
+    const canArsenalKits   = checkSub('arsenal');
+    const canArsenalOthers = checkSub('arsenal_give_others', 'arsenal');
+    const canArsenalEcon   = checkSub('arsenal_economy', 'manage_money');
+    setVis(document.querySelector('#pane-arsenal .arsenal-grid')?.closest('.section-card'), canArsenalKits);
+    setVis(document.getElementById('arsenal-target-player-select'), canArsenalOthers);
+    setVis(document.getElementById('quick-cash-amount')?.closest('.section-card'), canArsenalEcon);
+
+    // 9. WORLD & WEATHER (#pane-world)
+    const canWorldTimeWeather = checkSub('world_control', 'world');
+    const canWorldAnnounce    = checkSub('world_announce', 'world_control', 'mass_actions', 'world');
+    const canWorldNpc         = checkSub('npc_control', 'world_control', 'world');
+    const canWorldPropsCmd    = checkSub('world_props_cmd', 'devtools');
+    const canWorldOfflineBan  = checkSub('world_offline_ban', 'punish_bans');
+
+    setVis(document.querySelector('#pane-world button[data-time-h]')?.closest('.section-card'), canWorldTimeWeather);
+    setVis(document.querySelector('#pane-world .weather-btn')?.closest('.section-card'), canWorldTimeWeather);
+    setVis(document.getElementById('broadcast-msg-input')?.closest('.section-card'), canWorldAnnounce);
+    setVis(document.getElementById('toggle-npc-police')?.closest('.section-card'), canWorldNpc);
+    setVis(document.getElementById('slider-ped-density')?.closest('.section-card'), canWorldNpc);
+    setVis(document.getElementById('prop-model-input')?.closest('.section-card'), canWorldPropsCmd);
+    setVis(document.getElementById('custom-click-input')?.closest('.section-card'), canWorldPropsCmd);
+    setVis(document.getElementById('stash-id-input')?.closest('.section-card'), canWorldPropsCmd);
+    setVis(document.getElementById('offline-ban-id')?.closest('.section-card'), canWorldOfflineBan);
+
+    // 10. DEV TOOLS (#pane-devtools)
+    const canDevInspector = checkSub('devtools');
+    const canDevClean     = checkSub('devtools_clean', 'devtools', 'mass_actions');
+    const canDevSkins     = checkSub('devtools_skins', 'manage_skins', 'devtools');
+    setVis(document.getElementById('btn-copy-vec3')?.closest('.section-card'), canDevInspector);
+    setVis(document.querySelector('#pane-devtools #btn-clear-all')?.closest('.section-card'), canDevClean);
+    setVis(document.getElementById('btn-apply-skin')?.closest('.section-card'), canDevSkins);
+    setVis(document.querySelector('#pane-devtools #toggle-inspector')?.closest('.section-card'), canDevInspector);
+
+    // 11. EVENT MANAGER (#pane-events)
+    const canEventsPresets = checkSub('events');
+    const canEventsCustom  = checkSub('events_custom', 'events');
+    const eventPresetGrid = document.querySelector('#pane-events button[onclick*="launchPresetEvent"]')?.closest('.quick-actions-grid');
+    setVis(eventPresetGrid, canEventsPresets);
+    setVis(eventPresetGrid?.previousElementSibling, canEventsPresets);
+    const customEventTitleInput = document.getElementById('custom-event-title');
+    if (customEventTitleInput) {
+        const customEventRow1 = customEventTitleInput.closest('div[style*="grid-template-columns"]');
+        const customEventHeader = customEventRow1?.previousElementSibling;
+        const customEventMsg = document.getElementById('custom-event-msg')?.closest('.form-group');
+        const customEventRow2 = document.getElementById('custom-event-loc')?.closest('div[style*="grid-template-columns"]');
+        const customEventBtnRow = document.getElementById('btn-launch-custom-event')?.parentElement;
+        [customEventHeader, customEventRow1, customEventMsg, customEventRow2, customEventBtnRow].forEach(el => setVis(el, canEventsCustom));
+    }
+
+    // 12. DANCES & EMOTES (#pane-emotes)
+    const canEmotesTargetPlayer = checkSub('emotes_target_player', 'manage_force_dance', 'dances_emotes');
+    const canEmotesTargetAll    = checkSub('emotes_target_all', 'mass_actions');
+    const emoteTargetSel = document.getElementById('emote-target-select');
+    if (emoteTargetSel) {
+        setVis(emoteTargetSel, canEmotesTargetPlayer || canEmotesTargetAll);
+        const allOpt = emoteTargetSel.querySelector('option[value="all"]');
+        if (allOpt) allOpt.style.display = canEmotesTargetAll ? '' : 'none';
+    }
 }
 
 window.execPlayerDetailed = function(action, extra = {}) {
@@ -3178,68 +3510,609 @@ function postNUI(endpoint, payload = {}) {
     });
 }
 
-// Staff & Granular Permissions Suite
+// =========================================================================
+// Staff & Tab-by-Tab Granular Permissions Studio
+// =========================================================================
 let cachedStaffList = [];
 let cachedOnlinePlayers = [];
 let staffViewMode = 'members'; // 'members' = ga3 les joueurs, 'staff' = only staff
+let currentStaffRoleFilter = 'all';
+let currentPermStudioTabFilter = 'all';
+
+// Complete 16-Tab Schema: Master Tab Visibility (`tab_*`) + Per-Tab Sub-Permissions
+const STAFF_TAB_SCHEMA = [
+    {
+        tab: 'dashboard',
+        masterKey: 'tab_dashboard',
+        icon: '📊',
+        title: 'Dashboard (Tableau de Bord)',
+        subtitle: 'Statistiques serveur, actions rapides personnelles, mass actions et live feed',
+        color: '#00e5ff',
+        subs: [
+            { key: 'dash_metrics',    title: '📈 Compteurs & Services RP',       desc: 'Voir les compteurs (Joueurs en ligne, Police/EMS/Mécano en service)' },
+            { key: 'self_actions',    title: '❤️ Soins Rapides (Self)',          desc: 'Boutons Revive Self, Heal & Feed, Max Armor (100)' },
+            { key: 'dash_self_veh',   title: '🔧 Véhicule Rapide (Self)',        desc: 'Boutons Repair Vehicle, Clean Vehicle, Delete Vehicle (DV)' },
+            { key: 'dash_self_tp',    title: '📍 TP to Waypoint (Self)',         desc: 'Bouton rapide Dashboard pour se téléporter au marqueur GPS' },
+            { key: 'dash_self_cash',  title: '💵 Give $50,000 Cash (Self)',      desc: 'Bouton rapide pour se donner $50,000 Cash', badge: 'ÉCONOMIE', badgeType: 'warn' },
+            { key: 'mass_actions',    title: '🌐 Actions Globales (Mass)',       desc: 'Revive Tout le Serveur, Heal & Nourrir Tous, Purger Voitures Vides', badge: 'GLOBAL', badgeType: 'warn' },
+            { key: 'dash_purge_cops', title: '🚔 Purger Police NPC',             desc: 'Bouton pour supprimer immédiatement tous les policiers PNJ' },
+            { key: 'dash_announce',   title: '📢 Annonce Rapide Serveur',        desc: 'Envoyer une annonce globale à tout le serveur depuis le Dashboard' },
+            { key: 'dash_logs_feed',  title: '🛡️ Flux d\'Activité Staff (Feed)', desc: 'Voir les 6 dernières actions staff en direct sur le Dashboard' }
+        ]
+    },
+    {
+        tab: 'players',
+        masterKey: 'tab_players',
+        icon: '👥',
+        title: 'Players (Liste des Joueurs)',
+        subtitle: 'Tableau des joueurs en ligne, soldes Cash/Banque et boutons d\'action rapide sur chaque ligne',
+        color: '#38bdf8',
+        subs: [
+            { key: 'view_players',       title: '👁️ Voir Liste & Bouton Info',   desc: 'Afficher les joueurs connectés, ping, métier, gang et fiche Info' },
+            { key: 'players_view_money', title: '💵 Voir Cash & Banque',         desc: 'Afficher la colonne Cash / Banque dans la liste des joueurs', badge: 'CONFIDENTIEL', badgeType: 'warn' },
+            { key: 'players_btn_manage', title: '⚡ Bouton « Manage »',          desc: 'Bouton pour ouvrir le joueur dans l\'onglet Manage Player' },
+            { key: 'player_heal',        title: '❤️ Bouton Revive / Heal',       desc: 'Réanimer et soigner un joueur en 1 clic depuis la liste' },
+            { key: 'player_inventory',   title: '🎒 Bouton Inventaire (Inv)',    desc: 'Ouvrir et fouiller l\'inventaire du joueur depuis la liste' },
+            { key: 'player_teleport',    title: '🚀 Boutons Goto & Bring',       desc: 'Se téléporter vers le joueur (Goto) ou l\'amener à soi (Bring)' },
+            { key: 'player_freeze',      title: '❄️ Bouton Freeze / Unfreeze',   desc: 'Immobiliser ou débloquer un joueur sur place' },
+            { key: 'player_spectate',    title: '🔭 Bouton Spectate',            desc: 'Observer un joueur à distance avec caméra OneSync' },
+            { key: 'punish_kicks',       title: '👢 Bouton Kick (Expulser)',     desc: 'Expulser un joueur du serveur avec raison', badge: 'SANCTION', badgeType: 'warn' },
+            { key: 'punish_bans',        title: '🚫 Bouton Ban (Bannir)',        desc: 'Bannir temporairement ou définitivement un joueur', badge: 'DANGER', badgeType: 'danger' }
+        ]
+    },
+    {
+        tab: 'manage',
+        masterKey: 'tab_manage',
+        icon: '⚡',
+        title: 'Manage Player (Studio Gestion Joueur)',
+        subtitle: 'Contrôle détaillé d\'un joueur : TP amis, argent, poches, job, garage, maisons, skins, trolls, kick, ban & wipes',
+        color: '#00e676',
+        subs: [
+            { key: 'manage_tp',          title: '🚀 1. Téléport & Amis',            desc: 'Envoyer chez un ami, Goto, Bring, TP Hôpital Pillbox / Place Legion' },
+            { key: 'manage_freeze',      title: '❄️ 1B. Freeze dans Manage',        desc: 'Geler ou dégeler le joueur sélectionné depuis sa fiche Manage' },
+            { key: 'manage_money',       title: '💰 2. Donner / Retirer Argent',    desc: 'Ajouter, retirer ou fixer le Cash & la Banque du joueur', badge: 'ÉCONOMIE', badgeType: 'danger' },
+            { key: 'manage_give_item',   title: '📦 2B. Donner un Item au Joueur',  desc: 'Donner un item ox_inventory directement dans les poches du joueur' },
+            { key: 'manage_inv',         title: '🎒 3. Poches en Direct & Coffres', desc: 'Voir ses poches en direct, retirer un item, ouvrir coffre/boîte à gants ou vider' },
+            { key: 'manage_jobs',        title: '💼 4. Changer Métier & Gang',      desc: 'Attribuer un Job, un Gang et le Grade au joueur' },
+            { key: 'manage_heal',        title: '❤️ 5. Santé, Armure & Besoins',    desc: 'Heal & Revive, 100% Armure, 100% Faim/Soif, Zéro Stress' },
+            { key: 'player_vehicles',    title: '🚘 6. Contrôle Véhicule Actuel',   desc: 'Donner clés, réparer, Max Tune, éjecter, crever pneus ou supprimer sa voiture' },
+            { key: 'manage_assets',      title: '🚗 6B. Patrimoine : Garage DB',    desc: 'Voir ses voitures DB, donner un véhicule officiel (+ carte grise), transférer ou saisir', badge: 'PATRIMOINE', badgeType: 'warn' },
+            { key: 'manage_properties',  title: '🏠 6C. Patrimoine : Maisons DB',   desc: 'Voir ses maisons, ouvrir coffre maison, donner clés, attribuer ou saisir propriété', badge: 'PATRIMOINE', badgeType: 'warn' },
+            { key: 'player_clothing',    title: '👔 7. Menu Vêtements & Coiffeur',  desc: 'Ouvrir le menu vêtements/coiffeur sur le joueur, recharger skin ou nettoyer sang' },
+            { key: 'manage_skins',       title: '🎭 7B. Transformer en Ped/Skin',   desc: 'Appliquer n\'importe quel Ped/Skin du catalogue (1051+ modèles) sur le joueur' },
+            { key: 'manage_trolls',      title: '🎪 8. Actions Trolls & Cage',      desc: 'Mettre en cage, Slap 50m, mettre en feu, ivre, pipi, caca, cri, tuer (Slay)' },
+            { key: 'manage_force_dance', title: '🕺 8B. Forcer une Danse',          desc: 'Faire danser le joueur sur l\'une des 4,800+ animations ou stopper' },
+            { key: 'player_pm',          title: '💬 8C. Message Privé Staff (PM)',  desc: 'Afficher un message privé officiel sur l\'écran du joueur' },
+            { key: 'manage_warn_kick',   title: '⚠️ 8D. Warn, Déco & Kick',         desc: 'Envoyer un avertissement officiel, forcer déconnexion ou Kick depuis Manage', badge: 'SANCTION', badgeType: 'warn' },
+            { key: 'manage_ban',         title: '🚫 8E. Bannir depuis Manage (Ban)',desc: 'Bouton Ban direct dans la fiche Manage Player', badge: 'DANGER', badgeType: 'danger' },
+            { key: 'manage_wipes',       title: '💀 8F. Wipe Cash / Inv / Total',   desc: 'Remise à zéro irréversible de l\'argent, de l\'inventaire ou du personnage complet', badge: 'CRITIQUE', badgeType: 'danger' }
+        ]
+    },
+    {
+        tab: 'teleport',
+        masterKey: 'tab_teleport',
+        icon: '📍',
+        title: 'Teleport (Téléportation)',
+        subtitle: 'Téléportation au marqueur GPS, vers les joueurs, destinations populaires, favoris et coordonnées XYZ',
+        color: '#a855f7',
+        subs: [
+            { key: 'world_teleport', title: '📍 TP au Marqueur GPS (Waypoint)',  desc: 'Se téléporter instantanément au point placé sur la carte GTA' },
+            { key: 'tp_players',     title: '👥 TP Rapide Joueurs en Ligne',     desc: 'Cartes Goto / Bring rapides vers tous les joueurs connectés' },
+            { key: 'tp_locations',   title: '🌆 Destinations Populaires',        desc: 'Se téléporter en 1 clic à Legion Square, Pillbox, LSPD, Casino, Cayo...' },
+            { key: 'tp_bookmarks',   title: '⭐ Mes Positions Favoris',          desc: 'Sauvegarder et utiliser ses propres repères de téléportation' },
+            { key: 'tp_coords',      title: '🧭 Coordonnées Exactes (X, Y, Z)',  desc: 'Se téléporter manuellement vers un vecteur X / Y / Z précis' }
+        ]
+    },
+    {
+        tab: 'items',
+        masterKey: 'tab_items',
+        icon: '🎒',
+        title: 'Items & Weapons (Catalogue Items & Armes)',
+        subtitle: 'Catalogue visuel ox_inventory (392+ items), armes, munitions, don à un joueur et atelier teinte d\'arme',
+        color: '#facc15',
+        subs: [
+            { key: 'spawn_items',        title: '📦 Items Généraux (Nourriture/Outils/Soins)', desc: 'Spawner les items standards (eau, burger, bandage, radio, lockpick...)' },
+            { key: 'items_weapons',      title: '🔫 Catégories Armes & Munitions',             desc: 'Afficher et spawner les armes à feu, armes blanches et boîtes de munitions', badge: 'ARMES', badgeType: 'warn' },
+            { key: 'items_give_others',  title: '🎯 Cibler & Donner à un Autre Joueur',        desc: 'Sélecteur permettant d\'envoyer les items/armes à un autre joueur connecté' },
+            { key: 'items_custom_spawn', title: '⌨️ Spawn Manuel par Code Item',               desc: 'Saisir manuellement le nom technique d\'un item et la quantité (jusqu\'à 1000)' },
+            { key: 'items_weapon_tint',  title: '✨ Atelier Arme en Main (Or/Platine + 999)',   desc: 'Appliquer finition Or, Platine ou LSPD + 999 munitions sur l\'arme en main' }
+        ]
+    },
+    {
+        tab: 'god',
+        masterKey: 'tab_god',
+        icon: '⚡',
+        title: 'God Powers (Pouvoirs Staff)',
+        subtitle: 'Godmode, NoClip, ESP/Blips, Pouvoirs Combat/Véhicule et utilitaires rapides',
+        color: '#ffd700',
+        subs: [
+            { key: 'god_powers',     title: '🛡️ Godmode, Invisibilité & Immunités', desc: 'Invincibilité Godmode, Fantôme Invisible, Never Wanted, Anti-Ragdoll, Stamina/Oxygène', badge: 'GOD', badgeType: 'warn' },
+            { key: 'noclip_power',   title: '👻 NoClip & Fast NoClip (5x)',         desc: 'Voler à travers les murs et la carte (sans activer le Godmode)' },
+            { key: 'admin_esp',      title: '👁️ ESP Noms, Blips GPS & Tag Admin',   desc: 'Voir les noms/vie au-dessus des joueurs, Blips GPS radar, Tag Admin et Coords HUD' },
+            { key: 'combat_powers',  title: '💥 Pouvoirs Combat & Munitions',       desc: 'Infinite Ammo, 1000x Dégâts, Super Sprint, Super Jump, Balles & Poings Explosifs', badge: 'DANGER', badgeType: 'danger' },
+            { key: 'veh_powers',     title: '🏎️ Pouvoirs Véhicule Spéciaux',        desc: 'Vehicle Godmode, Rocket Boost, Bunny Hop, Drift Physics, Auto-Flip' },
+            { key: 'god_self_utils', title: '🧰 Utilitaires Personnels & Voiture',  desc: 'Clothes Menu, Benny\'s Max, Refuel 100%, Clean Ped, Flip/Repair/Lock Car, Toggle Duty' },
+            { key: 'god_area_clean', title: '🧹 Revive Zone / All & Nettoyage 50m', desc: 'Revive Radius 50m, Revive All, Clear Area Vehicles / Peds / Objects' }
+        ]
+    },
+    {
+        tab: 'vehicles',
+        masterKey: 'tab_vehicles',
+        icon: '🚗',
+        title: 'Vehicles (Catalogue 971+ Véhicules & Atelier)',
+        subtitle: 'Vitrine photo des véhicules du serveur, spawn manuel, customisation plaque/livery/néons et sauvegarde garage',
+        color: '#fb923c',
+        subs: [
+            { key: 'spawn_vehicles',   title: '🖼️ Catalogue Visuel Véhicules (971+)', desc: 'Spawner n\'importe quel véhicule depuis la galerie avec photos' },
+            { key: 'veh_manual_spawn', title: '⌨️ Spawn Manuel & Quick Spawns',       desc: 'Spawner un véhicule par son nom de modèle avec option Max Tune' },
+            { key: 'veh_workshop',     title: '🔧 Atelier Custom, Plaque & Couleurs', desc: 'Changer plaque, Max Tune, Réparer, Livery, Néons, Vitres teintées, Portes, Couleurs' },
+            { key: 'veh_save_garage',  title: '💾 Enregistrer dans mon Garage DB',    desc: 'Bouton pour sauvegarder définitivement le véhicule actuel dans son propre garage', badge: 'DB GARAGE', badgeType: 'warn' }
+        ]
+    },
+    {
+        tab: 'characters',
+        masterKey: 'tab_characters',
+        icon: '🎭',
+        title: 'Characters & Skins (Catalogue 1,051+ Peds)',
+        subtitle: 'Galerie visuelle de tous les personnages GTA V (Story, Police, Gangs, Animaux) pour soi-même',
+        color: '#c084fc',
+        subs: [
+            { key: 'chars_catalog',     title: '🎭 Galerie Visuelle des Peds (1,051+)', desc: 'Se transformer en n\'importe quel personnage du catalogue photo' },
+            { key: 'chars_custom_hash', title: '⌨️ Saisie Modèle Custom & Reset MP',    desc: 'Appliquer un hash de Ped personnalisé ou revenir au personnage MP Freemode' }
+        ]
+    },
+    {
+        tab: 'jobs',
+        masterKey: 'tab_jobs',
+        icon: '💼',
+        title: 'Jobs & Ranks (Catalogue Métiers)',
+        subtitle: 'Catalogue visuel des métiers et grades du serveur (Police, EMS, Mécano, Entreprises, Gangs)',
+        color: '#34d399',
+        subs: [
+            { key: 'jobs_catalog', title: '💼 Catalogue des Métiers & Grades', desc: 'S\'attribuer un métier et un grade en 1 clic depuis l\'onglet Jobs' }
+        ]
+    },
+    {
+        tab: 'arsenal',
+        masterKey: 'tab_arsenal',
+        icon: '🔫',
+        title: 'Owner Arsenal (Packs Tactiques & Économie)',
+        subtitle: 'Packs d\'armes complets en 1 clic (SWAT, Juggernaut, Assassin, God) et ajout rapide Cash/Banque',
+        color: '#f43f5e',
+        subs: [
+            { key: 'arsenal',             title: '🔫 Packs d\'Armes Tactiques (Self)',   desc: 'Équiper les packs SWAT Commander, Heavy Juggernaut, Silent Assassin, God Arsenal', badge: 'HAUT NIVEAU', badgeType: 'danger' },
+            { key: 'arsenal_give_others', title: '🎯 Donner un Pack Arsenal à un Joueur',desc: 'Sélecteur pour équiper un pack d\'armes complet sur un autre joueur connecté', badge: 'DANGER', badgeType: 'danger' },
+            { key: 'arsenal_economy',     title: '💰 Quick Owner Economy (Cash/Banque)', desc: 'Se donner instantanément du Cash ou de l\'argent en Banque', badge: 'ÉCONOMIE', badgeType: 'danger' }
+        ]
+    },
+    {
+        tab: 'world',
+        masterKey: 'tab_world',
+        icon: '🌍',
+        title: 'World & Weather (Météo, Heure, Police NPC & Ban Offline)',
+        subtitle: 'Contrôle de l\'heure, météo, blackout, annonces globales, Police NPC / densité trafic PNJ et bans hors-ligne',
+        color: '#2dd4bf',
+        subs: [
+            { key: 'world_control',     title: '☀️ Heure, Météo & Blackout',            desc: 'Changer l\'heure (08h, 12h, 18h, 00h), la météo serveur et le Blackout électrique' },
+            { key: 'world_announce',    title: '📢 Annonce Globale Serveur (Broadcast)',desc: 'Diffuser une notification importante à tous les joueurs connectés' },
+            { key: 'npc_control',       title: '🚔 Police NPC, Mode Auto-RP & Densité', desc: 'Gérer la Police NPC, le seuil de policiers RP, les étoiles GTA et la densité du trafic PNJ' },
+            { key: 'world_props_cmd',   title: '📦 Spawner Props, Commandes & Stashs',  desc: 'Spawner des objets/barrières, exécuter une commande ou créer un coffre (Stash) métier/gang', badge: 'AVANCÉ', badgeType: 'warn' },
+            { key: 'world_offline_ban', title: '🚫 Ban Offline & Unban par License',    desc: 'Bannir un joueur hors-ligne par License/CID ou révoquer un bannissement actif', badge: 'DANGER', badgeType: 'danger' }
+        ]
+    },
+    {
+        tab: 'devtools',
+        masterKey: 'tab_devtools',
+        icon: '🔧',
+        title: 'Dev Tools (Outils Développeur)',
+        subtitle: 'Copie de coordonnées Vector3/Vector4, nettoyage de zone 50m, skins rapides et Raycast Laser Inspector',
+        color: '#60a5fa',
+        subs: [
+            { key: 'devtools',       title: '🧭 Coordonnées vec3/vec4 & Laser Inspector', desc: 'Copier Vector3/Vector4/Heading, Raycast Entity Inspector et Mode Cinématique (Hide HUD)' },
+            { key: 'devtools_clean', title: '🧹 Outils de Nettoyage de Zone (50m)',       desc: 'Supprimer les véhicules, PNJ, objets ou purger toute la zone dans un rayon de 50m' },
+            { key: 'devtools_skins', title: '🎭 Changement Rapide de Skin (Dev)',         desc: 'Boutons rapides Male/Female MP, Police, Paramedic et hash custom dans Dev Tools' }
+        ]
+    },
+    {
+        tab: 'events',
+        masterKey: 'tab_events',
+        icon: '🎪',
+        title: 'Event Manager (Événements Serveur)',
+        subtitle: 'Lancement et arrêt d\'événements communautaires (Fight Night, Drag Race, Purge, Airdrop, Derby)',
+        color: '#f97316',
+        subs: [
+            { key: 'events',        title: '🥊 Lancer / Stopper Événements Prédéfinis', desc: 'Démarrer ou arrêter Fight Night, Drag Race, Purge Night, Mystery Airdrop, Demolition Derby' },
+            { key: 'events_custom', title: '🚀 Créateur d\'Événement Personnalisé',     desc: 'Créer un événement sur-mesure avec titre, annonce, zone GPS et rayon personnalisés' }
+        ]
+    },
+    {
+        tab: 'emotes',
+        masterKey: 'tab_emotes',
+        icon: '🕺',
+        title: 'Dances & Emotes (Studio 4,800+ Animations)',
+        subtitle: 'Catalogue complet des danses, packs Fortnite, props 3D et postures RP',
+        color: '#ec4899',
+        subs: [
+            { key: 'dances_emotes',        title: '🕺 Jouer les Danses sur Soi-même',        desc: 'Accéder aux 4,800+ danses et animations et les jouer sur son propre personnage' },
+            { key: 'emotes_target_player', title: '🎯 Faire Danser un Joueur Ciblé',         desc: 'Choisir un joueur connecté dans la liste déroulante pour le faire danser' },
+            { key: 'emotes_target_all',    title: '🌐 Dance Party sur Tout le Serveur',      desc: 'Faire danser simultanément tous les joueurs connectés au serveur', badge: 'GLOBAL', badgeType: 'warn' }
+        ]
+    },
+    {
+        tab: 'logs',
+        masterKey: 'tab_logs',
+        icon: '📜',
+        title: 'Security Logs (Journal d\'Audit)',
+        subtitle: 'Historique complet et infalsifiable (SHA-256) de toutes les actions exécutées par le staff',
+        color: '#a3e635',
+        subs: [
+            { key: 'logs', title: '📜 Consulter & Filtrer les Security Logs', desc: 'Lire et rechercher dans l\'historique complet des actions staff' }
+        ]
+    },
+    {
+        tab: 'staff',
+        masterKey: 'tab_staff',
+        icon: '🛡️',
+        title: 'Staff & Perms (Gestion de l\'Équipe)',
+        subtitle: 'Panneau de haute sécurité permettant d\'ajouter, modifier ou révoquer les permissions des membres du staff',
+        color: '#ff4d6d',
+        subs: [
+            { key: 'staff_management', title: '👑 Gérer l\'Équipe Staff & Permissions', desc: 'Autoriser l\'ouverture de cet onglet et la gestion des grades/permissions (Réservé Owner)', badge: 'OWNER ONLY', badgeType: 'danger' }
+        ]
+    }
+];
+
+// Dynamically build ALL_PERM_KEYS and PERM_LABELS from STAFF_TAB_SCHEMA
+const ALL_TAB_MASTER_KEYS = STAFF_TAB_SCHEMA.map(t => t.masterKey);
+const ALL_SUB_PERM_KEYS = [];
+const PERM_LABELS = {};
+const TAB_LABELS = {};
+
+STAFF_TAB_SCHEMA.forEach(t => {
+    TAB_LABELS[t.masterKey] = `${t.icon} ${t.title.split(' (')[0]}`;
+    t.subs.forEach(s => {
+        if (!ALL_SUB_PERM_KEYS.includes(s.key)) {
+            ALL_SUB_PERM_KEYS.push(s.key);
+        }
+        PERM_LABELS[s.key] = s.title.replace(/^\S+\s+\d+[A-Z]?\.\s*/, '');
+    });
+});
+
+const ALL_PERM_KEYS = [...ALL_TAB_MASTER_KEYS, ...ALL_SUB_PERM_KEYS];
 
 let rolePresetPerms = {
-    owner: {
-        manage_money: true, manage_wipes: true, manage_assets: true, punish_bans: true, punish_kicks: true, manage_trolls: true,
-        view_players: true, player_spectate: true, player_freeze: true, player_teleport: true, player_heal: true, player_inventory: true,
-        spawn_vehicles: true, spawn_items: true, manage_jobs: true, manage_skins: true, world_teleport: true, world_control: true,
-        god_powers: true, staff_management: true, devtools: true, logs: true, events: true, arsenal: true,
-    },
+    owner: Object.fromEntries(ALL_PERM_KEYS.map(k => [k, true])),
     developer: {
-        manage_money: false, manage_wipes: false, manage_assets: false, punish_bans: false, punish_kicks: false, manage_trolls: false,
-        view_players: true, player_spectate: true, player_freeze: false, player_teleport: true, player_heal: false, player_inventory: false,
-        spawn_vehicles: true, spawn_items: false, manage_jobs: false, manage_skins: true, world_teleport: true, world_control: true,
-        god_powers: false, staff_management: false, devtools: true, logs: true, events: true, arsenal: false,
+        tab_dashboard: true, tab_god: true, tab_players: true, tab_manage: true,
+        tab_teleport: true, tab_items: false, tab_vehicles: true, tab_characters: true,
+        tab_jobs: false, tab_arsenal: false, tab_world: true, tab_devtools: true,
+        tab_events: true, tab_emotes: true, tab_logs: true, tab_staff: false,
+        dash_metrics: true, self_actions: true, dash_self_veh: true, dash_self_tp: true, dash_self_cash: false,
+        mass_actions: false, dash_purge_cops: true, dash_announce: false, dash_logs_feed: true,
+        view_players: true, players_view_money: false, players_btn_manage: true,
+        player_heal: false, player_inventory: false, player_teleport: true, player_freeze: false,
+        player_spectate: true, punish_kicks: false, punish_bans: false,
+        manage_tp: true, manage_freeze: false, manage_money: false, manage_give_item: false,
+        manage_inv: false, manage_jobs: false, manage_heal: false, player_vehicles: true,
+        manage_assets: false, manage_properties: false, player_clothing: true, manage_skins: true,
+        manage_trolls: false, manage_force_dance: true, player_pm: true, manage_warn_kick: false,
+        manage_ban: false, manage_wipes: false,
+        world_teleport: true, tp_players: true, tp_locations: true, tp_bookmarks: true, tp_coords: true,
+        spawn_items: false, items_weapons: false, items_give_others: false, items_custom_spawn: false, items_weapon_tint: false,
+        god_powers: false, noclip_power: true, admin_esp: true, combat_powers: false,
+        veh_powers: true, god_self_utils: true, god_area_clean: true,
+        spawn_vehicles: true, veh_manual_spawn: true, veh_workshop: true, veh_save_garage: false,
+        chars_catalog: true, chars_custom_hash: true,
+        jobs_catalog: false,
+        arsenal: false, arsenal_give_others: false, arsenal_economy: false,
+        world_control: true, world_announce: false, npc_control: true, world_props_cmd: true, world_offline_ban: false,
+        devtools: true, devtools_clean: true, devtools_skins: true,
+        events: true, events_custom: true,
+        dances_emotes: true, emotes_target_player: true, emotes_target_all: false,
+        logs: true, staff_management: false
     },
     admin: {
-        manage_money: false, manage_wipes: false, manage_assets: true, punish_bans: true, punish_kicks: true, manage_trolls: false,
-        view_players: true, player_spectate: true, player_freeze: true, player_teleport: true, player_heal: true, player_inventory: true,
-        spawn_vehicles: true, spawn_items: true, manage_jobs: true, manage_skins: true, world_teleport: true, world_control: true,
-        god_powers: false, staff_management: false, devtools: false, logs: true, events: true, arsenal: false,
+        tab_dashboard: true, tab_god: true, tab_players: true, tab_manage: true,
+        tab_teleport: true, tab_items: true, tab_vehicles: true, tab_characters: true,
+        tab_jobs: true, tab_arsenal: false, tab_world: true, tab_devtools: false,
+        tab_events: true, tab_emotes: true, tab_logs: true, tab_staff: false,
+        dash_metrics: true, self_actions: true, dash_self_veh: true, dash_self_tp: true, dash_self_cash: false,
+        mass_actions: true, dash_purge_cops: true, dash_announce: true, dash_logs_feed: true,
+        view_players: true, players_view_money: true, players_btn_manage: true,
+        player_heal: true, player_inventory: true, player_teleport: true, player_freeze: true,
+        player_spectate: true, punish_kicks: true, punish_bans: true,
+        manage_tp: true, manage_freeze: true, manage_money: false, manage_give_item: true,
+        manage_inv: true, manage_jobs: true, manage_heal: true, player_vehicles: true,
+        manage_assets: true, manage_properties: true, player_clothing: true, manage_skins: true,
+        manage_trolls: false, manage_force_dance: true, player_pm: true, manage_warn_kick: true,
+        manage_ban: true, manage_wipes: false,
+        world_teleport: true, tp_players: true, tp_locations: true, tp_bookmarks: true, tp_coords: true,
+        spawn_items: true, items_weapons: true, items_give_others: true, items_custom_spawn: true, items_weapon_tint: false,
+        god_powers: false, noclip_power: true, admin_esp: true, combat_powers: false,
+        veh_powers: true, god_self_utils: true, god_area_clean: true,
+        spawn_vehicles: true, veh_manual_spawn: true, veh_workshop: true, veh_save_garage: true,
+        chars_catalog: true, chars_custom_hash: true,
+        jobs_catalog: true,
+        arsenal: false, arsenal_give_others: false, arsenal_economy: false,
+        world_control: true, world_announce: true, npc_control: true, world_props_cmd: false, world_offline_ban: true,
+        devtools: false, devtools_clean: false, devtools_skins: false,
+        events: true, events_custom: true,
+        dances_emotes: true, emotes_target_player: true, emotes_target_all: true,
+        logs: true, staff_management: false
     },
     moderator: {
-        manage_money: false, manage_wipes: false, manage_assets: false, punish_bans: false, punish_kicks: true, manage_trolls: false,
-        view_players: true, player_spectate: true, player_freeze: true, player_teleport: true, player_heal: true, player_inventory: false,
-        spawn_vehicles: true, spawn_items: false, manage_jobs: false, manage_skins: false, world_teleport: false, world_control: false,
-        god_powers: false, staff_management: false, devtools: false, logs: false, events: false, arsenal: false,
+        tab_dashboard: true, tab_god: true, tab_players: true, tab_manage: true,
+        tab_teleport: true, tab_items: false, tab_vehicles: true, tab_characters: false,
+        tab_jobs: false, tab_arsenal: false, tab_world: false, tab_devtools: false,
+        tab_events: false, tab_emotes: true, tab_logs: false, tab_staff: false,
+        dash_metrics: true, self_actions: true, dash_self_veh: true, dash_self_tp: false, dash_self_cash: false,
+        mass_actions: false, dash_purge_cops: false, dash_announce: false, dash_logs_feed: false,
+        view_players: true, players_view_money: false, players_btn_manage: true,
+        player_heal: true, player_inventory: false, player_teleport: true, player_freeze: true,
+        player_spectate: true, punish_kicks: true, punish_bans: false,
+        manage_tp: true, manage_freeze: true, manage_money: false, manage_give_item: false,
+        manage_inv: false, manage_jobs: false, manage_heal: true, player_vehicles: true,
+        manage_assets: false, manage_properties: false, player_clothing: true, manage_skins: false,
+        manage_trolls: false, manage_force_dance: true, player_pm: true, manage_warn_kick: true,
+        manage_ban: false, manage_wipes: false,
+        world_teleport: false, tp_players: true, tp_locations: true, tp_bookmarks: false, tp_coords: false,
+        spawn_items: false, items_weapons: false, items_give_others: false, items_custom_spawn: false, items_weapon_tint: false,
+        god_powers: false, noclip_power: true, admin_esp: true, combat_powers: false,
+        veh_powers: false, god_self_utils: true, god_area_clean: false,
+        spawn_vehicles: true, veh_manual_spawn: false, veh_workshop: false, veh_save_garage: false,
+        chars_catalog: false, chars_custom_hash: false,
+        jobs_catalog: false,
+        arsenal: false, arsenal_give_others: false, arsenal_economy: false,
+        world_control: false, world_announce: false, npc_control: false, world_props_cmd: false, world_offline_ban: false,
+        devtools: false, devtools_clean: false, devtools_skins: false,
+        events: false, events_custom: false,
+        dances_emotes: true, emotes_target_player: false, emotes_target_all: false,
+        logs: false, staff_management: false
     },
     custom: {
-        manage_money: false, manage_wipes: false, manage_assets: false, punish_bans: false, punish_kicks: false, manage_trolls: false,
-        view_players: true, player_spectate: false, player_freeze: false, player_teleport: true, player_heal: false, player_inventory: false,
-        spawn_vehicles: false, spawn_items: false, manage_jobs: false, manage_skins: false, world_teleport: false, world_control: false,
-        god_powers: false, staff_management: false, devtools: false, logs: false, events: false, arsenal: false,
+        tab_dashboard: true, tab_god: false, tab_players: true, tab_manage: true,
+        tab_teleport: false, tab_items: false, tab_vehicles: false, tab_characters: false,
+        tab_jobs: false, tab_arsenal: false, tab_world: false, tab_devtools: false,
+        tab_events: false, tab_emotes: true, tab_logs: false, tab_staff: false,
+        dash_metrics: true, self_actions: false, dash_self_veh: false, dash_self_tp: false, dash_self_cash: false,
+        mass_actions: false, dash_purge_cops: false, dash_announce: false, dash_logs_feed: false,
+        view_players: true, players_view_money: false, players_btn_manage: true,
+        player_heal: false, player_inventory: false, player_teleport: true, player_freeze: false,
+        player_spectate: false, punish_kicks: false, punish_bans: false,
+        manage_tp: true, manage_freeze: false, manage_money: false, manage_give_item: false,
+        manage_inv: false, manage_jobs: false, manage_heal: false, player_vehicles: false,
+        manage_assets: false, manage_properties: false, player_clothing: false, manage_skins: false,
+        manage_trolls: false, manage_force_dance: true, player_pm: true, manage_warn_kick: false,
+        manage_ban: false, manage_wipes: false,
+        world_teleport: false, tp_players: false, tp_locations: false, tp_bookmarks: false, tp_coords: false,
+        spawn_items: false, items_weapons: false, items_give_others: false, items_custom_spawn: false, items_weapon_tint: false,
+        god_powers: false, noclip_power: false, admin_esp: false, combat_powers: false,
+        veh_powers: false, god_self_utils: false, god_area_clean: false,
+        spawn_vehicles: false, veh_manual_spawn: false, veh_workshop: false, veh_save_garage: false,
+        chars_catalog: false, chars_custom_hash: false,
+        jobs_catalog: false,
+        arsenal: false, arsenal_give_others: false, arsenal_economy: false,
+        world_control: false, world_announce: false, npc_control: false, world_props_cmd: false, world_offline_ban: false,
+        devtools: false, devtools_clean: false, devtools_skins: false,
+        events: false, events_custom: false,
+        dances_emotes: true, emotes_target_player: false, emotes_target_all: false,
+        logs: false, staff_management: false
     }
 };
 
-const ALL_PERM_KEYS = [
-    'manage_money', 'manage_wipes', 'manage_assets', 'punish_bans', 'punish_kicks', 'manage_trolls',
-    'view_players', 'player_spectate', 'player_freeze', 'player_teleport', 'player_heal', 'player_inventory',
-    'spawn_vehicles', 'spawn_items', 'manage_jobs', 'manage_skins', 'world_teleport', 'world_control',
-    'god_powers', 'staff_management', 'devtools', 'logs', 'events', 'arsenal'
-];
+// Render the 16-Tab Permissions Studio Matrix & Filter Pills inside #staff-modal
+let permStudioInitialized = false;
+function initStaffPermStudioDOM() {
+    if (permStudioInitialized) return;
+    const pillsContainer = document.getElementById('staff-perm-tab-pills');
+    const matrixContainer = document.getElementById('staff-perm-tabs-matrix');
+    if (!pillsContainer || !matrixContainer) return;
 
-// Legacy key → granular key mapping for permission display & backward compat
-const LEGACY_TO_GRANULAR = {
-    players: 'view_players', teleport: 'world_teleport', vehicles: 'spawn_vehicles',
-    punishments: 'punish_kicks', items: 'spawn_items', characters: 'manage_skins',
-    jobs: 'manage_jobs', world: 'world_control', god: 'god_powers', staff: 'staff_management',
+    // 1. Build Tab Filter Pills
+    let pillsHtml = `<button type="button" class="perm-tab-filter-pill active" data-ptab="all" onclick="filterPermStudioByTab('all')">🌐 Tous les Onglets (16)</button>`;
+    STAFF_TAB_SCHEMA.forEach(t => {
+        const shortName = t.title.split(' (')[0];
+        pillsHtml += `<button type="button" class="perm-tab-filter-pill" data-ptab="${t.tab}" onclick="filterPermStudioByTab('${t.tab}')">${t.icon} ${escapeHtml(shortName)}</button>`;
+    });
+    pillsContainer.innerHTML = pillsHtml;
+
+    // 2. Build the 16 Tab Blocks with Master Switch + Sub-Permission Check Cards
+    let matrixHtml = '';
+    STAFF_TAB_SCHEMA.forEach((t, idx) => {
+        const subsHtml = t.subs.map(s => {
+            const badgeHtml = s.badge
+                ? `<span class="perm-sub-badge ${s.badgeType === 'danger' ? 'danger' : 'warn'}">${escapeHtml(s.badge)}</span>`
+                : '';
+            return `
+                <label class="perm-check-card perm-sub-card" for="perm-${s.key}" data-sub-key="${s.key}" data-search="${escapeHtml((s.title + ' ' + s.desc + ' ' + s.key).toLowerCase())}">
+                    <input type="checkbox" id="perm-${s.key}" data-parent-tab="${t.masterKey}" onchange="onSubPermCheckboxChange('${t.masterKey}', '${s.key}')">
+                    <div class="perm-check-card-info">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                            <span class="perm-check-card-title">${escapeHtml(s.title)}</span>
+                            ${badgeHtml}
+                        </div>
+                        <span class="perm-check-card-desc">${escapeHtml(s.desc)}</span>
+                    </div>
+                </label>
+            `;
+        }).join('');
+
+        matrixHtml += `
+            <div class="perm-tab-block" id="perm-block-${t.tab}" data-tab-id="${t.tab}" style="--tab-accent: ${t.color};">
+                <div class="perm-tab-master-header">
+                    <div class="perm-tab-master-left">
+                        <span class="perm-tab-num">${String(idx + 1).padStart(2, '0')}</span>
+                        <span class="perm-tab-icon">${t.icon}</span>
+                        <div>
+                            <div class="perm-tab-title-row">
+                                <h4>${escapeHtml(t.title)}</h4>
+                                <span class="perm-tab-sub-counter" id="perm-counter-${t.masterKey}">0/${t.subs.length} actifs</span>
+                            </div>
+                            <p>${escapeHtml(t.subtitle)}</p>
+                        </div>
+                    </div>
+                    <div class="perm-tab-master-actions">
+                        <button type="button" class="perm-mini-action-btn" onclick="toggleAllSubPermsInTab('${t.masterKey}', true)" title="Activer toutes les options de cet onglet">✅ Tout cocher</button>
+                        <button type="button" class="perm-mini-action-btn clear" onclick="toggleAllSubPermsInTab('${t.masterKey}', false)" title="Décocher toutes les options de cet onglet">🧹 Vider</button>
+                        <label class="perm-master-switch-wrap" for="perm-${t.masterKey}" title="Afficher ou masquer complètement cet onglet dans le menu du staff">
+                            <span class="perm-master-switch-label" id="perm-master-lbl-${t.masterKey}">ONGLET VISIBLE</span>
+                            <input type="checkbox" id="perm-${t.masterKey}" onchange="onMasterTabSwitchChange('${t.masterKey}')">
+                            <span class="perm-master-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="perm-cards-grid perm-sub-grid" id="perm-subgrid-${t.masterKey}">
+                    ${subsHtml}
+                </div>
+            </div>
+        `;
+    });
+    matrixContainer.innerHTML = matrixHtml;
+    permStudioInitialized = true;
+}
+
+window.filterPermStudioByTab = function(tabId) {
+    currentPermStudioTabFilter = tabId || 'all';
+    document.querySelectorAll('#staff-perm-tab-pills .perm-tab-filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-ptab') === currentPermStudioTabFilter);
+    });
+    applyPermStudioSearchAndFilter();
 };
 
-// Human-readable labels for granular permission tags
-const PERM_LABELS = {
-    manage_money: '💰 Argent', manage_wipes: '⚡ Wipes', manage_assets: '🏛️ Patrimoine',
-    punish_bans: '🚫 Bans', punish_kicks: '👢 Kicks', manage_trolls: '🎭 Trolls',
-    view_players: '👁️ Joueurs', player_spectate: '🔭 Spectate', player_freeze: '❄️ Freeze',
-    player_teleport: '🚀 TP Joueur', player_heal: '❤️ Heal', player_inventory: '🎒 Inventaire',
-    spawn_vehicles: '🚗 Véhicules', spawn_items: '📦 Items', manage_jobs: '💼 Jobs',
-    manage_skins: '🎭 Skins', world_teleport: '🗺️ TP Map', world_control: '🌍 Monde',
-    god_powers: '⚡ Godmode', staff_management: '🛡️ Staff', devtools: '🔧 DevTools',
-    logs: '📜 Logs', events: '🎪 Events', arsenal: '🔫 Arsenal',
+function applyPermStudioSearchAndFilter() {
+    initStaffPermStudioDOM();
+    const query = (document.getElementById('staff-perm-search')?.value || '').toLowerCase().trim();
+
+    STAFF_TAB_SCHEMA.forEach(t => {
+        const block = document.getElementById(`perm-block-${t.tab}`);
+        if (!block) return;
+
+        const tabMatchesFilter = currentPermStudioTabFilter === 'all' || currentPermStudioTabFilter === t.tab;
+        if (!tabMatchesFilter) {
+            block.style.display = 'none';
+            return;
+        }
+
+        if (!query) {
+            block.style.display = '';
+            block.querySelectorAll('.perm-sub-card').forEach(c => { c.style.display = ''; });
+            return;
+        }
+
+        const headerMatches = t.title.toLowerCase().includes(query) || t.subtitle.toLowerCase().includes(query) || t.tab.includes(query);
+        let anySubMatches = false;
+        block.querySelectorAll('.perm-sub-card').forEach(card => {
+            const hay = card.getAttribute('data-search') || '';
+            const match = headerMatches || hay.includes(query);
+            card.style.display = match ? '' : 'none';
+            if (match) anySubMatches = true;
+        });
+
+        block.style.display = (headerMatches || anySubMatches) ? '' : 'none';
+    });
+}
+
+window.onMasterTabSwitchChange = function(masterKey) {
+    const masterChk = document.getElementById(`perm-${masterKey}`);
+    const tabSchema = STAFF_TAB_SCHEMA.find(t => t.masterKey === masterKey);
+    if (!masterChk || !tabSchema) return;
+
+    // If the owner turns ON a tab that currently has 0 sub-permissions checked,
+    // automatically enable the first (default/safe) sub-permission so the tab isn't empty.
+    if (masterChk.checked) {
+        const anySubChecked = tabSchema.subs.some(s => document.getElementById(`perm-${s.key}`)?.checked);
+        if (!anySubChecked && tabSchema.subs.length > 0) {
+            const firstSub = document.getElementById(`perm-${tabSchema.subs[0].key}`);
+            if (firstSub) firstSub.checked = true;
+        }
+    }
+
+    const roleSel = document.getElementById('staff-select-role');
+    if (roleSel) roleSel.value = 'custom';
+    highlightPresetButton('');
+    updateStaffPermVisualState();
+};
+
+window.onSubPermCheckboxChange = function(masterKey, subKey) {
+    const subChk = document.getElementById(`perm-${subKey}`);
+    const masterChk = document.getElementById(`perm-${masterKey}`);
+    // If a sub-permission is checked, automatically turn ON its parent tab so the staff can see the tab!
+    if (subChk && subChk.checked && masterChk && !masterChk.checked) {
+        masterChk.checked = true;
+    }
+    const roleSel = document.getElementById('staff-select-role');
+    if (roleSel) roleSel.value = 'custom';
+    highlightPresetButton('');
+    updateStaffPermVisualState();
+};
+
+window.toggleAllSubPermsInTab = function(masterKey, enable) {
+    const tabSchema = STAFF_TAB_SCHEMA.find(t => t.masterKey === masterKey);
+    if (!tabSchema) return;
+    const masterChk = document.getElementById(`perm-${masterKey}`);
+    if (masterChk) masterChk.checked = !!enable;
+
+    tabSchema.subs.forEach(s => {
+        const chk = document.getElementById(`perm-${s.key}`);
+        if (chk) chk.checked = !!enable;
+    });
+
+    const roleSel = document.getElementById('staff-select-role');
+    if (roleSel) roleSel.value = 'custom';
+    highlightPresetButton('');
+    updateStaffPermVisualState();
+};
+
+function updateStaffPermVisualState() {
+    initStaffPermStudioDOM();
+    let activeTabsCount = 0;
+    let activeSubsCount = 0;
+
+    STAFF_TAB_SCHEMA.forEach(t => {
+        const masterChk = document.getElementById(`perm-${t.masterKey}`);
+        const isTabOn = !!(masterChk && masterChk.checked);
+        if (isTabOn) activeTabsCount++;
+
+        let tabSubActive = 0;
+        t.subs.forEach(s => {
+            const chk = document.getElementById(`perm-${s.key}`);
+            if (chk && chk.checked) {
+                tabSubActive++;
+                if (isTabOn) activeSubsCount++;
+            }
+        });
+
+        const block = document.getElementById(`perm-block-${t.tab}`);
+        if (block) {
+            block.classList.toggle('tab-disabled', !isTabOn);
+            block.classList.toggle('tab-enabled', isTabOn);
+        }
+
+        const lbl = document.getElementById(`perm-master-lbl-${t.masterKey}`);
+        if (lbl) {
+            lbl.innerText = isTabOn ? '👁️ ONGLET VISIBLE' : '🚫 ONGLET MASQUÉ';
+            lbl.style.color = isTabOn ? '#00e676' : 'var(--text-muted)';
+        }
+
+        const counterEl = document.getElementById(`perm-counter-${t.masterKey}`);
+        if (counterEl) {
+            counterEl.innerText = `${tabSubActive}/${t.subs.length} options`;
+            counterEl.className = `perm-tab-sub-counter ${isTabOn && tabSubActive > 0 ? 'active' : ''}`;
+        }
+    });
+
+    const summaryEl = document.getElementById('staff-perm-live-summary');
+    if (summaryEl) {
+        summaryEl.innerText = `${activeTabsCount}/16 Onglets Visibles • ${activeSubsCount} Permissions Actives`;
+    }
+}
+
+window.setStaffRoleFilter = function(role) {
+    currentStaffRoleFilter = role || 'all';
+    document.querySelectorAll('#staff-role-filter-pills .filter-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-srole') === currentStaffRoleFilter);
+    });
+    renderStaffView();
 };
 
 async function fetchNUI(endpoint, payload = {}) {
@@ -3258,6 +4131,7 @@ async function fetchNUI(endpoint, payload = {}) {
 }
 
 async function fetchStaffData() {
+    initStaffPermStudioDOM();
     const container = document.getElementById('staff-list-container');
     if (container) container.innerHTML = '<div class="table-empty">Chargement de la liste des membres...</div>';
 
@@ -3270,7 +4144,9 @@ async function fetchStaffData() {
     cachedStaffList = res.staff || [];
     cachedOnlinePlayers = res.onlinePlayers || [];
     if (res.defaultPerms) {
-        rolePresetPerms = { ...rolePresetPerms, ...res.defaultPerms };
+        Object.keys(res.defaultPerms).forEach(rKey => {
+            rolePresetPerms[rKey] = { ...(rolePresetPerms[rKey] || {}), ...res.defaultPerms[rKey] };
+        });
     }
 
     // Update metrics
@@ -3305,11 +4181,44 @@ function renderStaffView() {
     }
 }
 
+// Build a clean visual summary of Visible Tabs + Key Permissions for a Staff Card
+function buildStaffCardPermsSummaryHtml(perms, hasAccess, isOwner) {
+    if (!hasAccess && !isOwner) {
+        return `<span class="perm-tag" style="color: var(--text-muted);">Joueur Standard — Aucun accès au panel SOUH4IL-DEV</span>`;
+    }
+    if (isOwner) {
+        return `<span class="perm-tag active" style="border-color: #ffd700; color: #ffd700; background: rgba(255,215,0,0.12);">👑 16/16 Onglets Visibles • Accès Intégral Owner</span>`;
+    }
+
+    const p = perms || {};
+    let visibleTabs = [];
+    STAFF_TAB_SCHEMA.forEach(t => {
+        const masterVal = p[t.masterKey];
+        const isVis = typeof masterVal === 'boolean'
+            ? masterVal
+            : t.subs.some(s => p[s.key] === true);
+        if (isVis) {
+            const shortTitle = t.title.split(' (')[0];
+            const activeSubs = t.subs.filter(s => p[s.key] === true).length;
+            visibleTabs.push(`<span class="perm-tag active" title="${t.title} (${activeSubs}/${t.subs.length} options)">${t.icon} ${escapeHtml(shortTitle)} <small style="opacity:0.75;">(${activeSubs}/${t.subs.length})</small></span>`);
+        }
+    });
+
+    if (visibleTabs.length === 0) {
+        return `<span class="perm-tag" style="color: var(--accent-red);">🚫 Aucun onglet actif</span>`;
+    }
+    return visibleTabs.join('');
+}
+
 function renderMembersList(list, filter = '') {
     const container = document.getElementById('staff-list-container');
     if (!container) return;
 
     const filtered = list.filter(p => {
+        const rLower = (p.role || 'member').toLowerCase();
+        if (currentStaffRoleFilter !== 'all') {
+            if (!p.hasAccess || rLower !== currentStaffRoleFilter) return false;
+        }
         if (!filter) return true;
         const q = filter.toLowerCase();
         return (p.name && p.name.toLowerCase().includes(q)) ||
@@ -3321,7 +4230,7 @@ function renderMembersList(list, filter = '') {
     });
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="table-empty">Aucun joueur connecté trouvé dans le serveur.</div>';
+        container.innerHTML = '<div class="table-empty">Aucun joueur connecté correspondant à ce filtre.</div>';
         return;
     }
 
@@ -3332,26 +4241,12 @@ function renderMembersList(list, filter = '') {
         const roleClass = `role-${roleLower}`;
         const hasAccess = !!p.hasAccess;
 
-        // Build active perms tags
-        const perms = p.permissions || {};
-        let permsTagsHtml = '';
-        if (hasAccess) {
-            ALL_PERM_KEYS.forEach(k => {
-                if (perms[k] === true) {
-                    const label = PERM_LABELS[k] || k.charAt(0).toUpperCase() + k.slice(1);
-                    permsTagsHtml += `<span class="perm-tag active">${label}</span>`;
-                }
-            });
-        }
-        if (!permsTagsHtml) {
-            permsTagsHtml = '<span class="perm-tag" style="color: var(--text-muted);">Membre Standard (Aucun Accès Panel)</span>';
-        }
-
+        const permsTagsHtml = buildStaffCardPermsSummaryHtml(p.permissions, hasAccess, p.isOwner);
         const safeLicense = escapeHtml(p.license || '');
         const displayLic = safeLicense.length > 25 ? `${safeLicense.substring(0, 16)}...${safeLicense.substring(safeLicense.length - 6)}` : safeLicense;
 
         html += `
-        <div class="staff-card ${p.isOwner ? 'owner-card' : ''}" style="${!hasAccess ? 'border-style: dashed; opacity: 0.9;' : ''}">
+        <div class="staff-card ${p.isOwner ? 'owner-card' : ''}" style="${!hasAccess ? 'border-style: dashed; opacity: 0.92;' : ''}">
             <div class="staff-top">
                 <div class="staff-identity">
                     <div class="staff-avatar" style="${hasAccess ? 'border-color: var(--accent-cyan);' : 'background: rgba(255,255,255,0.05);'}">${initials}</div>
@@ -3377,7 +4272,7 @@ function renderMembersList(list, filter = '') {
             </div>
 
             <div>
-                <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.04em;">Accès SOUH4IL-DEV :</div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.04em;">Onglets & Permissions Visibles :</div>
                 <div class="perm-tags-container">
                     ${permsTagsHtml}
                 </div>
@@ -3387,10 +4282,10 @@ function renderMembersList(list, filter = '') {
                 ${p.isOwner ? `
                     <span style="font-size: 0.75rem; color: #ffd700; font-weight: 700; padding: 6px;">👑 PROPRIÉTAIRE CANONIQUE</span>
                 ` : hasAccess ? `
-                    <button class="secondary-btn" onclick="openEditStaff('${safeLicense}')">✏️ Modifier Perms</button>
+                    <button class="secondary-btn" onclick="openEditStaff('${safeLicense}')">⚙️ Choisir Onglets & Perms</button>
                     <button class="primary-btn danger-btn" onclick="removeStaffMember('${safeLicense}', '${escapeHtml(p.name)}')">🗑️ Révoquer</button>
                 ` : `
-                    <button class="primary-btn" style="background: rgba(0, 229, 255, 0.2); border-color: var(--accent-cyan); color: var(--accent-cyan);" onclick="openGrantMemberModal('${safeLicense}', '${escapeHtml(p.name)}')">➕ Configurer les accès (Grant Access)</button>
+                    <button class="primary-btn" style="background: rgba(0, 229, 255, 0.2); border-color: var(--accent-cyan); color: var(--accent-cyan);" onclick="openGrantMemberModal('${safeLicense}', '${escapeHtml(p.name)}')">➕ Configurer Onglets & Accès</button>
                 `}
             </div>
         </div>
@@ -3405,6 +4300,10 @@ function renderStaffList(list, filter = '') {
     if (!container) return;
 
     const filtered = list.filter(s => {
+        const rLower = (s.role || 'moderator').toLowerCase();
+        if (currentStaffRoleFilter !== 'all' && rLower !== currentStaffRoleFilter) {
+            return false;
+        }
         if (!filter) return true;
         const q = filter.toLowerCase();
         return (s.name && s.name.toLowerCase().includes(q)) ||
@@ -3413,7 +4312,7 @@ function renderStaffList(list, filter = '') {
     });
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="table-empty">Aucun membre du staff trouvé.</div>';
+        container.innerHTML = '<div class="table-empty">Aucun membre du staff trouvé pour ce filtre.</div>';
         return;
     }
 
@@ -3424,19 +4323,7 @@ function renderStaffList(list, filter = '') {
         const roleClass = `role-${roleLower}`;
         const initials = (s.name || 'ST').substring(0, 2).toUpperCase();
 
-        // Build active perms tags
-        const perms = s.permissions || {};
-        let permsTagsHtml = '';
-        ALL_PERM_KEYS.forEach(k => {
-            if (perms[k] === true) {
-                const label = PERM_LABELS[k] || k.charAt(0).toUpperCase() + k.slice(1);
-                permsTagsHtml += `<span class="perm-tag active">${label}</span>`;
-            }
-        });
-        if (!permsTagsHtml) {
-            permsTagsHtml = '<span class="perm-tag">Aucune permission active</span>';
-        }
-
+        const permsTagsHtml = buildStaffCardPermsSummaryHtml(s.permissions, true, s.isOwner);
         const safeLicense = escapeHtml(s.license || '');
         const displayLic = safeLicense.length > 25 ? `${safeLicense.substring(0, 16)}...${safeLicense.substring(safeLicense.length - 6)}` : safeLicense;
 
@@ -3464,7 +4351,7 @@ function renderStaffList(list, filter = '') {
             </div>
 
             <div>
-                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.04em;">Pouvoirs autorisés :</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.04em;">Onglets & Permissions Visibles :</div>
                 <div class="perm-tags-container">
                     ${permsTagsHtml}
                 </div>
@@ -3474,7 +4361,7 @@ function renderStaffList(list, filter = '') {
                 ${s.isOwner ? `
                     <span style="font-size: 0.75rem; color: #ffd700; font-weight: 700; padding: 6px;">👑 PROPRIÉTAIRE CANONIQUE</span>
                 ` : `
-                    <button class="secondary-btn" onclick="openEditStaff('${safeLicense}')">✏️ Modifier Perms</button>
+                    <button class="secondary-btn" onclick="openEditStaff('${safeLicense}')">⚙️ Choisir Onglets & Perms</button>
                     <button class="primary-btn danger-btn" onclick="removeStaffMember('${safeLicense}', '${escapeHtml(s.name || 'Staff')}')">🗑️ Révoquer</button>
                 `}
             </div>
@@ -3485,11 +4372,19 @@ function renderStaffList(list, filter = '') {
     container.innerHTML = html;
 }
 
+function resetPermModalFilters() {
+    initStaffPermStudioDOM();
+    const searchEl = document.getElementById('staff-perm-search');
+    if (searchEl) searchEl.value = '';
+    filterPermStudioByTab('all');
+}
+
 function openGrantMemberModal(license, name) {
     const modal = document.getElementById('staff-modal');
     if (!modal) return;
+    resetPermModalFilters();
 
-    document.getElementById('staff-modal-title').innerText = `🛡️ Configurer les accès pour : ${name}`;
+    document.getElementById('staff-modal-title').innerText = `🛡️ Configurer les Onglets & Permissions : ${name}`;
     document.getElementById('staff-select-player').value = license;
     document.getElementById('staff-input-name').value = name;
     document.getElementById('staff-input-license').value = license;
@@ -3504,8 +4399,9 @@ function openGrantMemberModal(license, name) {
 function openAddStaffModal() {
     const modal = document.getElementById('staff-modal');
     if (!modal) return;
+    resetPermModalFilters();
 
-    document.getElementById('staff-modal-title').innerText = '🛡️ Grant New Staff Access';
+    document.getElementById('staff-modal-title').innerText = '🛡️ Ajouter un Staff & Choisir ses Onglets';
     document.getElementById('staff-select-player').value = '';
     document.getElementById('staff-input-name').value = '';
     document.getElementById('staff-input-license').value = '';
@@ -3523,8 +4419,9 @@ function openEditStaff(license) {
 
     const modal = document.getElementById('staff-modal');
     if (!modal) return;
+    resetPermModalFilters();
 
-    document.getElementById('staff-modal-title').innerText = `✏️ Modifier les permissions : ${staff.name}`;
+    document.getElementById('staff-modal-title').innerText = `⚙️ Permissions & Onglets de : ${staff.name}`;
     document.getElementById('staff-select-player').value = staff.license;
     document.getElementById('staff-input-name').value = staff.name || '';
     document.getElementById('staff-input-license').value = staff.license || '';
@@ -3534,9 +4431,28 @@ function openEditStaff(license) {
     document.getElementById('staff-select-role').value = rolePresetPerms[roleLower] ? roleLower : 'custom';
 
     const perms = staff.permissions || {};
-    ALL_PERM_KEYS.forEach(k => {
+    const fallbackPreset = rolePresetPerms[roleLower] || rolePresetPerms.custom;
+
+    // 1. Populate all sub-permission checkboxes (with smart fallback for newly added sub-keys)
+    ALL_SUB_PERM_KEYS.forEach(k => {
         const chk = document.getElementById(`perm-${k}`);
-        if (chk) chk.checked = !!perms[k];
+        if (!chk) return;
+        if (typeof perms[k] === 'boolean') {
+            chk.checked = perms[k];
+        } else {
+            chk.checked = !!fallbackPreset[k];
+        }
+    });
+
+    // 2. Populate all 16 master tab switches (if undefined on old DB row, infer from sub-permissions)
+    STAFF_TAB_SCHEMA.forEach(t => {
+        const masterChk = document.getElementById(`perm-${t.masterKey}`);
+        if (!masterChk) return;
+        if (typeof perms[t.masterKey] === 'boolean') {
+            masterChk.checked = perms[t.masterKey];
+        } else {
+            masterChk.checked = t.subs.some(s => document.getElementById(`perm-${s.key}`)?.checked);
+        }
     });
 
     const btnMap = {
@@ -3546,15 +4462,18 @@ function openEditStaff(license) {
         owner: 'preset-btn-owner'
     };
     highlightPresetButton(btnMap[roleLower] || '');
+    updateStaffPermVisualState();
     modal.style.display = 'flex';
 }
 
 function applyRolePresetToCheckboxes(role) {
+    initStaffPermStudioDOM();
     const preset = rolePresetPerms[role] || rolePresetPerms.moderator;
     ALL_PERM_KEYS.forEach(k => {
         const chk = document.getElementById(`perm-${k}`);
         if (chk) chk.checked = !!preset[k];
     });
+    updateStaffPermVisualState();
 }
 
 function closeStaffModal() {
@@ -3568,7 +4487,7 @@ async function saveStaff() {
     const role = document.getElementById('staff-select-role')?.value || 'moderator';
 
     if (!license) {
-        alert('Veuillez sélectionner un joueur ou renseigner une Rockstar License valide !');
+        showToast('License Requise', 'Veuillez sélectionner un joueur connecté ou saisir une Rockstar License valide.', 'warning');
         return;
     }
 
@@ -3586,23 +4505,21 @@ async function saveStaff() {
     });
 
     if (res && res.success) {
+        showToast('Permissions Enregistrées', `Les onglets et permissions de ${name} (${role.toUpperCase()}) ont été mis à jour en direct !`, 'success');
         closeStaffModal();
         fetchStaffData();
     } else {
-        alert('Erreur lors de la sauvegarde : ' + (res && res.error ? res.error : 'Serveur inaccessible'));
+        showToast('Erreur de Sauvegarde', (res && res.error ? res.error : 'Serveur inaccessible'), 'error');
     }
 }
 
 async function removeStaffMember(license, name) {
-    if (!confirm(`Êtes-vous sûr de vouloir révoquer tous les accès SOUH4IL-DEV pour ${name} ?`)) {
-        return;
-    }
-
     const res = await fetchNUI('removeStaffMember', { license: license });
     if (res && res.success) {
+        showToast('Accès Révoqué', `Tous les accès SOUH4IL-DEV de ${name} ont été révoqués immédiatement.`, 'info');
         fetchStaffData();
     } else {
-        alert('Erreur lors de la révocation : ' + (res && res.error ? res.error : 'Erreur inconnue'));
+        showToast('Erreur de Révocation', (res && res.error ? res.error : 'Erreur inconnue'), 'error');
     }
 }
 
@@ -3803,22 +4720,12 @@ document.getElementById('staff-select-player')?.addEventListener('change', (e) =
     }
 });
 
-document.getElementById('staff-select-role')?.addEventListener('change', (e) => {
-    const role = e.target.value;
-    if (role !== 'custom') {
-        applyRolePresetToCheckboxes(role);
-    }
-});
-
-ALL_PERM_KEYS.forEach(k => {
-    document.getElementById(`perm-${k}`)?.addEventListener('change', () => {
-        const roleSel = document.getElementById('staff-select-role');
-        if (roleSel) roleSel.value = 'custom';
-    });
-});
-
 document.getElementById('staff-search-input')?.addEventListener('input', () => {
     renderStaffView();
+});
+
+document.getElementById('staff-perm-search')?.addEventListener('input', () => {
+    applyPermStudioSearchAndFilter();
 });
 
 // Event Manager Button Listeners
@@ -3828,7 +4735,7 @@ document.getElementById('btn-launch-custom-event')?.addEventListener('click', la
 
 // Preset Buttons & Modal Helpers
 function highlightPresetButton(activeId) {
-    ['preset-btn-mod', 'preset-btn-admin', 'preset-btn-dev', 'preset-btn-owner', 'preset-btn-clear'].forEach(id => {
+    ['preset-btn-mod', 'preset-btn-admin', 'preset-btn-dev', 'preset-btn-owner', 'preset-btn-all-tabs', 'preset-btn-clear'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
             if (id === activeId) btn.classList.add('active');
@@ -3857,12 +4764,24 @@ document.getElementById('preset-btn-owner')?.addEventListener('click', () => {
     applyRolePresetToCheckboxes('owner');
     highlightPresetButton('preset-btn-owner');
 });
+document.getElementById('preset-btn-all-tabs')?.addEventListener('click', () => {
+    initStaffPermStudioDOM();
+    document.getElementById('staff-select-role').value = 'custom';
+    ALL_PERM_KEYS.forEach(k => {
+        const chk = document.getElementById(`perm-${k}`);
+        if (chk) chk.checked = true;
+    });
+    updateStaffPermVisualState();
+    highlightPresetButton('preset-btn-all-tabs');
+});
 document.getElementById('preset-btn-clear')?.addEventListener('click', () => {
+    initStaffPermStudioDOM();
     document.getElementById('staff-select-role').value = 'custom';
     ALL_PERM_KEYS.forEach(k => {
         const chk = document.getElementById(`perm-${k}`);
         if (chk) chk.checked = false;
     });
+    updateStaffPermVisualState();
     highlightPresetButton('preset-btn-clear');
 });
 
@@ -3959,9 +4878,27 @@ let currentPlayingEmote = null;
 
 function setEmoteCat(btn, cat) {
     currentEmoteCat = cat;
+    currentEmoteLimit = 120;
     document.querySelectorAll('[data-emote-cat]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     renderEmotes();
+}
+
+window.resetEmoteLimitAndRender = function() {
+    currentEmoteLimit = 120;
+    renderEmotes();
+};
+
+window.loadMoreEmotes = function() {
+    currentEmoteLimit += 180;
+    renderEmotes();
+};
+
+function getCombinedEmotesCatalog() {
+    if (allServerEmotes && allServerEmotes.length > 0) {
+        return allServerEmotes;
+    }
+    return EMOTES_LIST;
 }
 
 function renderEmotes() {
@@ -3969,45 +4906,155 @@ function renderEmotes() {
     const grid   = document.getElementById('emotes-grid');
     if (!grid) return;
 
-    const filtered = EMOTES_LIST.filter(e => {
-        const catOk  = currentEmoteCat === 'all' || e.cat === currentEmoteCat;
-        const termOk = !search || e.label.toLowerCase().includes(search) || e.cat.includes(search);
-        return catOk && termOk;
+    const sourceList = getCombinedEmotesCatalog();
+    const badgeEl = document.getElementById('emote-total-badge');
+    if (badgeEl) {
+        badgeEl.innerText = `${sourceList.length.toLocaleString()} Animations`;
+    }
+
+    const filtered = sourceList.filter(e => {
+        const idStr = (e.id || '').toLowerCase();
+        const labelStr = (e.label || e.id || '').toLowerCase();
+        const catStr = (e.cat || 'dance').toLowerCase();
+        const packStr = (e.pack || '').toLowerCase();
+
+        const termOk = !search || labelStr.includes(search) || idStr.includes(search) || catStr.includes(search) || packStr.includes(search);
+        if (!termOk) return false;
+
+        if (currentEmoteCat === 'favorites') {
+            return Favorites.has('emotes', idStr);
+        }
+        if (search.length > 0 && currentEmoteCat === 'all') return true;
+        if (currentEmoteCat === 'all') return true;
+        return catStr === currentEmoteCat;
     });
 
     if (!filtered.length) {
-        grid.innerHTML = '<div style="color:var(--text-muted);padding:24px;text-align:center;">Aucune animation trouvée.</div>';
+        grid.innerHTML = '<div style="color:var(--text-muted);padding:24px;text-align:center;grid-column:1/-1;">Aucune danse ou animation trouvée.</div>';
         return;
     }
 
-    grid.innerHTML = filtered.map(e => {
+    const slice = filtered.slice(0, currentEmoteLimit);
+    const hasMore = filtered.length > currentEmoteLimit;
+
+    let html = slice.map(e => {
         const isPlaying = currentPlayingEmote === e.id;
-        return `<div class="emote-card${isPlaying ? ' playing' : ''}" onclick="playEmote('${e.id}','${e.dict}','${e.clip}',${e.loop},'${e.label}')">
-            <div class="emote-emoji">${e.emoji}</div>
-            <div class="emote-name">${e.label}</div>
-            <div class="emote-cat-badge">${e.cat}</div>
+        const isFav = Favorites.has('emotes', e.id);
+        const safeId = escapeHtml(e.id || '');
+        const safeLabel = escapeHtml(e.label || e.id || 'Dance');
+        const safeDict = escapeHtml(e.dict || '');
+        const safeClip = escapeHtml(e.clip || '');
+        const safeScenario = escapeHtml(e.scenario || '');
+        const safePack = e.pack ? `<div style="font-size:0.62rem;color:var(--accent-cyan);opacity:0.85;margin-top:2px;">${escapeHtml(e.pack)}</div>` : '';
+        const loopBool = e.loop !== false;
+
+        return `<div class="emote-card${isPlaying ? ' playing' : ''}" style="position:relative;" onclick="playEmote('${safeId}','${safeDict}','${safeClip}',${loopBool},'${safeLabel}','${safeScenario}')">
+            <button type="button" class="fav-star-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('emotes', '${safeId}')" title="Ajouter aux favoris" style="position:absolute;top:6px;right:6px;background:none;border:none;cursor:pointer;font-size:0.9rem;color:${isFav ? '#ffd700' : 'rgba(255,255,255,0.28)'};">★</button>
+            <div class="emote-emoji">${e.emoji || '🕺'}</div>
+            <div class="emote-name" title="/e ${safeId}">${safeLabel}</div>
+            <div style="font-size:0.65rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">/e ${safeId}</div>
+            ${safePack}
+            <div class="emote-cat-badge">${escapeHtml(e.cat || 'dance')}</div>
         </div>`;
     }).join('');
+
+    if (hasMore) {
+        const remaining = filtered.length - currentEmoteLimit;
+        html += `<div style="grid-column: 1 / -1; text-align: center; padding: 14px;">
+            <button type="button" class="secondary-btn" onclick="loadMoreEmotes()" style="padding: 10px 24px; font-weight: 800; border-color: var(--accent-cyan); color: var(--accent-cyan);">
+                ➕ Afficher plus de danses (${remaining.toLocaleString()} restantes sur ${filtered.length.toLocaleString()})
+            </button>
+        </div>`;
+    }
+
+    grid.innerHTML = html;
 }
 
-function playEmote(id, dict, clip, loop, label) {
+function playEmote(id, dict, clip, loop, label, scenario) {
     currentPlayingEmote = id;
     renderEmotes();
 
-    const bar   = document.getElementById('emote-now-playing');
-    const lbl   = document.getElementById('emote-now-label');
-    if (bar && lbl) { bar.style.display = 'block'; lbl.textContent = label; }
+    const targetSel = document.getElementById('emote-target-select');
+    const target = targetSel ? targetSel.value : 'self';
 
-    postNUI('playEmote', { dict, clip, loop });
+    const bar = document.getElementById('emote-now-playing');
+    const lbl = document.getElementById('emote-now-label');
+    if (bar && lbl) {
+        bar.style.display = 'block';
+        const targetText = target === 'all' ? ' [🌐 TOUT LE SERVEUR]' : (target !== 'self' ? ` [🎯 Joueur #${target}]` : ' [👤 Moi-même]');
+        lbl.textContent = `${label} (/e ${id})${targetText}`;
+    }
+
+    postNUI('playEmote', { id, dict, clip, loop, label, scenario: scenario || null, target });
 }
 
 function stopEmote() {
     currentPlayingEmote = null;
     renderEmotes();
+    const targetSel = document.getElementById('emote-target-select');
+    const target = targetSel ? targetSel.value : 'self';
     const bar = document.getElementById('emote-now-playing');
     if (bar) bar.style.display = 'none';
-    postNUI('stopEmote', {});
+    postNUI('stopEmote', { target });
 }
+
+// Manage Tab: Force Dance on Managed Player
+window.forceDanceOnManagedPlayer = function(presetEmoteId) {
+    const targetId = document.getElementById('manage-target-id')?.value;
+    if (!targetId) {
+        showToast('Force Dance', 'Sélectionnez d’abord un joueur.', 'error');
+        return;
+    }
+    const inputEl = document.getElementById('manage-force-emote-id');
+    const query = (presetEmoteId || inputEl?.value || '').trim().toLowerCase();
+    if (!query) {
+        showToast('Force Dance', 'Entrez le code ou nom d’une danse (ex: dance, siu, twerk).', 'warning');
+        return;
+    }
+
+    const catalog = getCombinedEmotesCatalog();
+    const match = catalog.find(e => (e.id || '').toLowerCase() === query)
+               || catalog.find(e => (e.label || '').toLowerCase().includes(query) || (e.id || '').toLowerCase().includes(query));
+
+    const payload = match ? {
+        id: match.id,
+        dict: match.dict,
+        clip: match.clip,
+        loop: match.loop !== false,
+        label: match.label || match.id,
+        scenario: match.scenario || null,
+        target: targetId
+    } : {
+        id: query,
+        dict: '',
+        clip: '',
+        loop: true,
+        label: query,
+        target: targetId
+    };
+
+    postNUI('playEmote', payload);
+    showToast('🕺 Force Dance', `Animation "${payload.label}" lancée sur le joueur #${targetId} !`, 'success');
+};
+
+window.stopDanceOnManagedPlayer = function() {
+    const targetId = document.getElementById('manage-target-id')?.value;
+    if (!targetId) return;
+    postNUI('stopEmote', { target: targetId });
+    showToast('⏹️ Stop Dance', `Animation arrêtée sur le joueur #${targetId}.`, 'info');
+};
+
+window.openEmotesTabForManagedPlayer = function() {
+    const targetId = document.getElementById('manage-target-id')?.value;
+    const emotesNav = document.querySelector('.nav-item[data-tab="emotes"]');
+    if (emotesNav) emotesNav.click();
+    if (targetId) {
+        setTimeout(() => {
+            const sel = document.getElementById('emote-target-select');
+            if (sel) sel.value = String(targetId);
+        }, 120);
+    }
+};
 
 // Handle Lua -> JS emoteStopped event (player moved)
 window.addEventListener('message', function(ev) {

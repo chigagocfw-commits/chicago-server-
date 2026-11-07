@@ -303,11 +303,11 @@ lib.callback.register('souh4il_dev:server:requestQuickAction', function(source, 
             if not Permissions.HasModulePermission(source, 'world_teleport') and not Permissions.HasModulePermission(source, 'self_actions') then
                 return { success = false, error = "PERMISSION_DENIED" }
             end
-        elseif actionType == 'revive' or actionType == 'heal' or actionType == 'armor' then
+        elseif actionType == 'revive' or actionType == 'heal' or actionType == 'armor' or actionType == 'clean_ped' then
             if not Permissions.HasModulePermission(source, 'self_actions') and not Permissions.HasModulePermission(source, 'player_heal') then
                 return { success = false, error = "PERMISSION_DENIED" }
             end
-        elseif actionType == 'repair' or actionType == 'clean' or actionType == 'dv' then
+        elseif actionType == 'repair' or actionType == 'clean' or actionType == 'dv' or actionType == 'maxmod' or actionType == 'flip_car' or actionType == 'fix_wash_car' then
             if not Permissions.HasModulePermission(source, 'self_actions') and not Permissions.HasModulePermission(source, 'spawn_vehicles') and not Permissions.HasModulePermission(source, 'veh_powers') then
                 return { success = false, error = "PERMISSION_DENIED" }
             end
@@ -328,7 +328,7 @@ lib.callback.register('souh4il_dev:server:requestQuickAction', function(source, 
             return { success = true }
         end
         return { success = false, error = "qbx_medical not started" }
-    elseif actionType == 'repair' or actionType == 'clean' or actionType == 'tpm' or actionType == 'dv' or actionType == 'armor' then
+    elseif actionType == 'repair' or actionType == 'clean' or actionType == 'tpm' or actionType == 'dv' or actionType == 'armor' or actionType == 'maxmod' or actionType == 'clean_ped' or actionType == 'flip_car' or actionType == 'fix_wash_car' then
         Logger.Write("QUICK_ACTION_" .. actionType:upper(), source, source, { type = actionType }, "SUCCESS")
         return { success = true }
     end
@@ -367,8 +367,9 @@ lib.callback.register('souh4il_dev:server:getOnlinePlayers', function(source)
     if not allowed then return { success = false, error = reason } end
 
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
-    -- Financial data redaction: only show cash/bank to staff with manage_money
-    local canSeeMoney = Permissions.IsOwner(source) or (Permissions.GetPermissions(source).manage_money == true)
+    -- Financial data redaction: only show cash/bank to staff with manage_money or players_view_money
+    local callerPerms = Permissions.GetPermissions(source) or {}
+    local canSeeMoney = Permissions.IsOwner(source) or (callerPerms.manage_money == true) or (callerPerms.players_view_money == true)
 
     local players = {}
     local playerList = GetPlayers()
@@ -1788,8 +1789,9 @@ lib.callback.register('souh4il_dev:server:getPlayerDetails', function(source, ta
     local allowed, reason = Security.CheckRateLimit(source, 'get_players')
     if not allowed then return { success = false, error = reason } end
     -- [SOUH4IL-DEV] Granular permission enforced by CALLBACK_MODULES wrapper
-    -- Financial data redaction: only show cash/bank to staff with manage_money
-    local canSeeMoney = Permissions.IsOwner(source) or (Permissions.GetPermissions(source).manage_money == true)
+    -- Financial data redaction: only show cash/bank to staff with manage_money or players_view_money
+    local callerPerms = Permissions.GetPermissions(source) or {}
+    local canSeeMoney = Permissions.IsOwner(source) or (callerPerms.manage_money == true) or (callerPerms.players_view_money == true)
 
     local tId = tonumber(targetId)
     if not tId or not DoesPlayerExist(tostring(tId)) then return { success = false, error = "PLAYER_NOT_FOUND" } end
@@ -3077,6 +3079,7 @@ lib.callback.register('souh4il_dev:server:saveStaffMember', function(source, dat
         if src and Identifiers.GetLicense(src) == data.license then
             exports.qbx_core:Notify(src, ("Votre rang SOUH4IL-DEV a été mis à jour: %s"):format(string.upper(data.role or "Staff")), "success", 7000)
             TriggerClientEvent('souh4il_dev:client:refreshPermissions', src)
+            TriggerClientEvent('souh4il_dev:client:forceDisablePowers', src, data.permissions or {})
             break
         end
     end

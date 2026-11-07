@@ -81,7 +81,15 @@ RegisterNetEvent('mechanic:client:CleanVehicle', function()
 
     if not success then return end
 
-    SetDirtLevel(vehicle, 0.0)
+    SetVehicleDirtLevel(vehicle, 0.0)
     WashDecalsFromVehicle(vehicle, 1.0)
     exports.qbx_core:Notify('Vehicle cleaned', 'success')
 end)
+
+RegisterNetEvent('mechanic:client:OpenRadial', function()
+    ExecuteCommand('mechanic_radial')
+end)
+
+RegisterCommand('mechanictablet', function()
+    TriggerEvent('qs-mechanic-creator:client:openTablet')
+end, false)

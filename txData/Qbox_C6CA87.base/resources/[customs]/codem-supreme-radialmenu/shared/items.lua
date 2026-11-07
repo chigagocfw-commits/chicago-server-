@@ -430,6 +430,22 @@ JobInteractions = {
                 event = 'mechanic:client:CleanVehicle',
                 type = 'client',
                 shouldClose = true
+            },
+            {
+                id = 'mechanictablet',
+                label = 'Mechanic Tablet',
+                icon = 'tablet-screen-button',
+                event = 'qs-mechanic-creator:client:openTablet',
+                type = 'client',
+                shouldClose = true
+            },
+            {
+                id = 'mechanicmenu',
+                label = 'Mechanic Menu',
+                icon = 'gears',
+                event = 'mechanic:client:OpenRadial',
+                type = 'client',
+                shouldClose = true
             }
         }
     },

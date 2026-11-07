@@ -380,8 +380,10 @@ return {
 		weight = 2500,
 		stack = true,
 		close = true,
+		consume = 0,
 		description = "A nice toolbox with stuff to repair your vehicle",
 		client = {
+			export = "qs-mechanic-creator.repairkit",
 			image = "repairkit.png",
 		}
 	},
@@ -3601,6 +3603,43 @@ return {
 		stack = false,
 		close = true,
 		description = 'Electronic tracking unit to register personal vehicles for PostOP transport.',
+	},
+
+	-- Mechanic Items (qs-mechanic-creator)
+	['mechanic_tablet'] = {
+		label = 'Mechanic Tablet',
+		weight = 500,
+		stack = false,
+		close = true,
+		consume = 0,
+		description = 'Tablet for managing mechanic shop, employees, prices and orders.',
+		client = {
+			export = 'qs-mechanic-creator.mechanic_tablet',
+			image = 'tablet.png',
+		},
+	},
+	['sponge'] = {
+		label = 'Cleaning Sponge',
+		weight = 200,
+		stack = true,
+		close = true,
+		consume = 0,
+		description = 'Sponge used to clean vehicles.',
+		client = {
+			export = 'qs-mechanic-creator.sponge',
+			image = 'cleaningkit.png',
+		},
+	},
+	['rope'] = {
+		label = 'Tow Rope',
+		weight = 1000,
+		stack = true,
+		close = true,
+		consume = 0,
+		description = 'Heavy duty rope used to tow vehicles.',
+		client = {
+			export = 'qs-mechanic-creator.rope',
+		},
 	},
 }
 --             

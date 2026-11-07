@@ -56,6 +56,79 @@ function Mechanic.NormalizeShopData(shop)
 
     if shop.coords and not sc.coords then
         sc.coords = copyCoords(shop.coords)
+    elseif sc.coords and not shop.coords then
+        shop.coords = copyCoords(sc.coords)
+    end
+
+    if shop.name and not sc.name then
+        sc.name = shop.name
+    elseif sc.name and not shop.name then
+        shop.name = sc.name
+    end
+
+    local job = shop.job or sc.job
+    if type(job) == 'string' and job ~= '' then
+        shop.job = job
+        sc.job = job
+    end
+
+    local jobGrade = tonumber(shop.jobGrade or sc.jobGrade)
+    if jobGrade ~= nil then
+        shop.jobGrade = jobGrade
+        sc.jobGrade = jobGrade
+    end
+
+    local bossGrade = tonumber(shop.bossGrade or sc.bossGrade)
+    if bossGrade ~= nil then
+        shop.bossGrade = bossGrade
+        sc.bossGrade = bossGrade
+    end
+
+    local managerGrade = tonumber(shop.managerGrade or sc.managerGrade)
+    if managerGrade ~= nil then
+        shop.managerGrade = managerGrade
+        sc.managerGrade = managerGrade
+    end
+
+    for _, sectionKey in ipairs({ 'shops', 'stashes', 'garages', 'wardrobe', 'engineSwap' }) do
+        if sc[sectionKey] ~= nil and shop[sectionKey] == nil then
+            shop[sectionKey] = sc[sectionKey]
+        elseif shop[sectionKey] ~= nil and sc[sectionKey] == nil then
+            sc[sectionKey] = shop[sectionKey]
+        end
+    end
+
+    local rawBlip = sc.blip
+    if rawBlip == nil then
+        rawBlip = shop.blip
+    end
+    if rawBlip == false or rawBlip == 0 then
+        sc.blip = false
+        shop.blip = false
+    elseif type(rawBlip) == 'table' then
+        if rawBlip.enabled == false then
+            sc.blip = false
+            shop.blip = false
+        else
+            rawBlip.sprite = tonumber(rawBlip.sprite) or 72
+            rawBlip.color = tonumber(rawBlip.color) or 81
+            rawBlip.scale = tonumber(rawBlip.scale) or 0.8
+            rawBlip.name = rawBlip.name or shop.name or sc.name
+            rawBlip.coords = copyCoords(rawBlip.coords) or copyCoords(sc.coords) or copyCoords(shop.coords)
+            sc.blip = rawBlip
+            shop.blip = rawBlip
+        end
+    elseif rawBlip == true or rawBlip == 1 then
+        local blipTbl = {
+            enabled = true,
+            sprite = tonumber(sc.blipId or shop.blipId) or 72,
+            color = tonumber(sc.blipColor or shop.blipColor) or 81,
+            scale = tonumber(sc.blipScale or shop.blipScale) or 0.8,
+            name = shop.name or sc.name,
+            coords = copyCoords(sc.coords) or copyCoords(shop.coords),
+        }
+        sc.blip = blipTbl
+        shop.blip = blipTbl
     end
 
     local tuneshop = shop.tuneshop or sc.tuneshop

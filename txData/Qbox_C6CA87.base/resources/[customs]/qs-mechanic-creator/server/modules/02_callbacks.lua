@@ -89,22 +89,49 @@ end)
 
 Mechanic.RegisterCallback('checkRadialAccess', function(src, shopId)
     if Mechanic.HasAdminPermission(src) then return true end
-    if shopId and Mechanic.IsShopEmployee(src, shopId) then return true end
     local job = Mechanic.GetJob(src)
-    if job and shopId then
+    if shopId then
+        if Mechanic.IsShopEmployee(src, shopId) then return true end
         local shopJob = Mechanic.GetShopJob(shopId)
-        if shopJob and job.name == shopJob then return true end
+        if job and shopJob and job.name == shopJob then return true end
+        return false
+    end
+    if job and job.name == 'mechanic' then
+        return true
+    end
+    for id, _ in pairs(Mechanic.Shops or {}) do
+        if Mechanic.IsShopEmployee(src, id) then
+            return true
+        end
+        local shopJob = Mechanic.GetShopJob(id)
+        if job and shopJob and job.name == shopJob then
+            return true
+        end
     end
     return false
 end)
 
 Mechanic.RegisterCallback('getPlayerShopData', function(src, shopId)
-    return {
-        shopId = shopId,
-        job = Mechanic.GetJob(src),
-        license = Mechanic.GetPlayerLicense(src),
-        isEmployee = Mechanic.IsShopEmployee(src, shopId),
-    }
+    local job = Mechanic.GetJob(src)
+    if shopId then
+        local shopJob = Mechanic.GetShopJob(shopId) or (job and job.name) or 'mechanic'
+        return shopJob, shopId
+    end
+    for id, _ in pairs(Mechanic.Shops or {}) do
+        if Mechanic.IsShopEmployee(src, id) then
+            local shopJob = Mechanic.GetShopJob(id) or (job and job.name) or 'mechanic'
+            return shopJob, id
+        end
+        local shopJob = Mechanic.GetShopJob(id)
+        if job and shopJob and job.name == shopJob then
+            return shopJob, id
+        end
+    end
+    if job and job.name == 'mechanic' then
+        local firstShopId = next(Mechanic.Shops or {})
+        return 'mechanic', firstShopId
+    end
+    return nil, nil
 end)
 
 Mechanic.RegisterCallback('getShopItems', function(_, shopId)
@@ -384,6 +411,12 @@ Mechanic.RegisterCallback('confirmItemUse', function(src, item)
         return true
     end
     return false
+end)
+
+Mechanic.RegisterEvent('confirmItemUse', function(src, item)
+    if Mechanic.HasItem(src, item, 1) then
+        Mechanic.RemoveItem(src, item, 1)
+    end
 end)
 
 Mechanic.RegisterCallback('checkCarliftAccess', function(src, liftKey)

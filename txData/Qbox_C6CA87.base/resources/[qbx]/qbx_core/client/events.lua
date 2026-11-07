@@ -20,6 +20,10 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     if motd ~= '' then
         exports.chat:addMessage({ template = motd })
     end
+
+    if UpdatePauseMenuHeader then
+        UpdatePauseMenuHeader()
+    end
 end)
 
 ---@param val PlayerData
@@ -27,6 +31,15 @@ RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
     local invokingResource = GetInvokingResource()
     if invokingResource and invokingResource ~= cache.resource then return end
     QBX.PlayerData = val
+    if UpdatePauseMenuHeader then
+        UpdatePauseMenuHeader()
+    end
+end)
+
+RegisterNetEvent('QBCore:Client:OnMoneyChange', function()
+    if UpdatePauseMenuHeader then
+        UpdatePauseMenuHeader()
+    end
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
