@@ -101,6 +101,10 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                         <span>Event Manager</span>
                     </button>
+                    <button class="nav-item" data-tab="emotes">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                        <span>Dances & Emotes</span>
+                    </button>
                     <button class="nav-item" data-tab="logs">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         <span>Security Logs</span>
@@ -1633,6 +1637,40 @@
                         </div>
                     </section>
 
+                    <!-- Tab: Dances & Emotes -->
+                    <section class="tab-pane" id="pane-emotes">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>🕺 DANCES & EMOTES</h4>
+                                <span>Jouez des animations sur votre personnage — arrêtez en bougeant ou en cliquant Stop</span>
+                            </div>
+
+                            <!-- Stop button + search + filters -->
+                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                                <button class="action-btn danger" id="emote-stop-btn" style="min-width:120px;" onclick="stopEmote()">
+                                    <span class="btn-icon">⏹</span><span class="btn-text">Stop Emote</span>
+                                </button>
+                                <input type="text" id="emote-search" class="search-input" placeholder="🔍 Rechercher une animation..." oninput="renderEmotes()" style="flex:1; min-width:180px;">
+                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button class="filter-btn active" data-emote-cat="all"    onclick="setEmoteCat(this,'all')">Tous</button>
+                                    <button class="filter-btn"        data-emote-cat="dance"  onclick="setEmoteCat(this,'dance')">💃 Danses</button>
+                                    <button class="filter-btn"        data-emote-cat="sit"    onclick="setEmoteCat(this,'sit')">🪑 Assis</button>
+                                    <button class="filter-btn"        data-emote-cat="idle"   onclick="setEmoteCat(this,'idle')">💤 Idles</button>
+                                    <button class="filter-btn"        data-emote-cat="social" onclick="setEmoteCat(this,'social')">👋 Social</button>
+                                    <button class="filter-btn"        data-emote-cat="funny"  onclick="setEmoteCat(this,'funny')">😂 Funny</button>
+                                </div>
+                            </div>
+
+                            <!-- Now playing bar -->
+                            <div id="emote-now-playing" style="display:none; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:8px 14px; margin-bottom:14px; font-size:0.82rem; color:#00e5ff;">
+                                ▶ En cours: <b id="emote-now-label">—</b>
+                            </div>
+
+                            <!-- Emotes grid -->
+                            <div id="emotes-grid" class="emotes-grid"></div>
+                        </div>
+                    </section>
+
                     <!-- Tab: Staff & Permissions Management -->
                     <section class="tab-pane" id="pane-staff">
                         <div class="section-card">
@@ -1679,6 +1717,7 @@
                         </div>
                     </section>
                 </div>
+
             </main>
         </div>
 

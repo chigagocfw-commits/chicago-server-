@@ -43,9 +43,9 @@ local vehicleShops = {
 }
 
 local interacts = {
-    {'qs-textui', 'qs-textui'},
     {'ox_target', 'ox_target'},
     {'qb-target', 'qb-target'},
+    {'qs-textui', 'qs-textui'},
 }
 
 local clothingSystem = {

@@ -568,6 +568,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             checkEventState();
         } else if (tab === 'staff') {
             fetchStaffData();
+        } else if (tab === 'emotes') {
+            renderEmotes();
         }
     });
 });
@@ -3787,3 +3789,142 @@ document.getElementById('staff-select-role')?.addEventListener('change', (e) => 
         highlightPresetButton('');
     }
 });
+
+
+// =========================================================================
+// DANCES & EMOTES SYSTEM
+// =========================================================================
+
+const EMOTES_LIST = [
+    // 💃 DANSES
+    { id: 'gangnam',       label: 'Gangnam Style',    emoji: '🐴', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@lo_intensity@var_a@',           clip: 'high_intensity',       loop: true },
+    { id: 'floss',         label: 'Floss',            emoji: '💃', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@lo_intensity@var_a@',           clip: 'low_intensity',        loop: true },
+    { id: 'carlton',       label: 'Carlton Dance',    emoji: '🕺', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@hi_intensity@var_a@',           clip: 'low_intensity',        loop: true },
+    { id: 'robot',         label: 'Robot',            emoji: '🤖', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@hi_intensity@var_a@',           clip: 'high_intensity',       loop: true },
+    { id: 'twerk',         label: 'Twerk',            emoji: '🍑', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@lo_intensity@var_b@',           clip: 'low_intensity',        loop: true },
+    { id: 'breakdance',    label: 'Breakdance',       emoji: '🌀', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@hi_intensity@var_b@',           clip: 'high_intensity',       loop: true },
+    { id: 'shuffle',       label: 'Shuffle',          emoji: '🔀', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@lo_intensity@var_c@',           clip: 'low_intensity',        loop: true },
+    { id: 'dab',           label: 'Dab',              emoji: '🤙', cat: 'dance',  dict: 'mp_player_int_uppercut',                                                clip: 'mp_player_int_uppercut',loop: false },
+    { id: 'salsa',         label: 'Salsa',            emoji: '🌹', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@hi_intensity@var_c@',           clip: 'low_intensity',        loop: true },
+    { id: 'wave',          label: 'Wave Dance',       emoji: '🌊', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@lo_intensity@var_c@',           clip: 'high_intensity',       loop: true },
+    { id: 'toprock',       label: 'Top Rock',         emoji: '🔥', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@hi_intensity@var_a@',           clip: 'med_intensity',        loop: true },
+    { id: 'moonwalk',      label: 'Moonwalk',         emoji: '🌙', cat: 'dance',  dict: 'missheistfbi2finale',                                                   clip: 'intro_loop',            loop: true },
+    { id: 'aerobics',      label: 'Aerobics',         emoji: '🏃', cat: 'dance',  dict: 'anim@amb@gym@treadmill@',                                               clip: 'cardio_cycle_base',     loop: true },
+    { id: 'clubdance1',    label: 'Club Dance 1',     emoji: '🎶', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@lo_intensity@var_b@',           clip: 'high_intensity',        loop: true },
+    { id: 'clubdance2',    label: 'Club Dance 2',     emoji: '🎵', cat: 'dance',  dict: 'anim@amb@nightclub@mini@dance@dance_solo@hi_intensity@var_b@',           clip: 'low_intensity',         loop: true },
+
+    // 🪑 ASSIS / SITS
+    { id: 'sit_ground',    label: 'Sit Ground',       emoji: '🪑', cat: 'sit',    dict: 'amb@world_human_sit@male@base',                                         clip: 'base',                 loop: true },
+    { id: 'sit_bench',     label: 'Sit Bench',        emoji: '🏠', cat: 'sit',    dict: 'amb@world_human_seat_steps@male@idle_a',                                clip: 'idle_a',               loop: true },
+    { id: 'lean_wall',     label: 'Lean Wall',        emoji: '🧱', cat: 'sit',    dict: 'amb@world_human_leaning@male@wall@back@hard@idle_a',                    clip: 'idle_a',               loop: true },
+    { id: 'crouch',        label: 'Crouch',           emoji: '🤸', cat: 'sit',    dict: 'missfbi4',                                                              clip: 'amb_packing_a_idle',   loop: true },
+    { id: 'meditate',      label: 'Meditate',         emoji: '🧘', cat: 'sit',    dict: 'amb@world_human_meditation@male@base',                                  clip: 'base',                 loop: true },
+    { id: 'kneel',         label: 'Kneel',            emoji: '🙏', cat: 'sit',    dict: 'rcmnigel3b',                                                            clip: 'rcm_nigel3b_trev_idle', loop: true },
+
+    // 💤 IDLES
+    { id: 'smoke',         label: 'Smoke',            emoji: '🚬', cat: 'idle',   dict: 'amb@world_human_smoking@male@idle_a',                                   clip: 'idle_a',               loop: true },
+    { id: 'phone_text',    label: 'Phone Text',       emoji: '📱', cat: 'idle',   dict: 'amb@world_human_mobile_film_shocking@male@idle_a',                      clip: 'idle_a',               loop: true },
+    { id: 'phone_ear',     label: 'Phone Call',       emoji: '📞', cat: 'idle',   dict: 'amb@world_human_mobile_lester_low@male@idle_a',                         clip: 'idle_a',               loop: true },
+    { id: 'drink',         label: 'Drink Beer',       emoji: '🍺', cat: 'idle',   dict: 'amb@world_human_drinking@beer@male@idle_a',                             clip: 'idle_a',               loop: true },
+    { id: 'stretch',       label: 'Stretch',          emoji: '🤸', cat: 'idle',   dict: 'amb@world_human_stretching@male@idle_a',                                clip: 'idle_a',               loop: true },
+    { id: 'yawn',          label: 'Yawn',             emoji: '😴', cat: 'idle',   dict: 'anim@heists@ornate_bank@ig1@',                                          clip: 'ig1_idle2',            loop: false },
+    { id: 'lean_car',      label: 'Lean on Car',      emoji: '🚗', cat: 'idle',   dict: 'amb@world_human_hang_out_street@male_a@idle_a',                         clip: 'idle_a',               loop: true },
+    { id: 'beg',           label: 'Beg',              emoji: '🤲', cat: 'idle',   dict: 'amb@world_human_bum_freeway@male@idle_a',                               clip: 'idle_a',               loop: true },
+    { id: 'binoculars',    label: 'Binoculars',       emoji: '🔭', cat: 'idle',   dict: 'amb@world_human_binoculars@male@idle_a',                                clip: 'idle_a',               loop: true },
+    { id: 'pushups',       label: 'Push-Ups',         emoji: '💪', cat: 'idle',   dict: 'amb@world_human_push_ups@male@base',                                    clip: 'base',                 loop: true },
+    { id: 'situps',        label: 'Sit-Ups',          emoji: '🏋️', cat: 'idle',   dict: 'amb@world_human_ab_exercises@male@base',                                clip: 'base',                 loop: true },
+    { id: 'weld',          label: 'Welding',          emoji: '🔧', cat: 'idle',   dict: 'amb@world_human_welding@male@idle_a',                                   clip: 'idle_a',               loop: true },
+
+    // 👋 SOCIAL
+    { id: 'wave_hand',     label: 'Wave',             emoji: '👋', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'wave',                  loop: false },
+    { id: 'cheer',         label: 'Cheer',            emoji: '🙌', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'cheer',                 loop: false },
+    { id: 'salute',        label: 'Salute',           emoji: '🫡', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'salute',                loop: false },
+    { id: 'point',         label: 'Point',            emoji: '👆', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'clap',                  loop: false },
+    { id: 'clap',          label: 'Clap',             emoji: '👏', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'clap_left',             loop: false },
+    { id: 'facepalm',      label: 'Facepalm',         emoji: '🤦', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'come_on_1',             loop: false },
+    { id: 'thumbsup',      label: 'Thumbs Up',        emoji: '👍', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'finger_point',          loop: false },
+    { id: 'flex',          label: 'Flex',             emoji: '💪', cat: 'social', dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'slow_clap',             loop: false },
+    { id: 'hands_up',      label: 'Hands Up',         emoji: '🙌', cat: 'social', dict: 'missbank1shot4',                                                        clip: 'bh_reaction_idle',      loop: true  },
+    { id: 'surrender',     label: 'Surrender',        emoji: '🏳️', cat: 'social', dict: 'missfbi3',                                                              clip: 'fibsurrender_idle',     loop: true  },
+    { id: 'talk',          label: 'Talk Phone',       emoji: '📣', cat: 'social', dict: 'random@arrests@busted',                                                 clip: 'idle_d',                loop: true  },
+
+    // 😂 FUNNY
+    { id: 'chicken',       label: 'Chicken Dance',    emoji: '🐔', cat: 'funny',  dict: 'amb@world_human_aa_coffee@male@idle_a',                                 clip: 'idle_a',                loop: true  },
+    { id: 'drunk',         label: 'Drunk Walk',       emoji: '🍻', cat: 'funny',  dict: 'anim@mp_player_intros@male@',                                           clip: 'intro_0',               loop: false },
+    { id: 'scared',        label: 'Scared',           emoji: '😨', cat: 'funny',  dict: 'reaction@intimidation@1h@',                                             clip: 'intro',                 loop: false },
+    { id: 'cry',           label: 'Cry',              emoji: '😭', cat: 'funny',  dict: 'missfam5_heistchina_b',                                                 clip: 'a_m_y_skater_01_idle',  loop: false },
+    { id: 'laugh',         label: 'Laugh',            emoji: '😂', cat: 'funny',  dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'laugh',                 loop: false },
+    { id: 'victory',       label: 'Victory',          emoji: '🏆', cat: 'funny',  dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'victory',               loop: false },
+    { id: 'loser',         label: 'Loser',            emoji: '😅', cat: 'funny',  dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'loser',                 loop: false },
+    { id: 'rockpapersc',   label: 'Rock Paper Sc.',   emoji: '✂️',  cat: 'funny',  dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'rock_paper_scissors',   loop: false },
+    { id: 'shakebutt',     label: 'Shake It',         emoji: '🫣', cat: 'funny',  dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'wiggle',                loop: false },
+    { id: 'spook',         label: 'Spook',            emoji: '👻', cat: 'funny',  dict: 'rcmpaparazzo3',                                                         clip: 'a_m_y_juggalo_01_idle', loop: true  },
+    { id: 'boxingpose',    label: 'Boxing Pose',      emoji: '🥊', cat: 'funny',  dict: 'anim@mp_player_introcelebrations@upper',                                clip: 'boxing_pose',           loop: false },
+];
+
+let currentEmoteCat = 'all';
+let currentPlayingEmote = null;
+
+function setEmoteCat(btn, cat) {
+    currentEmoteCat = cat;
+    document.querySelectorAll('[data-emote-cat]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderEmotes();
+}
+
+function renderEmotes() {
+    const search = (document.getElementById('emote-search')?.value || '').toLowerCase().trim();
+    const grid   = document.getElementById('emotes-grid');
+    if (!grid) return;
+
+    const filtered = EMOTES_LIST.filter(e => {
+        const catOk  = currentEmoteCat === 'all' || e.cat === currentEmoteCat;
+        const termOk = !search || e.label.toLowerCase().includes(search) || e.cat.includes(search);
+        return catOk && termOk;
+    });
+
+    if (!filtered.length) {
+        grid.innerHTML = '<div style="color:var(--text-muted);padding:24px;text-align:center;">Aucune animation trouvée.</div>';
+        return;
+    }
+
+    grid.innerHTML = filtered.map(e => {
+        const isPlaying = currentPlayingEmote === e.id;
+        return `<div class="emote-card${isPlaying ? ' playing' : ''}" onclick="playEmote('${e.id}','${e.dict}','${e.clip}',${e.loop},'${e.label}')">
+            <div class="emote-emoji">${e.emoji}</div>
+            <div class="emote-name">${e.label}</div>
+            <div class="emote-cat-badge">${e.cat}</div>
+        </div>`;
+    }).join('');
+}
+
+function playEmote(id, dict, clip, loop, label) {
+    currentPlayingEmote = id;
+    renderEmotes();
+
+    const bar   = document.getElementById('emote-now-playing');
+    const lbl   = document.getElementById('emote-now-label');
+    if (bar && lbl) { bar.style.display = 'block'; lbl.textContent = label; }
+
+    postNUI('playEmote', { dict, clip, loop });
+}
+
+function stopEmote() {
+    currentPlayingEmote = null;
+    renderEmotes();
+    const bar = document.getElementById('emote-now-playing');
+    if (bar) bar.style.display = 'none';
+    postNUI('stopEmote', {});
+}
+
+// Handle Lua -> JS emoteStopped event (player moved)
+window.addEventListener('message', function(ev) {
+    if (ev.data && ev.data.action === 'emoteStopped') {
+        currentPlayingEmote = null;
+        const bar = document.getElementById('emote-now-playing');
+        if (bar) bar.style.display = 'none';
+        if (currentTab === 'emotes') renderEmotes();
+    }
+});
+
+// ===== end of emotes system =====

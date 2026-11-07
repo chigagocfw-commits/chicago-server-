@@ -2645,3 +2645,101 @@ AddEventHandler('onResourceStop', function(resourceName)
         NetworkSetInSpectatorMode(false, PlayerPedId())
     end
 end)
+
+-- =========================================================================
+-- DANCES & EMOTES ENGINE
+-- =========================================================================
+local currentEmoteDict = nil
+local currentEmoteClip = nil
+local isEmotePlaying = false
+
+local function LoadAnimDict(dict)
+    if HasAnimDictLoaded(dict) then return true end
+    RequestAnimDict(dict)
+    local timeout = 0
+    while not HasAnimDictLoaded(dict) and timeout < 100 do
+        Wait(50)
+        timeout = timeout + 1
+    end
+    return HasAnimDictLoaded(dict)
+end
+
+local function StopCurrentEmote()
+    if isEmotePlaying and currentEmoteDict and currentEmoteClip then
+        local ped = PlayerPedId()
+        StopAnimTask(ped, currentEmoteDict, currentEmoteClip, 3.0)
+        ClearPedTasks(ped)
+    end
+    currentEmoteDict = nil
+    currentEmoteClip = nil
+    isEmotePlaying = false
+end
+
+RegisterNUICallback('playEmote', function(data, cb)
+    local dict = data.dict
+    local clip = data.clip
+    local loop = data.loop ~= false -- default true
+
+    if not dict or not clip then
+        cb('error')
+        return
+    end
+
+    -- Stop any running emote first
+    StopCurrentEmote()
+
+    local ped = PlayerPedId()
+
+    -- Must be on foot
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 then
+        lib.notify({ title = SharedConfig.PanelName, description = "Sort du véhicule pour danser!", type = 'error' })
+        cb('ok')
+        return
+    end
+
+    local loaded = LoadAnimDict(dict)
+    if not loaded then
+        lib.notify({ title = SharedConfig.PanelName, description = "Failed to load animation: " .. dict, type = 'error' })
+        cb('ok')
+        return
+    end
+
+    local flag = loop and 1 or 0  -- 1 = loop, 0 = play once
+    TaskPlayAnim(ped, dict, clip, 8.0, -8.0, -1, flag, 0, false, false, false)
+
+    currentEmoteDict = dict
+    currentEmoteClip = clip
+    isEmotePlaying = true
+
+    -- Auto stop on movement
+    CreateThread(function()
+        local savedDict = dict
+        local savedClip = clip
+        Wait(500)
+        while isEmotePlaying and currentEmoteDict == savedDict and currentEmoteClip == savedClip do
+            local ped2 = PlayerPedId()
+            -- If player moves or enters vehicle, stop emote
+            if IsEntityMoving(ped2) or GetVehiclePedIsIn(ped2, false) ~= 0 then
+                StopCurrentEmote()
+                SendNUIMessage({ action = "emoteStopped" })
+                break
+            end
+            Wait(300)
+        end
+    end)
+
+    cb('ok')
+end)
+
+RegisterNUICallback('stopEmote', function(_, cb)
+    StopCurrentEmote()
+    SendNUIMessage({ action = "emoteStopped" })
+    cb('ok')
+end)
+
+-- Stop emote on panel close too
+local _origClose = nil
+AddEventHandler('__cfx_export_souh4il_dev_stopEmoteOnClose', function()
+    StopCurrentEmote()
+end)
